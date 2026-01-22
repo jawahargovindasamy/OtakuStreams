@@ -4,12 +4,7 @@ import AnimeImage from "../assets/Hero Img.webp";
 import Avatar1 from "../assets/AOT/av-aot-01.jpg";
 import Avatar2 from "../assets/AOT/av-aot-02.png";
 import Avatar3 from "../assets/JJK/av-jjk-04.png";
-import {
-  Search,
-  ArrowRight,
-  Menu,
-  MessageCircle,
-} from "lucide-react";
+import { Search, ArrowRight, Menu, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,19 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
-
-const topSearches = [
-  "Jujutsu Kaisen: The Culling Game Part 1",
-  "Frieren: Beyond Journey's End Season 2",
-  "Hell's Paradise Season 2",
-  "Jujutsu Kaisen 2nd Season",
-  "One Piece",
-  "Frieren: Beyond Journey's End",
-  "Demon Slayer: Kimetsu no Yaiba - The Movie: Infinity Castle - Part 1: Akaza Returns",
-  "Fate/strange Fake",
-  "Attack on Titan",
-  "Hell's Paradise",
-];
+import { useData } from "@/context/data-provider";
 
 const links = [
   {
@@ -109,6 +92,12 @@ const question = [
 ];
 
 const LandingPage = () => {
+  const { homedata } = useData();
+
+  const topSearches = homedata?.data.trendingAnimes.map(
+    (item) => item.name,
+  ) || ["Naruto", "One Piece", "Bleach"];
+
   return (
     <div>
       <nav className="w-full py-6">
@@ -147,9 +136,9 @@ const LandingPage = () => {
                 <DialogTitle></DialogTitle>
                 <DialogDescription></DialogDescription>
                 <div className="flex flex-col items-center gap-10 text-lg font-semibold">
-                  {links.map((item) => (
+                  {links.map((item, index) => (
                     <a
-                      key={item}
+                      key={index}
                       href="#"
                       className="hover:text-pink-400 transition"
                     >
@@ -199,7 +188,16 @@ const LandingPage = () => {
             {/* Top Search */}
             <div className="text-sm text-white/90">
               <span className="font-semibold">Top search: </span>
-              {topSearches.join(", ")}
+              {topSearches
+                ?.map((item) => (
+                  <Link
+                    key={item}
+                    to={`/search?q=${encodeURIComponent(item)}`}
+                  >
+                    {item.length > 20 ? item.slice(0, 25) + "..." : item}
+                  </Link>
+                ))
+                .reduce((p, c) => [p, ", ", c])}
             </div>
 
             {/* CTA */}
@@ -282,7 +280,7 @@ const LandingPage = () => {
                   </Card>
                 ))}
               </div>
-              <Button className="mt-4 cursor-pointer w-full text-black">
+              <Button className="mt-4 cursor-pointer w-full">
                 <Link to="/blog">Show More</Link>
               </Button>
             </div>
