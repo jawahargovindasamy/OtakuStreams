@@ -1,37 +1,36 @@
-import { useTheme } from "@/context/theme-provider";
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useData } from "@/context/data-provider";
+import React, { useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import { useData } from "@/context/data-provider";
+import MediaCard from "@/components/MediaCard";
 
 const Home = () => {
-  const [count, setCount] = useState(0);
 
-  const { theme, setTheme } = useTheme();
+
   const {
     homedata,
-    fetchazlistdata,
-    azlistdata,
-    fetchanimeinfo,
-    animeinfo,
-    searchdata,
-    searchsuggestions,
-    fetchsearchdata,
+    // fetchazlistdata,
+    // azlistdata,
+    // fetchanimeinfo,
+    // animeinfo,
+    // searchdata,
+    // searchsuggestions,
+    // fetchsearchdata,
   } = useData();
 
-  // console.log(homedata);
+  console.log(homedata?.data.trendingAnimes);
 
-  useEffect(() => {
-    // fetchazlistdata('other');
-    
-    // fetchanimeinfo('one-piece-100');
+  // useEffect(() => {
+  // fetchazlistdata('other');
 
-    fetchsearchdata({
-      q: "one piece",
-      type: "tv",
-      rated: "pg-13",
-    });
-  }, []);
+  // fetchanimeinfo('one-piece-100');
+
+  // fetchsearchdata({
+  //   q: "one piece",
+  //   type: "tv",
+  //   rated: "pg-13",
+  // });
+  // }, []);
 
   // console.log(azlistdata);
 
@@ -39,25 +38,13 @@ const Home = () => {
 
   // console.log(searchdata);
 
-  console.log(searchsuggestions);
+  // console.log(searchsuggestions);
 
   return (
     <div>
-      <Navbar/>
-      <h1 className="text-3xl font-bold text-center">Welcome to OtakuStream</h1>
-      <p className="text-center mt-4 mb-8">Clicked {count} times</p>
-      <Button
-        className="mx-auto block cursor-pointer"
-        onClick={() => setCount(count + 1)}
-      >
-        Button
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      >
-        Switch to {theme === "dark" ? "Light" : "Dark"} Mode
-      </Button>
+      <Navbar />
+      <Hero />
+      <MediaCard/>
     </div>
   );
 };

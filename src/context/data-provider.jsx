@@ -6,7 +6,6 @@ const DataContext = createContext();
 export function DataProvider({ children }) {
   const [homedata, setHomedata] = useState(null);
   const [azlistdata, setAzlistdata] = useState(null);
-  const [animeinfo, setAnimeinfo] = useState(null);
   const [searchdata, setSearchdata] = useState(null);
   const [searchsuggestions, setSearchSuggestions] = useState(null);
   const [language, setLanguage] = useState("EN");
@@ -38,7 +37,7 @@ export function DataProvider({ children }) {
       const response = await axios.get(
         `${import.meta.env.VITE_ANIWATCH_URL}/anime/${id}`,
       );
-      setAnimeinfo(response.data);
+      return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -93,6 +92,17 @@ export function DataProvider({ children }) {
     }
   };
 
+  const fetchepisodeinfo = async (id) => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_ANIWATCH_URL}/anime/${id}/episodes`,
+      );
+      return response.data
+    } catch (error) {
+      console.error("Error fetching Episode data:", error);
+    }
+  };
+
   useEffect(() => {
     fetchHomedata();
   }, []);
@@ -103,13 +113,13 @@ export function DataProvider({ children }) {
         homedata,
         azlistdata,
         fetchazlistdata,
-        animeinfo,
         fetchanimeinfo,
         searchdata,
         searchsuggestions,
         fetchsearchdata,
         language,
         setLanguage,
+        fetchepisodeinfo
       }}
     >
       {children}
