@@ -31,7 +31,7 @@ const Navbar = () => {
   const navigate= useNavigate();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
+    <nav className="sticky top-0 z-50 w-full border-b bg-[#f8f9fa]/70 text-[#2d3748] dark:bg-[#0f172a]/70 dark:text-[#e2e8f0] backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex flex-row items-center gap-2">
           <TooltipProvider>

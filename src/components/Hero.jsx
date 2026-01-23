@@ -36,23 +36,20 @@ const Hero = () => {
   const handlePlay = async (id) => {
     const data = await fetchepisodeinfo(id);
     navigate(`/watch/${data.data.episodes[0].episodeId}`);
-    // console.log(data.data.episodes[0].episodeId);
-
   };
-
-  // console.log(homedata?.data.spotlightAnimes);
 
   return (
     <Carousel className="relative" plugins={[autoplay.current]}>
       <CarouselContent className="h-[calc(100vh-64px)]">
         {homedata?.data.spotlightAnimes.map((item) => (
-          <CarouselItem key={item.id} className=" relative h-full">
+          <CarouselItem key={item.id} className="relative h-full">
             <img
               src={item.poster}
               alt={item.name}
-              className="absolute  w-full h-full"
+              className="absolute w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#2a2a3d]/70 to-[#2a2a3d]" />
+            {/* Updated gradient to match navbar themes */}
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#0f172a]/70 to-[#0f172a] dark:via-[#0f172a]/70 dark:to-[#0f172a]" />
 
             <div className="relative pb-8 z-10 flex h-full max-w-3xl flex-col justify-end px-8 md:px-16 text-white">
               <span className="mb-2 text-[#ffbade] text-sm md:text-lg font-semibold">
@@ -98,14 +95,14 @@ const Hero = () => {
 
               <div className="mt-8 flex gap-4">
                 <button
-                  className=" flex items-center rounded-full bg-[#ffbade] text-black px-6 py-3 font-semibold hover:bg-[#f89abf] cursor-pointer"
+                  className="flex items-center rounded-full bg-[#ffbade] text-black px-6 py-3 font-semibold hover:bg-[#f89abf] transition-colors cursor-pointer"
                   onClick={() => handlePlay(item.id)}
                 >
-                  <Play className="mr-2 h-4 w-4" />
+                  <Play className="mr-2 h-4 w-4 fill-black" />
                   Watch Now
                 </button>
                 <button
-                  className="flex items-center justify-center rounded-full bg-white/10 px-6 py-3 hover:bg-white/20 cursor-pointer"
+                  className="flex items-center justify-center rounded-full bg-white/10 px-6 py-3 hover:bg-white/20 transition-colors cursor-pointer backdrop-blur-sm border border-white/20"
                   onClick={() => navigate(`/${item.id}`)}
                 >
                   Detail
@@ -116,8 +113,8 @@ const Hero = () => {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="left-4 top-1/2 -translate-y-1/2 h-6 w-6 md:h-10 md:w-10 cursor-pointer" />
-      <CarouselNext className="right-4 top-1/2 -translate-y-1/2 h-6 w-6 md:h-10 md:w-10 cursor-pointer" />
+      <CarouselPrevious className="left-4 top-1/2 -translate-y-1/2 h-6 w-6 md:h-10 md:w-10 cursor-pointer hover:bg-white/20 transition-colors" />
+      <CarouselNext className="right-4 top-1/2 -translate-y-1/2 h-6 w-6 md:h-10 md:w-10 cursor-pointer hover:bg-white/20 transition-colors" />
     </Carousel>
   );
 };

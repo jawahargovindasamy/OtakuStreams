@@ -83,7 +83,7 @@ const MediaCard = () => {
         <img
           src={item.info.poster}
           alt={item.info.name}
-          className="h-60 cursor-pointer rounded-lg"
+          className="h-60 cursor-pointer rounded-lg transition-transform hover:scale-105"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
@@ -92,16 +92,16 @@ const MediaCard = () => {
       <PopoverContent
         align="start"
         sideOffset={-20}
-        className="w-75 rounded-2xl border-none bg-[#3b3b4f]/95 p-4 text-white shadow-2xl backdrop-blur"
+        className="w-75 rounded-2xl border border-[#2d3748]/30 bg-[#0f172a]/95 dark:bg-[#0f172a]/95 p-4 text-white shadow-2xl backdrop-blur-md"
         onMouseEnter={() => clearTimeout(timerRef.current)}
         onMouseLeave={handleMouseLeave}
         onPointerDownOutside={(e) => e.preventDefault()}
       >
-        <h3 className="font-bold leading-tight">{item.info.name}</h3>
+        <h3 className="font-bold leading-tight text-white">{item.info.name}</h3>
 
         <div className="mt-2 flex items-center gap-1 text-sm text-gray-300">
           <div className="flex items-center gap-1 mr-2">
-            <Star className="h-4 w-4 text-[#ffc107]" />
+            <Star className="h-4 w-4 text-[#ffc107] fill-[#ffc107]" />
             <span>
               {item.moreInfo.malscore === "?"
                 ? "N/A"
@@ -157,15 +157,15 @@ const MediaCard = () => {
         <div className="mt-3 flex items-center justify-center gap-2">
           <Button
             onClick={() => handlePlay(item.info.id)}
-            className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf]"
+            className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf] transition-colors"
           >
-            <Play className="h-4 w-4" />
+            <Play className="h-4 w-4 fill-black" />
             Watch now
           </Button>
 
           <Popover modal={false}>
             <PopoverTrigger asChild>
-              <div className="cursor-pointer rounded-full bg-white p-1.5 text-black">
+              <div className="cursor-pointer rounded-full bg-white p-1.5 text-black hover:bg-gray-100 transition-colors">
                 {playlist1 === null ? (
                   <Plus className="h-4 w-4" />
                 ) : (
@@ -177,12 +177,12 @@ const MediaCard = () => {
             <PopoverContent
               side="left"
               align="start"
-              className="w-40 border border-black bg-white p-2 text-black shadow-2xl"
+              className="w-40 border border-[#2d3748] bg-white dark:bg-[#1e293b] dark:text-white p-2 shadow-2xl"
             >
               {playlist.map((i) => (
                 <Button
                   key={i}
-                  className="flex w-full items-center justify-between bg-transparent text-black hover:bg-amber-200"
+                  className="flex w-full items-center justify-between bg-transparent text-black dark:text-white hover:bg-[#ffbade]/20 dark:hover:bg-[#ffbade]/20 transition-colors"
                   onClick={() => setPlaylist1(i)}
                 >
                   {i}
