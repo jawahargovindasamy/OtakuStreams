@@ -21,14 +21,14 @@ import { useTheme } from "@/context/theme-provider";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Search, Shuffle, Bell, Menu } from "lucide-react";
-import { useData } from "@/context/data-provider";
 import ThemeTogglePill from "./ThemeTogglePill";
 import AvatarDropdown from "./AvatarDropdown";
+import { useAuth } from "@/context/auth-provider";
 
 const Navbar = () => {
   const { theme } = useTheme();
-  const { language, setLanguage } = useData();
-  const navigate= useNavigate();
+  const { language, setLanguage } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-[#f8f9fa]/70 text-[#2d3748] dark:bg-[#0f172a]/70 dark:text-[#e2e8f0] backdrop-blur">

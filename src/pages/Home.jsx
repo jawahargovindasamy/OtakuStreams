@@ -18,7 +18,7 @@ const Home = () => {
     // fetchsearchdata,
   } = useData();
 
-  console.log(homedata?.data.trendingAnimes);
+  console.log(homedata?.data.spotlightAnimes);
 
   // useEffect(() => {
   // fetchazlistdata('other');
@@ -44,7 +44,7 @@ const Home = () => {
     <div>
       <Navbar />
       <Hero />
-      <MediaCard/>
+      <MediaCard />
     </div>
   );
 };

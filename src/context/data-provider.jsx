@@ -8,7 +8,7 @@ export function DataProvider({ children }) {
   const [azlistdata, setAzlistdata] = useState(null);
   const [searchdata, setSearchdata] = useState(null);
   const [searchsuggestions, setSearchSuggestions] = useState(null);
-  const [language, setLanguage] = useState("EN");
+  
 
   const fetchHomedata = async () => {
     try {
@@ -117,8 +117,6 @@ export function DataProvider({ children }) {
         searchdata,
         searchsuggestions,
         fetchsearchdata,
-        language,
-        setLanguage,
         fetchepisodeinfo
       }}
     >

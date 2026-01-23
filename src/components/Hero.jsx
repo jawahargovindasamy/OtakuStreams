@@ -20,9 +20,11 @@ import {
 
 import Autoplay from "embla-carousel-autoplay";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/auth-provider";
 
 const Hero = () => {
   const { homedata, fetchepisodeinfo } = useData();
+  const { language } = useAuth();
 
   const navigate = useNavigate();
 
@@ -49,14 +51,14 @@ const Hero = () => {
               className="absolute w-full h-full object-cover"
             />
             {/* Updated gradient to match navbar themes */}
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#0f172a]/70 to-[#0f172a] dark:via-[#0f172a]/70 dark:to-[#0f172a]" />
+            <div className="absolute inset-0 bg-linear-to-l from-transparent via-[#0f172a]/70 to-[#0f172a] dark:via-[#0f172a]/70 dark:to-[#0f172a]" />
 
             <div className="relative pb-8 z-10 flex h-full max-w-3xl flex-col justify-end px-8 md:px-16 text-white">
               <span className="mb-2 text-[#ffbade] text-sm md:text-lg font-semibold">
                 #{item.rank} Spotlight
               </span>
               <h1 className="text-2xl line-clamp-2 md:text-5xl font-bold leading-tight">
-                {item.name}
+                {language === "EN" ? item.name : item.jname}
               </h1>
 
               <div className="mt-4 hidden md:flex flex-wrap items-center gap-2 text-sm text-gray-300">

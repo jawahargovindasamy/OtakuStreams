@@ -9,9 +9,10 @@ export function AuthProvider({ children }) {
     createdAt: "2023-01-01",
     avatar: "/src/assets/JJK/av-jjk-02.png",
   });
+  const [language, setLanguage] = useState("EN");
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, language, setLanguage }}>
       {children}
     </AuthContext.Provider>
   );
