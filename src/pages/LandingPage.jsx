@@ -161,11 +161,11 @@ const LandingPage = () => {
               className="h-full w-full object-cover"
             />
             {/* Gradient fade */}
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#2a2a3d]/70 to-[#2a2a3d]" />
+            <div className="absolute inset-0 bg-linear-to-l from-transparent via-[#2a2a3d]/70 to-[#2a2a3d]" />
           </div>
 
           {/* Left Content */}
-          <div className="relative z-10 flex min-h-[420px] w-full flex-col justify-center gap-6 px-4 py-8 md:px-10 md:py-14 md:w-1/2">
+          <div className="relative z-10 flex min-h-105 w-full flex-col justify-center gap-6 px-4 py-8 md:px-10 md:py-14 md:w-1/2">
             {/* Logo */}
             <div className="flex justify-center md:justify-start">
               <img src={LightLogo} alt="Logo" className="w-60 h-10" />
@@ -214,7 +214,7 @@ const LandingPage = () => {
         <p className="text-sm">to your friends</p>
       </div>
       <section className="mx-auto max-w-7xl px-6 py-2 dark:text-white">
-        <div className="flex justify-center mt-10 gap-16 justify-between">
+        <div className="flex justify-center mt-10 gap-16">
           <div className="lg:grid gap-10 lg:grid-cols-[2fr_1fr]">
             {/* LEFT CONTENT */}
             <div className="space-y-10">
@@ -248,7 +248,7 @@ const LandingPage = () => {
                 {trendingPosts.map((post, i) => (
                   <Card
                     key={i}
-                    className="rounded-2xl bg-black/80 border-black/100 dark:border-white/10 backdrop-blur-md"
+                    className="rounded-2xl bg-black/80 border-black dark:border-white/10 backdrop-blur-md"
                   >
                     <CardContent className="p-5 space-y-3 text-white dark:text-white">
                       <div className="flex items-center justify-between text-sm">
