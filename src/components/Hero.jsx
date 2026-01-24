@@ -21,6 +21,7 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-provider";
+import HeroSkelton from "./HeroSkelton";
 
 const Hero = () => {
   const { homedata, fetchepisodeinfo } = useData();
@@ -35,6 +36,10 @@ const Hero = () => {
     }),
   );
 
+  const isLoading = !homedata || !homedata?.data?.spotlightAnimes?.length;
+
+  if (isLoading) return (<HeroSkelton />);
+
   const handlePlay = async (id) => {
     const data = await fetchepisodeinfo(id);
     navigate(`/watch/${data.data.episodes[0].episodeId}`);
@@ -42,16 +47,16 @@ const Hero = () => {
 
   return (
     <Carousel className="relative" plugins={[autoplay.current]}>
-      <CarouselContent className="h-[calc(100vh-64px)]">
+      <CarouselContent className="h-[70vh] md:h-[calc(100vh-64px)]">
         {homedata?.data.spotlightAnimes.map((item) => (
           <CarouselItem key={item.id} className="relative h-full">
             <img
               src={item.poster}
               alt={item.name}
-              className="absolute w-full h-full object-cover"
+              className="absolute w-full h-full"
             />
             {/* Updated gradient to match navbar themes */}
-            <div className="absolute inset-0 bg-linear-to-l from-transparent via-[#0f172a]/70 to-[#0f172a] dark:via-[#0f172a]/70 dark:to-[#0f172a]" />
+            <div className="absolute inset-0 bg-linear-to-bl from-transparent via-[#0f172a]/70 to-[#0f172a] dark:via-[#0f172a]/70 dark:to-[#0f172a]" />
 
             <div className="relative pb-8 z-10 flex h-full max-w-3xl flex-col justify-end px-8 md:px-16 text-white">
               <span className="mb-2 text-[#ffbade] text-sm md:text-lg font-semibold">

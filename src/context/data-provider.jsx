@@ -37,7 +37,7 @@ export function DataProvider({ children }) {
       const response = await axios.get(
         `${import.meta.env.VITE_ANIWATCH_URL}/anime/${id}`,
       );
-      return response.data;
+      return response.data.data.anime;
     } catch (error) {
       console.error("Error fetching data:", error);
     }

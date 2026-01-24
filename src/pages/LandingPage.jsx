@@ -137,13 +137,13 @@ const LandingPage = () => {
                 <DialogDescription></DialogDescription>
                 <div className="flex flex-col items-center gap-10 text-lg font-semibold">
                   {links.map((item, index) => (
-                    <a
+                    <Link
                       key={index}
-                      href="#"
+                      to={`/${item.to}`}
                       className="hover:text-pink-400 transition"
                     >
-                      {item}
-                    </a>
+                      {item.name}
+                    </Link>
                   ))}
                 </div>
               </DialogContent>

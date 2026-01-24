@@ -15,9 +15,33 @@ import {
 import { Button } from "./ui/button";
 import { useData } from "@/context/data-provider";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "@/context/auth-provider";
 
-const MediaCard = () => {
-    const { fetchepisodeinfo } = useData();
+const MediaCard = ({ id, jname = "" }) => {
+    const { fetchanimeinfo, fetchepisodeinfo } = useData();
+    const { language } = useAuth();
+    const [item, setInfo] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let mounted = true;
+        const getAnimeInfo = async () => {
+            setLoading(true);
+            const data = await fetchanimeinfo(id);
+            if (mounted) {
+                setInfo(data);
+                setLoading(false);
+            }
+        }
+        getAnimeInfo();
+        return () => {
+            mounted = false;
+        };
+    }, [id, fetchanimeinfo])
+
+    // console.log(item);
+
 
     const navigate = useNavigate();
 
@@ -54,110 +78,131 @@ const MediaCard = () => {
         [fetchepisodeinfo, navigate]
     );
 
-    const item = {
-        info: {
-            id: "jujutsu-kaisen-the-culling-game-part-1-20401",
-            name: "Jujutsu Kaisen: The Culling Game Part 1",
-            poster:
-                "https://cdn.noitatnemucod.net/thumbnail/300x400/100/a1c21d8b67b4a99bc693f26bf8fcd2e5.jpg",
-            description:
-                "The third season of Jujutsu Kaisen.\n\nAfter the Shibuya Incident, a deadly jujutsu battle known as the Culling Game erupts across Japan.",
-            stats: {
-                quality: "HD",
-                episodes: { sub: 4, dub: 2 },
-                type: "TV",
-            },
-        },
-        moreInfo: {
-            japanese: "呪術廻戦 「死滅回游 前編」",
-            synonyms: "Jujutsu Kaisen 3rd Season",
-            aired: "Jan 9, 2026 to ?",
-            status: "Currently Airing",
-            malscore: "?",
-            genres: ["Action", "Drama", "School", "Shounen", "Supernatural"],
-        },
-    };
+    if (loading) {
+        return (
+            <div className="bg-[#0f172a] px-2 py-4 rounded-2xl">
+                {/* Poster skeleton */}
+                <div className="h-60 w-full rounded-lg bg-[#1e293b] animate-pulse" />
+
+                {/* Title skeleton */}
+                <div className="mt-3 h-4 w-3/4 rounded bg-[#1e293b] animate-pulse" />
+            </div>
+        );
+    }
+
+    // const item = {
+    //     info: {
+    //         id: "jujutsu-kaisen-the-culling-game-part-1-20401",
+    //         name: "Jujutsu Kaisen: The Culling Game Part 1",
+    //         poster:
+    //             "https://cdn.noitatnemucod.net/thumbnail/300x400/100/a1c21d8b67b4a99bc693f26bf8fcd2e5.jpg",
+    //         description:
+    //             "The third season of Jujutsu Kaisen.\n\nAfter the Shibuya Incident, a deadly jujutsu battle known as the Culling Game erupts across Japan.",
+    //         stats: {
+    //             quality: "HD",
+    //             episodes: { sub: 4, dub: 2 },
+    //             type: "TV",
+    //         },
+    //     },
+    //     moreInfo: {
+    //         japanese: "呪術廻戦 「死滅回游 前編」",
+    //         synonyms: "Jujutsu Kaisen 3rd Season",
+    //         aired: "Jan 9, 2026 to ?",
+    //         status: "Currently Airing",
+    //         malscore: "?",
+    //         genres: ["Action", "Drama", "School", "Shounen", "Supernatural"],
+    //     },
+    // };
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <img
-                    src={item.info.poster}
-                    alt={item.info.name}
-                    className="h-60 cursor-pointer rounded-lg transition-transform hover:scale-105"
+                <div
+                    className="bg-[#0f172a] px-2 py-4 rounded-2xl flex flex-col cursor-pointer transition-transform hover:scale-105"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
-                />
+                >
+                    <img
+                        src={item?.info.poster}
+                        alt={item?.info.name}
+                        className="h-60  rounded-lg "
+                    />
+                    <h1 className="line-clamp-1 mt-2 font-bold leading-tight text-white">
+                        {language === "EN" ? item?.info.name : jname}
+                    </h1>
+                </div>
             </PopoverTrigger>
 
             <PopoverContent
                 align="start"
-                sideOffset={-20}
+                sideOffset={-50}
                 className="w-75 rounded-2xl border border-[#2d3748]/30 bg-[#0f172a]/95 dark:bg-[#0f172a]/95 p-4 text-white shadow-2xl backdrop-blur-md"
                 onMouseEnter={() => clearTimeout(timerRef.current)}
                 onMouseLeave={handleMouseLeave}
                 onPointerDownOutside={(e) => e.preventDefault()}
             >
-                <h3 className="font-bold leading-tight text-white">{item.info.name}</h3>
+                <h3 className="font-bold leading-tight text-white">{item?.info.name}</h3>
 
                 <div className="mt-2 flex items-center gap-1 text-sm text-gray-300">
                     <div className="flex items-center gap-1 mr-2">
                         <Star className="h-4 w-4 text-[#ffc107] fill-[#ffc107]" />
                         <span>
-                            {item.moreInfo.malscore === "?"
+                            {item?.moreInfo.malscore === "?"
                                 ? "N/A"
-                                : item.moreInfo.malscore}
+                                : item?.moreInfo.malscore}
                         </span>
                     </div>
 
                     <span className="rounded bg-[#ffbade] px-2 py-0.5 text-xs font-semibold text-black">
-                        {item.info.stats.quality}
+                        {item?.info.stats.quality}
                     </span>
 
                     <span className="flex items-center gap-1 rounded bg-[#b0e3af] px-2 py-0.5 text-xs font-semibold text-black">
                         <ClosedCaption className="h-4 w-4" />
-                        {item.info.stats.episodes.sub}
+                        {item?.info.stats.episodes.sub}
                     </span>
 
-                    <span className="flex items-center gap-1 rounded bg-[#b9e7ff] px-2 py-0.5 text-xs font-semibold text-black">
-                        <Mic className="h-4 w-4" />
-                        {item.info.stats.episodes.dub}
-                    </span>
+                    {item?.info.stats.episodes.dub && (
+                        <span className="flex items-center gap-1 rounded bg-[#b9e7ff] px-2 py-0.5 text-xs font-semibold text-black">
+                            <Mic className="h-4 w-4" />
+                            {item?.info.stats.episodes.dub}
+                        </span>
+                    )}
 
                     <span className="rounded bg-[#ffbade] px-2 py-0.5 text-xs font-semibold text-black">
-                        {item.info.stats.type}
+                        {item?.info.stats.type}
                     </span>
                 </div>
 
                 <p className="mt-3 line-clamp-3 text-sm text-gray-200">
-                    {item.info.description}
+                    {item?.info.description}
                 </p>
 
                 <div className="mt-3 space-y-1 text-xs text-gray-300">
                     <p>
                         <span className="opacity-60">Japanese:</span>{" "}
-                        {item.moreInfo.japanese}
+                        {item?.moreInfo.japanese}
                     </p>
                     <p>
                         <span className="opacity-60">Synonyms:</span>{" "}
-                        {item.moreInfo.synonyms}
+                        {item?.moreInfo.synonyms}
                     </p>
                     <p>
-                        <span className="opacity-60">Aired:</span> {item.moreInfo.aired}
+                        <span className="opacity-60">Aired:</span> {item?.moreInfo.aired}
                     </p>
                     <p>
                         <span className="opacity-60">Status:</span>{" "}
-                        {item.moreInfo.status}
+                        {item?.moreInfo.status}
                     </p>
                     <p>
                         <span className="opacity-60">Genres:</span>{" "}
-                        {item.moreInfo.genres.join(", ")}
+                        {item?.moreInfo.genres.join(", ")}
                     </p>
                 </div>
 
                 <div className="mt-3 flex items-center justify-center gap-2">
                     <Button
-                        onClick={() => handlePlay(item.info.id)}
+                        onClick={() => handlePlay(item?.info.id)}
                         className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf] transition-colors"
                     >
                         <Play className="h-4 w-4 fill-black" />
