@@ -43,7 +43,7 @@ const Home = () => {
 
   // console.log(searchsuggestions);
 
-  console.log(homedata);
+  // console.log(homedata);
 
 
   return (
@@ -58,7 +58,7 @@ const Home = () => {
         {!homedata?.data?.trendingAnimes ? (
           <CarouselSkelton />
         ) : (
-          <CardCarousel animes={homedata?.data.trendingAnimes} />
+          <CardCarousel animes={homedata?.data.trendingAnimes} showRank={true} loop />
         )}
       </div>
       <div className="mt-10 mb-4 mx-6">
@@ -69,10 +69,10 @@ const Home = () => {
         {!homedata?.data?.latestEpisodeAnimes ? (
           <CarouselSkelton />
         ) : (
-          <CardCarousel animes={homedata?.data.latestEpisodeAnimes} />
+          <CardCarousel animes={homedata?.data.latestEpisodeAnimes} showRank={false} />
         )}
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };

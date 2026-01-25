@@ -2,14 +2,17 @@ import React from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MediaCard from "./MediaCard";
+import { useNavigate } from "react-router-dom";
 
-const CardCarousel = ({ animes = [] }) => {
+const CardCarousel = ({ animes = [], showRank = false, loop=false  }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: false,
+    loop,
     align: "start",
     slidesToScroll: 2,
     dragFree: false,
   });
+
+  const navigate = useNavigate();
 
 //   console.log(animes);
   
@@ -23,7 +26,7 @@ const CardCarousel = ({ animes = [] }) => {
       <div className="overflow-hidden" ref={emblaRef}>
         {/* Embla container */}
         <div className="flex gap-4">
-          {animes.map((anime) => (
+          {animes.map((anime,index) => (
             <div
               key={anime.id}
               className="
@@ -32,8 +35,9 @@ const CardCarousel = ({ animes = [] }) => {
                 md:basis-1/4
                 lg:basis-1/6
               "
+              onClick={() => navigate(`/${anime.id}`)}
             >
-              <MediaCard id={anime.id} jname={anime.jname} />
+              <MediaCard id={anime.id} jname={anime.jname} rank={showRank ? index + 1 : null} showRank={showRank} />
             </div>
           ))}
         </div>

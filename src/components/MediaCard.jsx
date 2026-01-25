@@ -1,24 +1,11 @@
 import React, { useCallback, useRef, useState, useMemo } from "react";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-    Check,
-    ClosedCaption,
-    Mic,
-    Play,
-    Plus,
-    Star,
-} from "lucide-react";
-import { Button } from "./ui/button";
 import { useData } from "@/context/data-provider";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/context/auth-provider";
+import MediaCardPopover from "./MediaCardPopover";
 
-const MediaCard = ({ id, jname = "" }) => {
+const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     const { fetchanimeinfo, fetchepisodeinfo } = useData();
     const { language } = useAuth();
     const [item, setInfo] = useState(null);
@@ -39,9 +26,6 @@ const MediaCard = ({ id, jname = "" }) => {
             mounted = false;
         };
     }, [id, fetchanimeinfo])
-
-    // console.log(item);
-
 
     const navigate = useNavigate();
 
@@ -81,165 +65,58 @@ const MediaCard = ({ id, jname = "" }) => {
     if (loading) {
         return (
             <div className="bg-[#0f172a] px-2 py-4 rounded-2xl">
-                {/* Poster skeleton */}
                 <div className="h-60 w-full rounded-lg bg-[#1e293b] animate-pulse" />
-
-                {/* Title skeleton */}
                 <div className="mt-3 h-4 w-3/4 rounded bg-[#1e293b] animate-pulse" />
             </div>
         );
     }
 
-    // const item = {
-    //     info: {
-    //         id: "jujutsu-kaisen-the-culling-game-part-1-20401",
-    //         name: "Jujutsu Kaisen: The Culling Game Part 1",
-    //         poster:
-    //             "https://cdn.noitatnemucod.net/thumbnail/300x400/100/a1c21d8b67b4a99bc693f26bf8fcd2e5.jpg",
-    //         description:
-    //             "The third season of Jujutsu Kaisen.\n\nAfter the Shibuya Incident, a deadly jujutsu battle known as the Culling Game erupts across Japan.",
-    //         stats: {
-    //             quality: "HD",
-    //             episodes: { sub: 4, dub: 2 },
-    //             type: "TV",
-    //         },
-    //     },
-    //     moreInfo: {
-    //         japanese: "呪術廻戦 「死滅回游 前編」",
-    //         synonyms: "Jujutsu Kaisen 3rd Season",
-    //         aired: "Jan 9, 2026 to ?",
-    //         status: "Currently Airing",
-    //         malscore: "?",
-    //         genres: ["Action", "Drama", "School", "Shounen", "Supernatural"],
-    //     },
-    // };
-
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <div
-                    className="bg-[#0f172a] px-2 py-4 rounded-2xl flex flex-col cursor-pointer transition-transform hover:scale-105"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                >
+        <MediaCardPopover
+            item={item}
+            open={open}
+            onOpenChange={setOpen}
+            timerRef={timerRef}
+            handleMouseLeave={handleMouseLeave}
+            handlePlay={handlePlay}
+            playlist={playlist}
+            playlist1={playlist1}
+            setPlaylist1={setPlaylist1}
+        >
+            <div
+                className="relative bg-[#0f172a] px-2 py-4 rounded-2xl flex flex-col cursor-pointer transition-transform hover:scale-105 group"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                {/* Rank Number - Netflix Style */}
+                {showRank && rank !== null && (
+                    <div 
+                        className="absolute -left-3 -bottom-3 z-10 text-8xl md:text-9xl font-black leading-none pointer-events-none select-none"
+                        style={{ 
+                            WebkitTextStroke: '2px rgba(255, 255, 255, 0.3)',
+                            color: 'transparent',
+                            textShadow: '0 0 20px rgba(0,0,0,0.5)'
+                        }}
+                    >
+                        {rank}
+                    </div>
+                )}
+
+                <div className="relative">
                     <img
                         src={item?.info.poster}
                         alt={item?.info.name}
-                        className="h-60  rounded-lg "
+                        className="h-60 w-full rounded-lg object-cover"
                     />
-                    <h1 className="line-clamp-1 mt-2 font-bold leading-tight text-white">
-                        {language === "EN" ? item?.info.name : jname}
-                    </h1>
-                </div>
-            </PopoverTrigger>
-
-            <PopoverContent
-                align="start"
-                sideOffset={-50}
-                className="w-75 rounded-2xl border border-[#2d3748]/30 bg-[#0f172a]/95 dark:bg-[#0f172a]/95 p-4 text-white shadow-2xl backdrop-blur-md"
-                onMouseEnter={() => clearTimeout(timerRef.current)}
-                onMouseLeave={handleMouseLeave}
-                onPointerDownOutside={(e) => e.preventDefault()}
-            >
-                <h3 className="font-bold leading-tight text-white">{item?.info.name}</h3>
-
-                <div className="mt-2 flex items-center gap-1 text-sm text-gray-300">
-                    <div className="flex items-center gap-1 mr-2">
-                        <Star className="h-4 w-4 text-[#ffc107] fill-[#ffc107]" />
-                        <span>
-                            {item?.moreInfo.malscore === "?"
-                                ? "N/A"
-                                : item?.moreInfo.malscore}
-                        </span>
-                    </div>
-
-                    <span className="rounded bg-[#ffbade] px-2 py-0.5 text-xs font-semibold text-black">
-                        {item?.info.stats.quality}
-                    </span>
-
-                    <span className="flex items-center gap-1 rounded bg-[#b0e3af] px-2 py-0.5 text-xs font-semibold text-black">
-                        <ClosedCaption className="h-4 w-4" />
-                        {item?.info.stats.episodes.sub}
-                    </span>
-
-                    {item?.info.stats.episodes.dub && (
-                        <span className="flex items-center gap-1 rounded bg-[#b9e7ff] px-2 py-0.5 text-xs font-semibold text-black">
-                            <Mic className="h-4 w-4" />
-                            {item?.info.stats.episodes.dub}
-                        </span>
-                    )}
-
-                    <span className="rounded bg-[#ffbade] px-2 py-0.5 text-xs font-semibold text-black">
-                        {item?.info.stats.type}
-                    </span>
+                    {/* Gradient overlay on hover */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
                 </div>
 
-                <p className="mt-3 line-clamp-3 text-sm text-gray-200">
-                    {item?.info.description}
-                </p>
-
-                <div className="mt-3 space-y-1 text-xs text-gray-300">
-                    <p>
-                        <span className="opacity-60">Japanese:</span>{" "}
-                        {item?.moreInfo.japanese}
-                    </p>
-                    <p>
-                        <span className="opacity-60">Synonyms:</span>{" "}
-                        {item?.moreInfo.synonyms}
-                    </p>
-                    <p>
-                        <span className="opacity-60">Aired:</span> {item?.moreInfo.aired}
-                    </p>
-                    <p>
-                        <span className="opacity-60">Status:</span>{" "}
-                        {item?.moreInfo.status}
-                    </p>
-                    <p>
-                        <span className="opacity-60">Genres:</span>{" "}
-                        {item?.moreInfo.genres.join(", ")}
-                    </p>
-                </div>
-
-                <div className="mt-3 flex items-center justify-center gap-2">
-                    <Button
-                        onClick={() => handlePlay(item?.info.id)}
-                        className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf] transition-colors"
-                    >
-                        <Play className="h-4 w-4 fill-black" />
-                        Watch now
-                    </Button>
-
-                    <Popover modal={false}>
-                        <PopoverTrigger asChild>
-                            <div className="cursor-pointer rounded-full bg-white p-1.5 text-black hover:bg-gray-100 transition-colors">
-                                {playlist1 === null ? (
-                                    <Plus className="h-4 w-4" />
-                                ) : (
-                                    <Check className="h-4 w-4" />
-                                )}
-                            </div>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                            side="left"
-                            align="start"
-                            className="w-40 border border-[#2d3748] bg-white dark:bg-[#1e293b] dark:text-white p-2 shadow-2xl"
-                        >
-                            {playlist.map((i) => (
-                                <Button
-                                    key={i}
-                                    className="flex w-full items-center justify-between bg-transparent text-black dark:text-white hover:bg-[#ffbade]/20 dark:hover:bg-[#ffbade]/20 transition-colors"
-                                    onClick={() => setPlaylist1(i)}
-                                >
-                                    {i}
-                                    {playlist1 === i && <Check className="h-4 w-4" />}
-                                </Button>
-                            ))}
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            </PopoverContent>
-        </Popover>
+                <h1 className="line-clamp-1 mt-2 font-bold leading-tight text-white">
+                    {language === "EN" ? item?.info.name : jname}
+                </h1>
+            </div>
+        </MediaCardPopover>
     );
 };
 

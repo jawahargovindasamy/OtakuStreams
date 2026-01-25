@@ -1,48 +1,78 @@
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 
-const DataContext = createContext();
+/* -------------------- Axios Instance -------------------- */
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_ANIWATCH_URL,
+  timeout: 10000,
+});
+
+/* -------------------- Retry Helper -------------------- */
+
+const fetchWithRetry = async (fn, retries = 10, delay = 1000) => {
+  try {
+    return await fn();
+  } catch (error) {
+    const shouldRetry =
+      !error.response || error.response.status >= 500;
+
+    if (retries > 0 && shouldRetry) {
+      await new Promise((res) => setTimeout(res, delay));
+      return fetchWithRetry(fn, retries - 1, delay * 2);
+    }
+
+    throw error;
+  }
+};
+
+/* -------------------- Context -------------------- */
+
+const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
   const [homedata, setHomedata] = useState(null);
   const [azlistdata, setAzlistdata] = useState(null);
   const [searchdata, setSearchdata] = useState(null);
-  const [searchsuggestions, setSearchSuggestions] = useState(null);
-  
 
+  /* -------------------- HOME -------------------- */
   const fetchHomedata = async () => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/home`,
+      const res = await fetchWithRetry(() =>
+        api.get("/home")
       );
-      setHomedata(response.data);
+      setHomedata(res.data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Home fetch failed:", error);
     }
   };
 
+  /* -------------------- A–Z LIST -------------------- */
   const fetchazlistdata = async (azlist, page = 1) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/azlist/${azlist}?page=${page}`,
-      );
-      setAzlistdata(response.data);
+      const res = await api.get(`/azlist/${azlist}`, {
+        params: { page },
+      });
+      setAzlistdata(res.data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("AZ list fetch failed:", error);
     }
   };
 
+  /* -------------------- ANIME INFO -------------------- */
   const fetchanimeinfo = async (id) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/anime/${id}`,
+      const res = await fetchWithRetry(() =>
+        api.get(`/anime/${id}`)
       );
-      return response.data.data.anime;
+      return res.data?.data?.anime ?? null;
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Anime info fetch failed:", error);
+      return null;
     }
   };
 
+  /* -------------------- SEARCH -------------------- */
   const fetchsearchdata = async ({
     q,
     page = 1,
@@ -58,51 +88,59 @@ export function DataProvider({ children }) {
     genres,
   }) => {
     try {
-      const params = new URLSearchParams();
+      const params = {
+        q,
+        page,
+        type,
+        status,
+        rated,
+        score,
+        season,
+        language,
+        start_date,
+        end_date,
+        sort,
+        genres: genres?.length ? genres.join(",") : undefined,
+      };
 
-      // Required
-      if (q) params.append("q", q);
-
-      // Optional
-      params.append("page", page);
-      if (type) params.append("type", type);
-      if (status) params.append("status", status);
-      if (rated) params.append("rated", rated);
-      if (score) params.append("score", score);
-      if (season) params.append("season", season);
-      if (language) params.append("language", language);
-      if (start_date) params.append("start_date", start_date);
-      if (end_date) params.append("end_date", end_date);
-      if (sort) params.append("sort", sort);
-      if (genres?.length) params.append("genres", genres.join(","));
-
-      const response = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/search?${params.toString()}`,
+      const res = await fetchWithRetry(() =>
+        api.get("/search", { params })
       );
 
-      setSearchdata(response.data);
-
-      const res = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/search/suggestion?q=${q}`,
-      );
-
-      setSearchSuggestions(res.data);
+      setSearchdata(res.data);
     } catch (error) {
-      console.error("Error fetching search data:", error);
+      console.error("Search fetch failed:", error);
+      setSearchdata(null);
     }
   };
 
+  /* -------------------- SEARCH SUGGESTIONS -------------------- */
+  const fetchsearchsuggestions = async (q) => {
+    try {
+      const res = await api.get("/search/suggestion", {
+        params: { q },
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Search suggestions failed:", error);
+      return null;
+    }
+  };
+
+  /* -------------------- EPISODES -------------------- */
   const fetchepisodeinfo = async (id) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_ANIWATCH_URL}/anime/${id}/episodes`,
+      const res = await fetchWithRetry(() =>
+        api.get(`/anime/${id}/episodes`)
       );
-      return response.data
+      return res.data ?? null;
     } catch (error) {
-      console.error("Error fetching Episode data:", error);
+      console.error("Episode fetch failed:", error);
+      return null;
     }
   };
 
+  /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
     fetchHomedata();
   }, []);
@@ -112,17 +150,20 @@ export function DataProvider({ children }) {
       value={{
         homedata,
         azlistdata,
+        searchdata,
+        fetchHomedata,
         fetchazlistdata,
         fetchanimeinfo,
-        searchdata,
-        searchsuggestions,
         fetchsearchdata,
-        fetchepisodeinfo
+        fetchsearchsuggestions,
+        fetchepisodeinfo,
       }}
     >
       {children}
     </DataContext.Provider>
   );
 }
+
+/* -------------------- Hook -------------------- */
 
 export const useData = () => useContext(DataContext);
