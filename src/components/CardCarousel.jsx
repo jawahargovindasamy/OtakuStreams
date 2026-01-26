@@ -35,7 +35,6 @@ const CardCarousel = ({ animes = [], showRank = false, loop=false  }) => {
                 md:basis-1/4
                 lg:basis-1/6
               "
-              onClick={() => navigate(`/${anime.id}`)}
             >
               <MediaCard id={anime.id} jname={anime.jname} rank={showRank ? index + 1 : null} showRank={showRank} />
             </div>

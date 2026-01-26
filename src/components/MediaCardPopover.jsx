@@ -4,6 +4,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner"
 import {
     Check,
     ClosedCaption,
@@ -14,17 +15,19 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 
-const MediaCardPopover = ({ 
-    item, 
-    open, 
-    onOpenChange, 
-    timerRef, 
-    handleMouseLeave, 
-    handlePlay, 
-    playlist, 
-    playlist1, 
+const MediaCardPopover = ({
+    item,
+    open,
+    onOpenChange,
+    timerRef,
+    handleMouseLeave,
+    handlePlay,
+    playlist,
+    playlist1,
     setPlaylist1,
-    children 
+    children,
+    isPlaying,
+    sideOffset = -50
 }) => {
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
@@ -34,7 +37,7 @@ const MediaCardPopover = ({
 
             <PopoverContent
                 align="start"
-                sideOffset={-50}
+                sideOffset={sideOffset}
                 className="w-75 rounded-2xl border border-[#2d3748]/30 bg-[#0f172a]/95 dark:bg-[#0f172a]/95 p-4 text-white shadow-2xl backdrop-blur-md"
                 onMouseEnter={() => clearTimeout(timerRef.current)}
                 onMouseLeave={handleMouseLeave}
@@ -101,11 +104,21 @@ const MediaCardPopover = ({
 
                 <div className="mt-3 flex items-center justify-center gap-2">
                     <Button
+                        disabled={isPlaying}
                         onClick={() => handlePlay(item?.info.id)}
-                        className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf] transition-colors"
+                        className="flex w-[85%] items-center justify-center gap-2 rounded-full bg-[#ffbade] px-4 py-2 font-semibold text-black hover:bg-[#f89abf] transition-colors cursor-pointer"
                     >
-                        <Play className="h-4 w-4 fill-black" />
-                        Watch now
+                        {isPlaying ? (
+                            <>
+                                <Spinner data-icon="inline-start" />
+                                Loading...
+                            </>
+                        ) : (
+                            <>
+                                <Play className="h-4 w-4 fill-black" />
+                                Watch now
+                            </>
+                        )}
                     </Button>
 
                     <Popover modal={false}>

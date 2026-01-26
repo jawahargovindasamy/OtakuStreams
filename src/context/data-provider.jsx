@@ -10,7 +10,7 @@ const api = axios.create({
 
 /* -------------------- Retry Helper -------------------- */
 
-const fetchWithRetry = async (fn, retries = 10, delay = 1000) => {
+const fetchWithRetry = async (fn, retries = 20, delay = 1000) => {
   try {
     return await fn();
   } catch (error) {

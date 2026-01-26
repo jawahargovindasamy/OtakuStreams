@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -6,6 +6,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Spinner } from "@/components/ui/spinner"
+
 import { useData } from "@/context/data-provider";
 import {
   Calendar,
@@ -26,6 +28,7 @@ import HeroSkelton from "./HeroSkelton";
 const Hero = () => {
   const { homedata, fetchepisodeinfo } = useData();
   const { language } = useAuth();
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const navigate = useNavigate();
 
@@ -41,8 +44,14 @@ const Hero = () => {
   if (isLoading) return (<HeroSkelton />);
 
   const handlePlay = async (id) => {
-    const data = await fetchepisodeinfo(id);
-    navigate(`/watch/${data.data.episodes[0].episodeId}`);
+    setIsPlaying(true);
+    try {
+      const data = await fetchepisodeinfo(id);
+      navigate(`/watch/${data.data.episodes[0].episodeId}`);
+    } catch (err) {
+      console.error(err);
+      setIsPlaying(false);
+    }
   };
 
   return (
@@ -102,11 +111,21 @@ const Hero = () => {
 
               <div className="mt-8 flex gap-4">
                 <button
+                  disabled={isPlaying}
                   className="flex items-center rounded-full bg-[#ffbade] text-black px-6 py-3 font-semibold hover:bg-[#f89abf] transition-colors cursor-pointer"
                   onClick={() => handlePlay(item.id)}
                 >
-                  <Play className="mr-2 h-4 w-4 fill-black" />
-                  Watch Now
+                  {isPlaying ? (
+                    <>
+                      <Spinner data-icon="inline-start" className="mr-1" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 fill-black mr-1" />
+                      Watch now
+                    </>
+                  )}
                 </button>
                 <button
                   className="flex items-center justify-center rounded-full bg-white/10 px-6 py-3 hover:bg-white/20 transition-colors cursor-pointer backdrop-blur-sm border border-white/20"

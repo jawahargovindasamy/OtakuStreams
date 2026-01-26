@@ -10,6 +10,7 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     const { language } = useAuth();
     const [item, setInfo] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -45,6 +46,10 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
         []
     );
 
+    const handleNavigate = () => {
+        navigate(`/${id}`);
+    };
+
     const handleMouseEnter = () => {
         timerRef.current = setTimeout(() => setOpen(true), 250);
     };
@@ -56,8 +61,14 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
 
     const handlePlay = useCallback(
         async (id) => {
-            const data = await fetchepisodeinfo(id);
-            navigate(`/watch/${data.data.episodes[0].episodeId}`);
+            setIsPlaying(true);
+            try {
+                const data = await fetchepisodeinfo(id);
+                navigate(`/watch/${data.data.episodes[0].episodeId}`);
+            } catch (err) {
+                console.error(err);
+                setIsPlaying(false);
+            }
         },
         [fetchepisodeinfo, navigate]
     );
@@ -82,17 +93,19 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             playlist={playlist}
             playlist1={playlist1}
             setPlaylist1={setPlaylist1}
+            isPlaying={isPlaying}
         >
             <div
                 className="relative bg-[#0f172a] px-2 py-4 rounded-2xl flex flex-col cursor-pointer transition-transform hover:scale-105 group"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
+                onClick={handleNavigate}
             >
                 {/* Rank Number - Netflix Style */}
                 {showRank && rank !== null && (
-                    <div 
+                    <div
                         className="absolute -left-3 -bottom-3 z-10 text-8xl md:text-9xl font-black leading-none pointer-events-none select-none"
-                        style={{ 
+                        style={{
                             WebkitTextStroke: '2px rgba(255, 255, 255, 0.3)',
                             color: 'transparent',
                             textShadow: '0 0 20px rgba(0,0,0,0.5)'
