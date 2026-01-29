@@ -140,6 +140,18 @@ export function DataProvider({ children }) {
     }
   };
 
+  const fetchestimatedschedules = async (date) => {
+    try {
+      const res = await fetchWithRetry(() =>
+        api.get(`/schedule?date=${date}`)
+      );
+      return res.data ?? null;
+    } catch (error) {
+      console.error("Episode fetch failed:", error);
+      return null;
+    }
+  };
+
   /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
     fetchHomedata();
@@ -157,6 +169,7 @@ export function DataProvider({ children }) {
         fetchsearchdata,
         fetchsearchsuggestions,
         fetchepisodeinfo,
+        fetchestimatedschedules,
       }}
     >
       {children}

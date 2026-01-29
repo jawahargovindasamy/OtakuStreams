@@ -1,123 +1,136 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import { useData } from "@/context/data-provider";
-import CardCarousel from "@/components/CardCarousel";
-import CarouselSkelton from "@/components/CarouselSkelton";
 import Footer from "@/components/Footer";
+import CardCarousel from "@/components/CardCarousel";
 import VerticalList from "@/components/VerticalList";
-import { Link } from "react-router-dom";
-import { MoveRight } from "lucide-react";
+import MediaCard from "@/components/MediaCard";
+import DateCarousel from "@/components/Datecarousel";
+import ScheduleEpisodeList from "@/components/ScheduleEpisodeList";
+
+import SectionHeader from "@/components/SectionHeader";
+import HomeSidebar from "@/components/HomeSidebar";
+import HomeSkeleton from "@/components/HomeSkeleton";
+
+import { useData } from "@/context/data-provider";
 
 const Home = () => {
+  /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
+  const { homedata } = useData();
+  const navigate = useNavigate();
 
+  const maxInitial = 24;
+  const [showAll, setShowAll] = useState(false);
+  const [scheduledAnimes, setScheduledAnimes] = useState([]);
+  const [top10Animes, setTop10Animes] = useState("today");
 
-  const {
-    homedata,
-    // fetchazlistdata,
-    // azlistdata,
-    // fetchanimeinfo,
-    // animeinfo,
-    // searchdata,
-    // searchsuggestions,
-    // fetchsearchdata,
-  } = useData();
+  /* -------------------- DATA -------------------- */
+  const data = homedata?.data;
 
-  // console.log(homedata);
+  const genresToShow = showAll
+    ? data?.genres
+    : data?.genres?.slice(0, maxInitial);
 
-  // useEffect(() => {
-  // fetchazlistdata('other');
+  const getGenreColor = (genre) => {
+    let hash = 0;
+    for (let i = 0; i < genre.length; i++) {
+      hash = genre.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return `hsl(${hash % 360},70%,70%)`;
+  };
 
-  // fetchanimeinfo('one-piece-100');
+  /* -------------------- LOADING STATE -------------------- */
+  if (!data) {
+    return (
+      <>
+        <Navbar />
+        <HomeSkeleton />
+        <Footer />
+      </>
+    );
+  }
 
-  // fetchsearchdata({
-  //   q: "one piece",
-  //   type: "tv",
-  //   rated: "pg-13",
-  // });
-  // }, []);
-
-  // console.log(azlistdata);
-
-  // console.log(animeinfo);
-
-  // console.log(searchdata);
-
-  // console.log(searchsuggestions);
-
-  // console.log(homedata?.data.topAiringAnimes);
-
-
+  /* -------------------- UI -------------------- */
   return (
-    <div>
+    <>
       <Navbar />
       <Hero />
-      <div className="mt-10 mx-6 ">
-        <div className="flex items-center mb-4">
-          <div className="bg-black dark:bg-white h-10 w-2 rounded-2xl"></div>
-          <h1 className="text-2xl font-bold px-2">Trending</h1>
-        </div>
-        {!homedata?.data?.trendingAnimes ? (
-          <CarouselSkelton />
-        ) : (
-          <CardCarousel animes={homedata?.data.trendingAnimes} showRank={true} loop />
-        )}
+
+      {/* Trending */}
+      <div className="mt-10 mx-6">
+        <SectionHeader title="Trending" />
+        <CardCarousel animes={data.trendingAnimes} showRank loop />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 my-10 mx-3">
+
+      {/* Grid Sections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-10 mx-6">
+        <VerticalList anime={data.topAiringAnimes} title="Top Airing" />
+        <VerticalList anime={data.mostPopularAnimes} title="Most Popular" />
+        <VerticalList anime={data.mostFavoriteAnimes} title="Most Favorite" />
+        <VerticalList anime={data.latestCompletedAnimes} title="Completed" />
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[5fr_2fr] gap-10 mx-6">
+        {/* Main */}
         <div>
-          <h1 className="text-[#ffbade] text-lg md:text-2xl font-bold mb-3">Top Airing</h1>
-          <VerticalList anime={homedata?.data.topAiringAnimes} />
-          <Link to="/top-airing" className="text-md md:text-lg mb-3 text-blue-300 hover:text-blue-400">
-            <div className="flex gap-2 items-center mt-2">
-              <span>View All</span>
-              <MoveRight className="w-5 h-6" />
+          <SectionHeader title="Latest Episode" icon link="/recently-updated" />
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {data.latestEpisodeAnimes.map((a) => (
+              <MediaCard key={a.id} id={a.id} jname={a.jname} />
+            ))}
+          </div>
+
+          <div className="mt-10">
+            <SectionHeader title="Estimated Schedule" time />
+            <DateCarousel onScheduleChange={setScheduledAnimes} />
+            <ScheduleEpisodeList animes={scheduledAnimes} />
+          </div>
+
+          <div className="mt-10">
+            <SectionHeader title="Top Upcoming" icon link="/top-upcoming" />
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {data.topUpcomingAnimes.map((a) => (
+                <MediaCard key={a.id} id={a.id} jname={a.jname} />
+              ))}
             </div>
-          </Link>
+          </div>
         </div>
-        <div>
-          <h1 className="text-[#ffbade] text-lg md:text-2xl font-bold mb-3">Most Popular</h1>
-          <VerticalList anime={homedata?.data.mostPopularAnimes} />
-          <Link to="/most-popular" className="text-md md:text-lg mb-3 text-blue-300 hover:text-blue-400">
-            <div className="flex gap-2 items-center mt-2">
-              <span>View All</span>
-              <MoveRight className="w-5 h-6" />
-            </div>
-          </Link>
-        </div>
-        <div>
-          <h1 className="text-[#ffbade] text-lg md:text-2xl font-bold mb-3">Most Favorite</h1>
-          <VerticalList anime={homedata?.data.mostFavoriteAnimes} />
-          <Link to="/most-favorite" className="text-md md:text-lg mb-3 text-blue-300 hover:text-blue-400">
-            <div className="flex gap-2 items-center mt-2">
-              <span>View All</span>
-              <MoveRight className="w-5 h-6" />
-            </div>
-          </Link>
-        </div>
-        <div>
-          <h1 className="text-[#ffbade] text-lg md:text-2xl font-bold mb-3">Latest Completed</h1>
-          <VerticalList anime={homedata?.data.latestCompletedAnimes} />
-          <Link to="/completed" className="text-md md:text-lg mb-3 text-blue-300 hover:text-blue-400">
-            <div className="flex gap-2 items-center mt-2">
-              <span>View All</span>
-              <MoveRight className="w-5 h-6" />
-            </div>
-          </Link>
+
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block">
+          <HomeSidebar
+            data={data}
+            navigate={navigate}
+            genresToShow={genresToShow}
+            getGenreColor={getGenreColor}
+            showAll={showAll}
+            setShowAll={setShowAll}
+            maxInitial={maxInitial}
+            top10Animes={top10Animes}
+            setTop10Animes={setTop10Animes}
+          />
         </div>
       </div>
-      <div className="mt-10 mb-4 mx-6">
-        <div className="flex items-center mb-4">
-          <div className="bg-black dark:bg-white h-10 w-2 rounded-2xl"></div>
-          <h1 className="text-2xl font-bold px-2">Latest Episode</h1>
-        </div>
-        {!homedata?.data?.latestEpisodeAnimes ? (
-          <CarouselSkelton />
-        ) : (
-          <CardCarousel animes={homedata?.data.latestEpisodeAnimes} showRank={false} />
-        )}
+
+      {/* Mobile + MD Sidebar */}
+      <div className="block lg:hidden mx-6 mt-10">
+        <HomeSidebar
+          data={data}
+          navigate={navigate}
+          genresToShow={genresToShow}
+          getGenreColor={getGenreColor}
+          showAll={showAll}
+          setShowAll={setShowAll}
+          maxInitial={maxInitial}
+          top10Animes={top10Animes}
+          setTop10Animes={setTop10Animes}
+        />
       </div>
+
       <Footer />
-    </div>
+    </>
   );
 };
 

@@ -1,23 +1,63 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { ClosedCaption, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
 import { useData } from "@/context/data-provider";
-import MediaCardPopover from "@/components/MediaCardPopover";
 import { useAuth } from "@/context/auth-provider";
+import MediaCardPopover from "@/components/MediaCardPopover";
+
+/* -------------------- Skeleton Components -------------------- */
+
+const VerticalListSkeletonItem = () => {
+  return (
+    <div className="flex items-center gap-3 rounded-lg p-2 w-75 bg-[#0f172a] animate-pulse">
+      {/* Poster */}
+      <div className="w-14 h-20 rounded bg-slate-700" />
+
+      {/* Text */}
+      <div className="flex flex-col flex-1 gap-2">
+        <div className="h-4 w-3/4 rounded bg-slate-700" />
+        <div className="h-4 w-1/2 rounded bg-slate-700" />
+
+        <div className="flex gap-2 mt-1">
+          <div className="h-5 w-12 rounded bg-slate-600" />
+          <div className="h-5 w-12 rounded bg-slate-600" />
+          <div className="h-5 w-10 rounded bg-slate-600" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VerticalListSkeleton = ({ count = 5 }) => {
+  return (
+    <div className="flex flex-col gap-3 w-1/4">
+      {Array.from({ length: count }).map((_, i) => (
+        <VerticalListSkeletonItem key={i} />
+      ))}
+    </div>
+  );
+};
+
+/* -------------------- List Item -------------------- */
 
 const VerticalListItem = ({ anime }) => {
-
-  // console.log(anime);
-  
-  const {language} = useAuth();
+  const { language } = useAuth();
   const { fetchanimeinfo, fetchepisodeinfo } = useData();
   const navigate = useNavigate();
 
   const [item, setItem] = useState(null);
   const [open, setOpen] = useState(false);
-  const timerRef = useRef(null);
   const [playlist1, setPlaylist1] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const timerRef = useRef(null);
 
   const playlist = useMemo(
     () => [
@@ -35,12 +75,18 @@ const VerticalListItem = ({ anime }) => {
     let mounted = true;
 
     const loadInfo = async () => {
-      const data = await fetchanimeinfo(anime.id);
-      if (mounted) setItem(data);
+      try {
+        const data = await fetchanimeinfo(anime.id);
+        if (mounted) setItem(data);
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     loadInfo();
-    return () => (mounted = false);
+    return () => {
+      mounted = false;
+    };
   }, [anime.id, fetchanimeinfo]);
 
   const handleMouseEnter = () => {
@@ -84,7 +130,7 @@ const VerticalListItem = ({ anime }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={() => navigate(`/${anime.id}`)}
-        className="flex items-center gap-3 cursor-pointer rounded-lg p-1 hover:bg-white/5 transition w-full"
+        className="flex items-center gap-3 cursor-pointer rounded-lg p-2 hover:bg-[#16213a] transition w-75 bg-[#0f172a]"
       >
         <img
           src={anime.poster}
@@ -110,17 +156,26 @@ const VerticalListItem = ({ anime }) => {
               </span>
             )}
 
-            <span className="rounded bg-[#ffbade] px-2 py-0.5 font-semibold text-black">
-              {anime.type}
-            </span>
+            {anime.type &&
+              <span className="rounded bg-[#ffbade] px-2 py-0.5 font-semibold text-black">
+                {anime.type}
+              </span>
+            }
+
           </div>
         </div>
       </div>
-    </MediaCardPopover >
+    </MediaCardPopover>
   );
 };
 
-const VerticalList = ({ anime = [], list = 5 }) => {
+/* -------------------- Vertical List -------------------- */
+
+const VerticalList = ({ anime = null, list = 5 }) => {
+  if (!anime || anime.length === 0) {
+    return <VerticalListSkeleton count={list} />;
+  }
+
   return (
     <div className="flex flex-col gap-3 w-1/4">
       {anime.slice(0, list).map((item) => (

@@ -99,7 +99,7 @@ const Navbar = () => {
           {/* Desktop Nav */}
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="gap-3 items-center">
-              <NavigationMenuItem className="hidden lg:block w-72">
+              <NavigationMenuItem className="hidden lg:block w-76">
                 <SearchPopover
                   open={desktopOpen}
                   setOpen={setDesktopOpen}

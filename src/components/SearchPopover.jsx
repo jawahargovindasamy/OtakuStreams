@@ -51,7 +51,10 @@ const SearchPopover = ({
                         }}
                         className="w-full pr-10 border border-black dark:border-white focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 rounded-md transition"
                     />
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 absolute right-3 top-1/2 -translate-y-1/2">
+                        <Search className=" h-4 w-4 text-muted-foreground" />
+                        <Button className="h-7 cursor-pointer" onClick={() => navigate("/fiter")}>Filter</Button>
+                    </div>
                 </div>
             </PopoverTrigger>
 
@@ -59,7 +62,7 @@ const SearchPopover = ({
                 className={
                     isMobile
                         ? "w-screen max-w-none p-0 shadow-lg border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
-                        : "w-74 p-0 shadow-lg border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                        : "w-76 p-0 shadow-lg border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
                 }
                 align="start"
                 onOpenAutoFocus={(e) => e.preventDefault()}
