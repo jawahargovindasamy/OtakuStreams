@@ -2,21 +2,24 @@ import React from "react";
 
 const CarouselSkeleton = () => {
   return (
-    <div className="flex gap-4 overflow-hidden">
+    <div className="flex gap-3 sm:gap-4 overflow-hidden px-1">
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="bg-[#0f172a] px-2 py-4 rounded-2xl w-50 shrink-0"
+          className="shrink-0 basis-[45%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%] xl:basis-[15%] min-w-0"
         >
-          {/* Poster skeleton */}
-          <div className="relative h-60 rounded-lg overflow-hidden bg-[#1e293b]">
-            <div className="absolute inset-0 animate-pulse bg-linear-to-r from-[#1e293b] via-[#334155] to-[#1e293b]" />
-          </div>
+          <div className="bg-card rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-transparent">
+            {/* Poster skeleton with shimmer */}
+            <div className="relative aspect-2/3 w-full rounded-lg bg-muted overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-background/20 to-transparent animate-[shimmer_2s_infinite]"
+                style={{ backgroundSize: '200% 100%' }} />
+            </div>
 
-          {/* Title skeleton */}
-          <div className="mt-3 space-y-2">
-            <div className="h-4 w-full rounded bg-[#1e293b] animate-pulse" />
-            <div className="h-4 w-3/4 rounded bg-[#1e293b] animate-pulse" />
+            {/* Title skeleton */}
+            <div className="mt-2 sm:mt-3 space-y-1.5">
+              <div className="h-4 w-full rounded bg-muted" />
+              <div className="h-3 w-2/3 rounded bg-muted/50" />
+            </div>
           </div>
         </div>
       ))}

@@ -51,12 +51,12 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     };
 
     const handleMouseEnter = () => {
-        timerRef.current = setTimeout(() => setOpen(true), 250);
+        timerRef.current = setTimeout(() => setOpen(true), 400);
     };
 
     const handleMouseLeave = () => {
         clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => setOpen(false), 150);
+        timerRef.current = setTimeout(() => setOpen(false), 200);
     };
 
     const handlePlay = useCallback(
@@ -75,9 +75,12 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
 
     if (loading) {
         return (
-            <div className="bg-[#0f172a] px-2 py-4 rounded-2xl">
-                <div className="h-60 w-full rounded-lg bg-[#1e293b] animate-pulse" />
-                <div className="mt-3 h-4 w-3/4 rounded bg-[#1e293b] animate-pulse" />
+            <div className="bg-card rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-transparent hover:border-border/50 transition-all duration-300">
+                <div className="relative aspect-2/3 w-full rounded-lg bg-muted animate-pulse overflow-hidden">
+                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-background/10 to-transparent skeleton-shimmer" />
+                </div>
+                <div className="mt-2 sm:mt-3 h-4 w-3/4 rounded bg-muted animate-pulse" />
+                <div className="mt-1.5 h-3 w-1/2 rounded bg-muted/50 animate-pulse" />
             </div>
         );
     }
@@ -96,38 +99,71 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             isPlaying={isPlaying}
         >
             <div
-                className="relative bg-[#0f172a] px-2 py-4 rounded-2xl flex flex-col cursor-pointer transition-transform hover:scale-105 group"
+                className="relative bg-card rounded-xl sm:rounded-2xl p-2 sm:p-3 
+                           flex flex-col cursor-pointer 
+                           transition-all duration-300 ease-out
+                           hover:scale-105 hover:shadow-xl hover:shadow-primary/5 hover:z-10
+                           active:scale-95
+                           group border border-transparent hover:border-border/50"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onClick={handleNavigate}
             >
-                {/* Rank Number - Netflix Style */}
+                {/* Rank Number - Visible Netflix/HiAnime Style */}
                 {showRank && rank !== null && (
                     <div
-                        className="absolute -left-3 -bottom-3 z-10 text-8xl md:text-9xl font-black leading-none pointer-events-none select-none"
+                        className="absolute -left-3 sm:-left-3 -bottom-2 sm:-bottom-3 z-0 
+                                   text-6xl sm:text-7xl md:text-8xl lg:text-9xl 
+                                   font-black leading-none pointer-events-none select-none
+                                   italic tracking-tighter"
                         style={{
-                            WebkitTextStroke: '2px rgba(255, 255, 255, 0.3)',
-                            color: 'transparent',
-                            textShadow: '0 0 20px rgba(0,0,0,0.5)'
+                            color: 'hsl(var(--foreground))',
+                            WebkitTextStroke: '3px hsl(var(--background))',
+                            textShadow: `
+                                0 2px 10px rgba(0,0,0,0.3),
+                                0 4px 20px rgba(0,0,0,0.2),
+                                -2px -2px 0 hsl(var(--background)),
+                                2px -2px 0 hsl(var(--background)),
+                                -2px 2px 0 hsl(var(--background)),
+                                2px 2px 0 hsl(var(--background))
+                            `,
+                            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+                            WebkitFontSmoothing: 'antialiased'
                         }}
                     >
                         {rank}
                     </div>
                 )}
 
-                <div className="relative">
+                <div className="relative overflow-hidden rounded-lg aspect-2/3 bg-muted">
                     <img
                         src={item?.info.poster}
                         alt={item?.info.name}
-                        className="h-60 w-full rounded-lg object-cover"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
                     />
                     {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Quick play button on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center text-primary-foreground shadow-lg">
+                            <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current ml-0.5" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
-                <h1 className="line-clamp-1 mt-2 font-bold leading-tight text-white">
+                <h3 className="mt-2 sm:mt-3 text-sm sm:text-base font-semibold leading-tight text-foreground line-clamp-1 group-hover:text-primary transition-colors duration-200 z-20">
                     {language === "EN" ? item?.info.name : jname}
-                </h1>
+                </h3>
+                
+                {item?.info.stats?.type && (
+                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                        {item?.info.stats.type} • {item?.info.stats.episodes.sub} Eps
+                    </p>
+                )}
             </div>
         </MediaCardPopover>
     );

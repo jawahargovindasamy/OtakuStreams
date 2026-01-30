@@ -1,20 +1,21 @@
 import Navbar from "@/components/Navbar";
 import SecondaryNavbar from "@/components/SecondaryNavbar";
 import React, { useState } from "react";
-import { User, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { User, Pencil, ChevronDown, ChevronUp, Lock, Mail, CalendarDays, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/auth-provider";
 import AvatarPicker from "@/components/AvatarPicker";
+import { AnimatePresence } from "framer-motion";
 
 const Profile = () => {
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [open, setOpen] = useState(false);
-  const [avatar, setAvatar] = useState("/src/assets/JJK/av-jjk-02.png");
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
@@ -28,155 +29,197 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
       <SecondaryNavbar />
-      <div className="min-h-screen p-8">
-        <div className="flex items-center gap-3 mb-8 text-black dark:text-white">
-          <User className="h-8 w-8" />
-          <h1 className="text-3xl font-semibold">Edit Profile</h1>
+      
+      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="p-2 rounded-xl bg-primary/10 text-primary">
+            <User className="h-6 w-6 sm:h-8 sm:w-8" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Profile</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Manage your account settings and preferences
+            </p>
+          </div>
         </div>
 
-        <Card className="border border-gray-400 dark:border-gray-700 bg-white dark:bg-gray-900">
-          <CardContent className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 p-8">
-            <div className="space-y-6">
+        <Card className="border border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
+          <CardContent className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8">
+            
+            {/* Form Section */}
+            <div className="space-y-5 sm:space-y-6">
+              {/* Email Field */}
               <div className="space-y-2">
-                <Label className="text-gray-600 dark:text-gray-400">
-                  EMAIL ADDRESS
+                <Label className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5" />
+                  Email Address
                 </Label>
-                <Input
-                  value={user.email}
-                  readOnly
-                  className="bg-gray-100 dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
-                />
-                <Badge
-                  variant="outline"
-                  className="mt-2 w-fit border-pink-400 text-pink-400 dark:border-pink-500 dark:text-pink-500"
-                >
-                  ✔ Verified
-                </Badge>
+                <div className="relative">
+                  <Input
+                    value={user.email}
+                    readOnly
+                    className="bg-muted/50 text-foreground border-border/50 h-10 sm:h-11 pr-24"
+                  />
+                  <Badge
+                    variant="secondary"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                  >
+                    Verified
+                  </Badge>
+                </div>
               </div>
 
+              <Separator className="bg-border/50" />
+
+              {/* Name Field */}
               <div className="space-y-2">
-                <Label className="text-gray-600 dark:text-gray-400">
-                  YOUR NAME
+                <Label className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Your Name
                 </Label>
                 <Input
                   defaultValue={user.name}
-                  className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
+                  className="bg-background text-foreground border-border/50 h-10 sm:h-11 focus-visible:ring-primary/20"
+                  placeholder="Enter your name"
                 />
               </div>
 
+              {/* Joined Date */}
               <div className="space-y-2">
-                <Label className="text-gray-600 dark:text-gray-400">
-                  JOINED
+                <Label className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Member Since
                 </Label>
                 <Input
-                  value={user.createdAt}
+                  value={new Date(user.createdAt).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
                   readOnly
-                  className="bg-gray-100 dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
+                  className="bg-muted/50 text-foreground border-border/50 h-10 sm:h-11"
                 />
               </div>
 
-              <button
-                onClick={() => setShowPasswordFields(!showPasswordFields)}
-                className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+              <Separator className="bg-border/50" />
+
+              {/* Password Section */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordFields(!showPasswordFields)}
+                  className="flex items-center justify-between w-full group py-2 rounded-lg hover:bg-accent/50 px-3 -ml-3 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    Change Password
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                    <span className="hidden sm:inline">{showPasswordFields ? 'Hide' : 'Show'}</span>
+                    {showPasswordFields ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {showPasswordFields && (
+                    <div className="overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                      <div className="space-y-4 pt-2 pl-4 sm:pl-6 border-l-2 border-primary/30">
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Current Password</Label>
+                          <Input
+                            type="password"
+                            value={passwords.current}
+                            onChange={(e) => handlePasswordChange("current", e.target.value)}
+                            placeholder="Enter current password"
+                            className="bg-background border-border/50 h-10 sm:h-11 focus-visible:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">New Password</Label>
+                          <Input
+                            type="password"
+                            value={passwords.new}
+                            onChange={(e) => handlePasswordChange("new", e.target.value)}
+                            placeholder="Enter new password"
+                            className="bg-background border-border/50 h-10 sm:h-11 focus-visible:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
+                          <Input
+                            type="password"
+                            value={passwords.confirm}
+                            onChange={(e) => handlePasswordChange("confirm", e.target.value)}
+                            placeholder="Confirm new password"
+                            className="bg-background border-border/50 h-10 sm:h-11 focus-visible:ring-primary/20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Save Button */}
+              <Button 
+                className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
-                🔑 Change password
-                {showPasswordFields ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
-
-              {/* Password Change Fields */}
-              {showPasswordFields && (
-                <div className="space-y-4 pl-6 border-l-2 border-pink-400 dark:border-purple-600">
-                  <div className="space-y-2">
-                    <Label className="text-gray-600 dark:text-gray-400">
-                      CURRENT PASSWORD
-                    </Label>
-                    <Input
-                      type="password"
-                      value={passwords.current}
-                      onChange={(e) =>
-                        handlePasswordChange("current", e.target.value)
-                      }
-                      placeholder="Enter current password"
-                      className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-gray-600 dark:text-gray-400">
-                      NEW PASSWORD
-                    </Label>
-                    <Input
-                      type="password"
-                      value={passwords.new}
-                      onChange={(e) =>
-                        handlePasswordChange("new", e.target.value)
-                      }
-                      placeholder="Enter new password"
-                      className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-gray-600 dark:text-gray-400">
-                      CONFIRM NEW PASSWORD
-                    </Label>
-                    <Input
-                      type="password"
-                      value={passwords.confirm}
-                      onChange={(e) =>
-                        handlePasswordChange("confirm", e.target.value)
-                      }
-                      placeholder="Confirm new password"
-                      className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-700"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Save */}
-              <Button className="w-full bg-pink-400 dark:bg-pink-500 text-white hover:bg-pink-500 dark:hover:bg-pink-600">
-                Save
+                Save Changes
               </Button>
             </div>
 
-            <div className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-b from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 p-6">
-              <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-pink-400 dark:border-purple-600">
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback className="bg-gray-300 dark:bg-gray-700 text-black dark:text-white">
-                    JG
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-linear-to-b from-muted/30 to-muted/10 border border-border/50 p-6 sm:p-8 space-y-4">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-linear-to-r from-primary to-primary/50 rounded-full opacity-30 group-hover:opacity-50 blur transition duration-500" />
+                <Avatar className="relative h-32 w-32 sm:h-36 sm:w-36 ring-4 ring-background shadow-2xl">
+                  <AvatarImage src={user.avatar} className="object-cover" />
+                  <AvatarFallback className="bg-muted text-foreground text-2xl font-bold">
+                    {user.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
 
                 <button
                   onClick={() => setOpen(true)}
-                  className="absolute bottom-1 right-1 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="absolute bottom-1 right-1 bg-primary text-primary-foreground p-2.5 sm:p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label="Change avatar"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
-                <AvatarPicker
-                  open={open}
-                  onOpenChange={setOpen}
-                  onSelect={(selectedAvatar) => {
-                    setUser((prevUser) => ({
-                      ...prevUser,
-                      avatar: selectedAvatar,
-                    }));
-                    setOpen(false);
-                  }}
-                />
+              </div>
+
+              <div className="text-center space-y-1">
+                <h3 className="font-semibold text-foreground">{user.name}</h3>
+                <p className="text-xs text-muted-foreground">Click the camera to update</p>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
+
+      <AvatarPicker
+        open={open}
+        onOpenChange={setOpen}
+        onSelect={(selectedAvatar) => {
+          setUser((prevUser) => ({
+            ...prevUser,
+            avatar: selectedAvatar,
+          }));
+          setOpen(false);
+        }}
+        selectedAvatar={user.avatar}
+      />
     </div>
   );
 };
