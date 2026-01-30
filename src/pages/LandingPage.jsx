@@ -3,13 +3,6 @@ import { Search, ArrowRight, Menu, MessageCircle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/data-provider";
@@ -82,7 +75,7 @@ const LandingPage = () => {
   const { homedata } = useData();
   const { theme } = useTheme();
 
-  const topSearches = homedata?.data?.trendingAnimes?.slice(0, 5).map((item) => item.name) || 
+  const topSearches = homedata?.data?.trendingAnimes?.slice(0, 5).map((item) => item.name) ||
     ["Naruto", "One Piece", "Jujutsu Kaisen", "Attack on Titan", "Demon Slayer"];
 
   return (
@@ -128,19 +121,19 @@ const LandingPage = () => {
                   </div>
                 </SheetContent>
               </Sheet>
-              
-              <img 
-                src={theme === "light" ? DarkLogo : LightLogo} 
-                alt="Logo" 
+
+              <img
+                src={theme === "light" ? DarkLogo : LightLogo}
+                alt="Logo"
                 className="h-8 w-auto"
               />
             </div>
 
             {/* Desktop Logo */}
             <div className="hidden md:absolute md:right-8 lg:right-12">
-              <img 
-                src={theme === "light" ? DarkLogo : LightLogo} 
-                alt="Logo" 
+              <img
+                src={theme === "light" ? DarkLogo : LightLogo}
+                alt="Logo"
                 className="h-8 lg:h-9 w-auto"
               />
             </div>
@@ -151,8 +144,8 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <div className="container mx-auto max-w-7xl">
-          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-linear-to-br from-muted/80 to-muted border border-border/50 shadow-2xl">
-            
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-border/50 shadow-2xl">
+
             {/* Background Image - Desktop */}
             <div className="absolute right-0 top-0 h-full w-1/2 hidden lg:block">
               <img
@@ -160,7 +153,8 @@ const LandingPage = () => {
                 alt="Anime Preview"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-linear-to-l from-transparent via-background/80 to-background" />
+              <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent dark:from-background dark:via-background/40" />
+              <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/40 to-transparent dark:from-background/95 dark:via-background/50" />
             </div>
 
             {/* Mobile Background */}
@@ -177,9 +171,9 @@ const LandingPage = () => {
             <div className="relative z-10 flex flex-col justify-center gap-4 sm:gap-6 px-4 sm:px-6 lg:px-10 py-8 sm:py-12 lg:py-16 lg:max-w-2xl">
               {/* Logo */}
               <div className="flex justify-center lg:justify-start">
-                <img 
-                  src={theme === "light" ? DarkLogo : LightLogo} 
-                  alt="OtakuStreams" 
+                <img
+                  src={theme === "light" ? DarkLogo : LightLogo}
+                  alt="OtakuStreams"
                   className="h-10 sm:h-12 w-auto"
                 />
               </div>
@@ -225,7 +219,7 @@ const LandingPage = () => {
               </div>
 
               {/* CTA */}
-              <Button 
+              <Button
                 className="w-fit gap-2 rounded-full bg-primary hover:bg-primary/90 px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:scale-105"
                 asChild
               >
@@ -248,9 +242,9 @@ const LandingPage = () => {
           </div>
           <div className="flex gap-2">
             {["Twitter", "Discord", "Reddit"].map((social) => (
-              <Button 
-                key={social} 
-                variant="outline" 
+              <Button
+                key={social}
+                variant="outline"
                 size="sm"
                 className="rounded-full text-xs"
               >
@@ -264,7 +258,7 @@ const LandingPage = () => {
       {/* Main Content */}
       <section className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-12">
-          
+
           {/* Left Content - FAQ */}
           <div className="space-y-8 sm:space-y-10">
             <div className="space-y-4">
@@ -305,7 +299,7 @@ const LandingPage = () => {
                 <MessageCircle className="h-5 w-5 text-primary" />
                 Trending Posts
               </h2>
-              
+
               <div className="space-y-4">
                 {trendingPosts.map((post, i) => (
                   <Card
@@ -346,7 +340,7 @@ const LandingPage = () => {
                   </Card>
                 ))}
               </div>
-              
+
               <Button variant="outline" className="w-full mt-4 rounded-full" asChild>
                 <Link to="/blog">View All Posts</Link>
               </Button>
@@ -380,9 +374,9 @@ const LandingPage = () => {
       <footer className="border-t border-border/50 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <img 
-              src={theme === "light" ? DarkLogo : LightLogo} 
-              alt="OtakuStreams" 
+            <img
+              src={theme === "light" ? DarkLogo : LightLogo}
+              alt="OtakuStreams"
               className="h-8 w-auto opacity-80"
             />
             <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">

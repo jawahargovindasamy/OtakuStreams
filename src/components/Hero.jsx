@@ -87,8 +87,8 @@ const Hero = () => {
                 className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
               />
               {/* Multi-layered gradient for better text readability and theme adaptability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent dark:from-background dark:via-background/40" />
-              <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent dark:from-background/95 dark:via-background/50" />
+              <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent dark:from-background dark:via-background/40" />
+              <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/40 to-transparent dark:from-background/95 dark:via-background/50" />
             </div>
 
             {/* Content Container */}
