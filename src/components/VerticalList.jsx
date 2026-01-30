@@ -5,8 +5,8 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { ClosedCaption, Mic } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowRight, ClosedCaption, Mic } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
@@ -171,17 +171,31 @@ const VerticalListItem = ({ anime }) => {
 
 /* -------------------- Vertical List -------------------- */
 
-const VerticalList = ({ anime = null, list = 5 }) => {
+const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
   if (!anime || anime.length === 0) {
     return <VerticalListSkeleton count={list} />;
   }
 
   return (
-    <div className="flex flex-col gap-3 w-1/4">
-      {anime.slice(0, list).map((item) => (
-        <VerticalListItem key={item.id} anime={item} />
-      ))}
+    <div>
+      {title && <h2 className="text-lg font-bold dark:text-white text-gray-900 mb-3">{title}</h2>}
+      <div className="flex flex-col gap-3 w-1/4">
+        {anime.slice(0, list).map((item) => (
+          <VerticalListItem key={item.id} anime={item} />
+        ))}
+      </div>
+      {
+        link && (
+          <Link
+            to={link}
+            className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 cursor-pointer hover:underline mt-3"
+          >
+            View All <ArrowRight className="w-4 h-4" />
+          </Link>
+        )
+      }
     </div>
+
   );
 };
 

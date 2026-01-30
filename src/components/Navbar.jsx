@@ -15,7 +15,15 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle, 
+  SheetDescription
+} from "@/components/ui/sheet";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 
 import { Search, Shuffle, Bell, Menu } from "lucide-react";
@@ -28,6 +36,7 @@ import { useTheme } from "@/context/theme-provider";
 import { useAuth } from "@/context/auth-provider";
 import { useData } from "@/context/data-provider";
 import SearchPopover from "./SearchPopover";
+import Sidebar from "./Sidebar";
 
 
 /* ================= Navbar ================= */
@@ -42,6 +51,8 @@ const Navbar = () => {
   const [desktopOpen, setDesktopOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // console.log(suggestion);
 
@@ -76,16 +87,34 @@ const Navbar = () => {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Left */}
           <div className="flex flex-row items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="bg-muted cursor-pointer">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Sidebar</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="bg-muted cursor-pointer"
+                      >
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </SheetTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Sidebar</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Sidebar content */}
+              <SheetContent side="left" className="w-72 p-0" >
+                <VisuallyHidden>
+                  <SheetTitle>Sidebar navigation</SheetTitle>
+                  <SheetDescription>Main application navigation</SheetDescription>
+                </VisuallyHidden>
+                <Sidebar onClose={() => setSidebarOpen(false)}/>
+              </SheetContent>
+            </Sheet>
+
 
             <Link to="/" className="text-lg font-semibold">
               <img

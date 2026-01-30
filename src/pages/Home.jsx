@@ -66,10 +66,10 @@ const Home = () => {
 
       {/* Grid Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-10 mx-6">
-        <VerticalList anime={data.topAiringAnimes} title="Top Airing" />
-        <VerticalList anime={data.mostPopularAnimes} title="Most Popular" />
-        <VerticalList anime={data.mostFavoriteAnimes} title="Most Favorite" />
-        <VerticalList anime={data.latestCompletedAnimes} title="Completed" />
+        <VerticalList anime={data.topAiringAnimes} title="Top Airing" link="/top-airing" />
+        <VerticalList anime={data.mostPopularAnimes} title="Most Popular" link="/most-popular" />
+        <VerticalList anime={data.mostFavoriteAnimes} title="Most Favorite" link="/most-favorite" />
+        <VerticalList anime={data.latestCompletedAnimes} title="Completed" link="/completed" />
       </div>
 
       <div className="lg:grid lg:grid-cols-[5fr_2fr] gap-10 mx-6">

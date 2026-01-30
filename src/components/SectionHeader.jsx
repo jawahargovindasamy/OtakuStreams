@@ -30,7 +30,7 @@ const SectionHeader = ({ title, icon, link, time }) => {
             )}
 
             {time && (
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                <span className="text-sm font-medium bg-black dark:bg-white  px-2 py-0.5 rounded-xl text-white dark:text-black">
                     (GMT+05:30) {now.toLocaleTimeString()}
                 </span>
             )}
