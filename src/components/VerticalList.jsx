@@ -79,7 +79,7 @@ const VerticalListItem = ({ anime }) => {
 
     const loadInfo = async () => {
       try {
-        const data = await fetchanimeinfo(anime.id);
+        const data = await fetchanimeinfo(anime.id, "n");
         if (mounted) setItem(data);
       } catch (err) {
         console.error(err);

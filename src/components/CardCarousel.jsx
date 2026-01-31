@@ -1,5 +1,6 @@
 import React from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MediaCard from "./MediaCard";
 
@@ -42,7 +43,7 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
       </div>
 
       {/* Navigation - Hidden on mobile, visible on hover for desktop */}
-      <button
+      <Button
         onClick={scrollPrev}
         className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-10 
                    h-8 w-8 sm:h-10 sm:w-10 
@@ -56,9 +57,9 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
         aria-label="Previous slide"
       >
         <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={scrollNext}
         className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-10 
                    h-8 w-8 sm:h-10 sm:w-10 
@@ -72,7 +73,7 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
         aria-label="Next slide"
       >
         <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-      </button>
+      </Button>
     </div>
   );
 };

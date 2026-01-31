@@ -8,7 +8,7 @@ import MediaCardPopover from "./MediaCardPopover";
 const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     const { fetchanimeinfo, fetchepisodeinfo } = useData();
     const { language } = useAuth();
-    const [item, setInfo] = useState(null);
+    const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -16,9 +16,9 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
         let mounted = true;
         const getAnimeInfo = async () => {
             setLoading(true);
-            const data = await fetchanimeinfo(id);
+            const data = await fetchanimeinfo(id, "n");
             if (mounted) {
-                setInfo(data);
+                setItem(data);
                 setLoading(false);
             }
         }

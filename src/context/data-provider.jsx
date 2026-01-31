@@ -60,12 +60,16 @@ export function DataProvider({ children }) {
   };
 
   /* -------------------- ANIME INFO -------------------- */
-  const fetchanimeinfo = async (id) => {
+  const fetchanimeinfo = async (id, page = "n") => {
     try {
       const res = await fetchWithRetry(() =>
         api.get(`/anime/${id}`)
       );
-      return res.data?.data?.anime ?? null;
+      if (page === "n") {
+        return res.data?.data?.anime ?? null;
+      } else {
+        return res.data?.data ?? null;
+      }
     } catch (error) {
       console.error("Anime info fetch failed:", error);
       return null;
@@ -152,6 +156,17 @@ export function DataProvider({ children }) {
     }
   };
 
+  const fetchcategories = async (category, page = 1) => {
+    try {
+      const res = await api.get(`/category/${category}`, {
+        params: { page },
+      });
+      return res.data.data ?? null;
+    } catch (error) {
+      console.error("AZ list fetch failed:", error);
+    }
+  };
+
   /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
     fetchHomedata();
@@ -170,6 +185,7 @@ export function DataProvider({ children }) {
         fetchsearchsuggestions,
         fetchepisodeinfo,
         fetchestimatedschedules,
+        fetchcategories
       }}
     >
       {children}

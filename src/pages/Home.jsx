@@ -19,9 +19,7 @@ import { useData } from "@/context/data-provider";
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
   const { homedata } = useData();
-  const navigate = useNavigate();
-
-  const maxInitial = 24;
+  
   const [showAll, setShowAll] = useState(false);
   const [scheduledAnimes, setScheduledAnimes] = useState([]);
   const [top10Animes, setTop10Animes] = useState("today");
@@ -29,17 +27,6 @@ const Home = () => {
   /* -------------------- DATA -------------------- */
   const data = homedata?.data;
 
-  const genresToShow = showAll
-    ? data?.genres
-    : data?.genres?.slice(0, maxInitial);
-
-  const getGenreColor = (genre) => {
-    let hash = 0;
-    for (let i = 0; i < genre.length; i++) {
-      hash = genre.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return `hsl(${hash % 360},70%,70%)`;
-  };
 
   /* -------------------- LOADING STATE -------------------- */
   if (!data) {
@@ -56,7 +43,7 @@ const Home = () => {
 
   /* -------------------- UI -------------------- */
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
       
       <main className="flex-1 w-full">
@@ -143,12 +130,8 @@ const Home = () => {
               <div className="sticky top-24 space-y-6">
                 <HomeSidebar
                   data={data}
-                  navigate={navigate}
-                  genresToShow={genresToShow}
-                  getGenreColor={getGenreColor}
                   showAll={showAll}
                   setShowAll={setShowAll}
-                  maxInitial={maxInitial}
                   top10Animes={top10Animes}
                   setTop10Animes={setTop10Animes}
                 />
@@ -160,12 +143,8 @@ const Home = () => {
           <section className="block lg:hidden w-full">
             <HomeSidebar
               data={data}
-              navigate={navigate}
-              genresToShow={genresToShow}
-              getGenreColor={getGenreColor}
               showAll={showAll}
               setShowAll={setShowAll}
-              maxInitial={maxInitial}
               top10Animes={top10Animes}
               setTop10Animes={setTop10Animes}
             />
