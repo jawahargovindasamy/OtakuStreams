@@ -26,7 +26,7 @@ const Footer = () => {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 lg:py-16">
                 
                 {/* Top Section: Logo & Social */}
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-start sm:items-center mb-8">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-start sm:items-center mb-3">
                     <div className="flex items-center gap-4">
                         <Link to="/" className="transition-opacity hover:opacity-80 duration-200">
                             <img 
@@ -53,7 +53,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <Separator className="bg-border mb-8" />
+                <Separator className="bg-border mb-3" />
 
                 {/* A-Z List Section */}
                 <div className="space-y-4 sm:space-y-6">
@@ -72,7 +72,7 @@ const Footer = () => {
                             size="sm" 
                             variant="secondary"
                             className="min-w-10 sm:min-w-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-all duration-200 rounded-md"
-                            onClick={() => navigate("/az-list")}
+                            onClick={() => navigate("/az-list/all")}
                         >
                             All
                         </Button>

@@ -49,6 +49,17 @@ const SearchPopover = ({
                             setSearchQuery(val);
                             setOpen(val.trim().length > 0);
                         }}
+                        onKeyDown={(e) => {
+                            if(e.key === "Enter") {
+                                e.preventDefault();
+                                const trimmed = searchQuery.trim();
+                                if(trimmed){
+                                    navigate(`/search?keyword=${encodeURIComponent(trimmed)}`);
+                                    setSearchQuery("");
+                                    setOpen(false);
+                                }
+                            }
+                        }}
                         className="w-full pr-24 pl-4 h-10 sm:h-11 border-input bg-background/50 backdrop-blur-sm focus:bg-background transition-all duration-200 rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     <div className="flex items-center gap-1.5 absolute right-2 top-1/2 -translate-y-1/2">
@@ -56,7 +67,7 @@ const SearchPopover = ({
                         <Button 
                             size="sm" 
                             className="h-7 px-2.5 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all duration-200"
-                            onClick={() => navigate("/filter")}
+                            onClick={() => navigate("/search")}
                         >
                             Filter
                         </Button>

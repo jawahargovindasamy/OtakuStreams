@@ -33,7 +33,7 @@ const GenresList = ({
                         <div
                             key={genre}
                             onClick={() =>
-                                navigate(`/genres/${encodeURIComponent(genre.toLowerCase())}`)
+                                navigate(`/genre/${encodeURIComponent(genre.toLowerCase())}`)
                             }
                             className="group cursor-pointer text-xs sm:text-sm font-medium px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-muted/50 hover:bg-accent border border-transparent hover:border-border/50 transition-all duration-200 flex items-center gap-1.5"
                         >

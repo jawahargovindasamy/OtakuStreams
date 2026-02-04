@@ -32,7 +32,6 @@ const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
   const [homedata, setHomedata] = useState(null);
-  const [azlistdata, setAzlistdata] = useState(null);
   const [searchdata, setSearchdata] = useState(null);
 
   /* -------------------- HOME -------------------- */
@@ -53,7 +52,7 @@ export function DataProvider({ children }) {
       const res = await api.get(`/azlist/${azlist}`, {
         params: { page },
       });
-      setAzlistdata(res.data);
+      return res.data?.data ?? null;
     } catch (error) {
       console.error("AZ list fetch failed:", error);
     }
@@ -77,7 +76,24 @@ export function DataProvider({ children }) {
   };
 
   /* -------------------- SEARCH -------------------- */
-  const fetchsearchdata = async ({
+
+  const fetchsearch = async (keyword, page = "n") => {
+    try {
+      const res = await fetchWithRetry(() =>
+        api.get(`/search?q=${keyword}`)
+      );
+      if (page === "n") {
+        return res.data?.data?.anime ?? null;
+      } else {
+        return res.data?.data ?? null;
+      }
+    } catch (error) {
+      console.error("Anime info fetch failed:", error);
+      return null;
+    }
+  };
+
+  const fetchadvancedsearch = async ({
     q,
     page = 1,
     type,
@@ -98,25 +114,23 @@ export function DataProvider({ children }) {
         type,
         status,
         rated,
-        score,
+        score: score?.toLowerCase(),
         season,
         language,
         start_date,
         end_date,
         sort,
-        genres: genres?.length ? genres.join(",") : undefined,
+        genres: genres?.length ? genres.map(g => g.toLowerCase()).join(",") : undefined,
       };
 
-      const res = await fetchWithRetry(() =>
-        api.get("/search", { params })
-      );
-
-      setSearchdata(res.data);
+      const res = await fetchWithRetry(() => api.get("/search", { params }));
+      return res.data?.data ?? null;
     } catch (error) {
       console.error("Search fetch failed:", error);
-      setSearchdata(null);
+      return null;
     }
   };
+
 
   /* -------------------- SEARCH SUGGESTIONS -------------------- */
   const fetchsearchsuggestions = async (q) => {
@@ -167,6 +181,28 @@ export function DataProvider({ children }) {
     }
   };
 
+  const fetchgenres = async (name, page = 1) => {
+    try {
+      const res = await api.get(`/genre/${name}`, {
+        params: { page },
+      });
+      return res.data.data ?? null;
+    } catch (error) {
+      console.error("AZ list fetch failed:", error);
+    }
+  };
+
+  const fetchproducers = async (name, page = 1) => {
+    try {
+      const res = await api.get(`/producer/${name}`, {
+        params: { page },
+      });
+      return res.data.data ?? null;
+    } catch (error) {
+      console.error("AZ list fetch failed:", error);
+    }
+  };
+
   /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
     fetchHomedata();
@@ -176,16 +212,18 @@ export function DataProvider({ children }) {
     <DataContext.Provider
       value={{
         homedata,
-        azlistdata,
         searchdata,
         fetchHomedata,
         fetchazlistdata,
         fetchanimeinfo,
-        fetchsearchdata,
+        fetchsearch,
+        fetchadvancedsearch,
         fetchsearchsuggestions,
         fetchepisodeinfo,
         fetchestimatedschedules,
-        fetchcategories
+        fetchcategories,
+        fetchgenres,
+        fetchproducers,
       }}
     >
       {children}

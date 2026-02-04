@@ -7,6 +7,9 @@ import ContinueWatching from "./pages/ContinueWatching";
 import Anime from "./pages/Anime";
 import List from "./pages/List";
 import AZ from "./pages/AZ";
+import Genre from "./pages/Genre";
+import Search from "./pages/Search";
+import Producer from "./pages/Producer";
 
 function App() {
   return (
@@ -17,13 +20,16 @@ function App() {
         <Route path="/subbed-anime" element={<List anime="subbed-anime" />} />
         <Route path="/dubbed-anime" element={<List anime="dubbed-anime" />} />
         <Route path="/most-popular" element={<List anime="most-popular" />} />
+        <Route path="/top-airing" element={<List anime="top-airing" />} />
         <Route path="/movie" element={<List anime="movie" />} />
         <Route path="/tv" element={<List anime="tv" />} />
         <Route path="/ova" element={<List anime="ova" />} />
         <Route path="/ona" element={<List anime="ona" />} />
         <Route path="/special" element={<List anime="special" />} />
-        <Route path="/az-list" element={<AZ />} />
-        <Route path="/az-list/:letter" element={<AZ />} />
+        <Route path="/genre/:name" element={<Genre/>}/>
+        <Route path="/producer/:name" element={<Producer/>}/>
+        <Route path="/az-list/:letter" element={<AZ/>} />
+        <Route path="/search" element={<Search/>}/>
         <Route path="/:id" element={<Anime />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/continue-watching" element={<ContinueWatching />} />

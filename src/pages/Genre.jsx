@@ -5,16 +5,18 @@ import SectionHeader from '@/components/SectionHeader';
 import Top10 from '@/components/Top10';
 import { useData } from '@/context/data-provider';
 import React, { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import VerticalList from '@/components/VerticalList';
 
-const List = ({ anime }) => {
-    const { fetchcategories } = useData();
+const Genre = () => {
+
+    const { fetchgenres } = useData();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Initialize page from URL or default to 1
+    const { name } = useParams();
     const [item, setItem] = useState(null);
     const [page, setPage] = useState(() => {
         const pageParam = searchParams.get('page');
@@ -22,7 +24,6 @@ const List = ({ anime }) => {
         return parsed > 0 ? parsed : 1;
     });
     const [showAll, setShowAll] = useState(false);
-    const [top10Animes, setTop10Animes] = useState("today");
     const [loading, setLoading] = useState(false);
 
     // Sync page state with URL when anime category changes or when URL is manually edited
@@ -31,7 +32,7 @@ const List = ({ anime }) => {
         const parsed = parseInt(pageParam, 10);
         const newPage = parsed > 0 ? parsed : 1;
         setPage(newPage);
-    }, [anime, searchParams]);
+    }, [name, searchParams]);
 
     // Update URL when page changes (only for page > 1)
     useEffect(() => {
@@ -47,7 +48,7 @@ const List = ({ anime }) => {
         const getAnimeInfo = async () => {
             setLoading(true);
             try {
-                const data = await fetchcategories(anime, page);
+                const data = await fetchgenres(name, page);
                 setItem(data);
             } catch (error) {
                 console.error("Failed to fetch anime list:", error);
@@ -56,7 +57,7 @@ const List = ({ anime }) => {
             }
         }
         getAnimeInfo()
-    }, [anime, fetchcategories, page]);
+    }, [name, fetchgenres, page]);
 
     const totalPages = item?.totalPages || 1;
 
@@ -94,6 +95,8 @@ const List = ({ anime }) => {
         return pages;
     };
 
+
+
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col">
             <Navbar />
@@ -102,7 +105,7 @@ const List = ({ anime }) => {
                     <main className="flex-1 w-full space-y-6 sm:space-y-8">
                         {/* Header */}
                         <div className="space-y-2">
-                            <SectionHeader title={item?.category || anime} />
+                            <SectionHeader title={item?.genreName || name} />
                         </div>
 
                         {/* Grid Content */}
@@ -157,8 +160,8 @@ const List = ({ anime }) => {
                                                     size="sm"
                                                     onClick={() => handlePageChange(pageNum)}
                                                     className={`h-9 w-9 p-0 rounded-lg text-sm font-medium transition-all duration-200 ${page === pageNum
-                                                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
-                                                            : "border-border/50 hover:bg-accent hover:text-accent-foreground"
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
+                                                        : "border-border/50 hover:bg-accent hover:text-accent-foreground"
                                                         }`}
                                                 >
                                                     {pageNum}
@@ -182,15 +185,23 @@ const List = ({ anime }) => {
 
                         {/* Mobile Sidebar Content */}
                         <section className="block lg:hidden w-full space-y-6">
-                            {item?.top10Animes && <Top10 data={item} top10Animes={top10Animes} setTop10Animes={setTop10Animes} />}
                             {item?.genres && <GenresList data={item} showAll={showAll} setShowAll={setShowAll} />}
+                            {item?.topAiringAnimes &&
+                                <>
+                                    <SectionHeader title="Top Airing" />
+                                    <VerticalList list={item?.topAiringAnimes.length} anime={item.topAiringAnimes} />
+                                </>}
                         </section>
                     </main>
 
                     {/* Desktop Sidebar */}
                     <aside className="hidden lg:block space-y-6 sm:space-y-8 min-w-0">
-                        {item?.top10Animes && <Top10 data={item} top10Animes={top10Animes} setTop10Animes={setTop10Animes} />}
                         {item?.genres && <GenresList data={item} showAll={showAll} setShowAll={setShowAll} />}
+                        {item?.topAiringAnimes &&
+                            <>
+                                <SectionHeader title="Top Airing" />
+                                <VerticalList list={item?.topAiringAnimes.length} anime={item.topAiringAnimes} />
+                            </>}
                     </aside>
                 </div>
             </div>
@@ -199,4 +210,4 @@ const List = ({ anime }) => {
     )
 }
 
-export default List
+export default Genre

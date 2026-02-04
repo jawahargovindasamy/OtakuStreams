@@ -157,7 +157,7 @@ const MediaCardPopover = ({
                             </p>
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Genres:</span>
-                                <span className="line-clamp-1">{item?.moreInfo.genres.join(", ")}</span>
+                                <span className="line-clamp-1">{item?.moreInfo.genres?.join(", ")}</span>
                             </p>
                         </div>
 

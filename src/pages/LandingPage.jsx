@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Search, ArrowRight, Menu, MessageCircle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data-provider";
 import { useTheme } from "@/context/theme-provider";
 import LightLogo from "../assets/Logo Light.png";
@@ -16,8 +16,8 @@ import Avatar3 from "../assets/JJK/av-jjk-04.png";
 
 const navLinks = [
   { name: "Home", to: "/home" },
-  { name: "Movies", to: "/movies" },
-  { name: "TV Series", to: "/tv-series" },
+  { name: "Movies", to: "/movie" },
+  { name: "TV Series", to: "/tv" },
   { name: "Most Popular", to: "/most-popular" },
   { name: "Top Airing", to: "/top-airing" },
 ];
@@ -74,6 +74,19 @@ const faqItems = [
 const LandingPage = () => {
   const { homedata } = useData();
   const { theme } = useTheme();
+
+  const navigate = useNavigate();
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = () => {
+  const trimmed = searchQuery.trim();
+  if (trimmed) {
+    navigate(`/search?keyword=${encodeURIComponent(trimmed)}`);
+    setSearchQuery("");
+  }
+};
+
 
   const topSearches = homedata?.data?.trendingAnimes?.slice(0, 5).map((item) => item.name) ||
     ["Naruto", "One Piece", "Jujutsu Kaisen", "Attack on Titan", "Demon Slayer"];
@@ -189,11 +202,19 @@ const LandingPage = () => {
                   <Input
                     placeholder="Search anime..."
                     className="h-11 sm:h-12 pl-10 bg-background/80 backdrop-blur-sm border-border/50 focus-visible:ring-primary/20 text-foreground placeholder:text-muted-foreground"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
                 <Button
                   size="icon"
+                  onClick={handleSearch}
                   className="h-11 w-11 sm:h-12 sm:w-12 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
                 >
                   <ArrowRight className="h-5 w-5" />
@@ -206,7 +227,7 @@ const LandingPage = () => {
                 {topSearches.map((item, index) => (
                   <React.Fragment key={item}>
                     <Link
-                      to={`/search?q=${encodeURIComponent(item)}`}
+                      to={`/search?keyword=${encodeURIComponent(item)}`}
                       className="hover:text-primary transition-colors hover:underline underline-offset-2"
                     >
                       {item.length > 20 ? item.slice(0, 20) + "..." : item}
