@@ -16,7 +16,7 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
         let mounted = true;
         const getAnimeInfo = async () => {
             setLoading(true);
-            const data = await fetchanimeinfo(id, "n");
+            const data = await fetchanimeinfo(id);
             if (mounted) {
                 setItem(data);
                 setLoading(false);
@@ -64,13 +64,19 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             setIsPlaying(true);
             try {
                 const data = await fetchepisodeinfo(id);
-                navigate(`/watch/${data.data.episodes[0].episodeId}`);
+                navigate(`/watch/${data.data.episodes[0].episodeId}`, {
+                    state: {
+                        animeId: id,
+                        episodeList: data.data.episodes,
+                        animeInfo: item
+                    }
+                });
             } catch (err) {
                 console.error(err);
                 setIsPlaying(false);
             }
         },
-        [fetchepisodeinfo, navigate]
+        [fetchepisodeinfo, navigate, item]
     );
 
     if (loading) {
@@ -84,6 +90,9 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             </div>
         );
     }
+
+    // console.log(item);
+    
 
     return (
         <MediaCardPopover
@@ -137,31 +146,31 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
 
                 <div className="relative overflow-hidden rounded-lg aspect-2/3 bg-muted">
                     <img
-                        src={item?.info.poster}
-                        alt={item?.info.name}
+                        src={item?.anime.info.poster}
+                        alt={item?.anime.info.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                     />
                     {/* Gradient overlay on hover */}
                     <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    
+
                     {/* Quick play button on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                         <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center text-primary-foreground shadow-lg">
                             <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current ml-0.5" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
+                                <path d="M8 5v14l11-7z" />
                             </svg>
                         </div>
                     </div>
                 </div>
 
                 <h3 className="mt-2 sm:mt-3 text-sm sm:text-base font-semibold leading-tight text-foreground line-clamp-1 group-hover:text-primary transition-colors duration-200 z-20">
-                    {language === "EN" ? item?.info.name : jname}
+                    {language === "EN" ? item?.anime.info.name : jname}
                 </h3>
-                
-                {item?.info.stats?.type && (
+
+                {item?.anime.info.stats?.type && (
                     <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                        {item?.info.stats.type} • {item?.info.stats.episodes.sub} Eps
+                        {item?.anime.info.stats.type} • {item?.anime.info.stats.episodes.sub} Eps
                     </p>
                 )}
             </div>

@@ -158,7 +158,8 @@ const SearchPopover = ({
                                     <Button
                                         className="w-full cursor-pointer rounded-lg bg-linear-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-medium shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/30"
                                         onClick={() => {
-                                            navigate(`search?keyword=${searchQuery}`);
+                                            const trimmed = searchQuery.trim();
+                                            navigate(`/search?keyword=${encodeURIComponent(trimmed)}`);
                                             setOpen(false);
                                         }}
                                     >

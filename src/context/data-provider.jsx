@@ -59,16 +59,12 @@ export function DataProvider({ children }) {
   };
 
   /* -------------------- ANIME INFO -------------------- */
-  const fetchanimeinfo = async (id, page = "n") => {
+  const fetchanimeinfo = async (id) => {
     try {
       const res = await fetchWithRetry(() =>
         api.get(`/anime/${id}`)
       );
-      if (page === "n") {
-        return res.data?.data?.anime ?? null;
-      } else {
-        return res.data?.data ?? null;
-      }
+      return res.data?.data ?? null;
     } catch (error) {
       console.error("Anime info fetch failed:", error);
       return null;
@@ -172,9 +168,11 @@ export function DataProvider({ children }) {
 
   const fetchcategories = async (category, page = 1) => {
     try {
-      const res = await api.get(`/category/${category}`, {
-        params: { page },
-      });
+      const res = await fetchWithRetry(() =>
+        api.get(`/category/${category}`, {
+          params: { page },
+        })
+      );
       return res.data.data ?? null;
     } catch (error) {
       console.error("AZ list fetch failed:", error);
@@ -183,9 +181,12 @@ export function DataProvider({ children }) {
 
   const fetchgenres = async (name, page = 1) => {
     try {
-      const res = await api.get(`/genre/${name}`, {
-        params: { page },
-      });
+      const res = await fetchWithRetry(() =>
+        api.get(`/genre/${name}`, {
+          params: { page },
+        })
+      );
+
       return res.data.data ?? null;
     } catch (error) {
       console.error("AZ list fetch failed:", error);
@@ -194,12 +195,26 @@ export function DataProvider({ children }) {
 
   const fetchproducers = async (name, page = 1) => {
     try {
-      const res = await api.get(`/producer/${name}`, {
-        params: { page },
-      });
+      const res = await fetchWithRetry(() =>
+        api.get(`/producer/${name}`, {
+          params: { page },
+        })
+      );
       return res.data.data ?? null;
     } catch (error) {
       console.error("AZ list fetch failed:", error);
+    }
+  };
+
+  const fetchepisodeserver = async (id) => {
+    try {
+      const res = await fetchWithRetry(() =>
+        api.get(`/episode/servers?animeEpisodeId=${id}`)
+      );
+      return res.data.data ?? null;
+    } catch (error) {
+      console.error("Episode server fetch failed:", error);
+      return null;
     }
   };
 
@@ -224,6 +239,7 @@ export function DataProvider({ children }) {
         fetchcategories,
         fetchgenres,
         fetchproducers,
+        fetchepisodeserver,
       }}
     >
       {children}

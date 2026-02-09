@@ -4,9 +4,10 @@ import { useData } from '@/context/data-provider';
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from "@/components/ui/button";
-import { Loader2, Tv, Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import CharactersSection from '@/components/CharactersSection';
 import SectionHeader from '@/components/SectionHeader';
+import SeasonsSection from '@/components/SeasonsSection';
 import VerticalList from '@/components/VerticalList';
 import MediaCard from '@/components/MediaCard';
 import Footer from '@/components/Footer';
@@ -49,14 +50,20 @@ const Anime = () => {
             try {
                 const data = await fetchepisodeinfo(id);
                 if (data?.data?.episodes?.length > 0) {
-                    navigate(`/watch/${data.data.episodes[0].episodeId}`);
+                    navigate(`/watch/${data.data.episodes[0].episodeId}`, {
+                        state: {
+                            animeId: id,
+                            episodeList: data.data,
+                            animeInfo : item
+                        }
+                    });
                 }
             } catch (err) {
                 console.error(err);
                 setIsPlaying(false);
             }
         },
-        [fetchepisodeinfo, navigate]
+        [fetchepisodeinfo, navigate,item]
     );
 
     // Loading skeleton
@@ -102,23 +109,7 @@ const Anime = () => {
                         <div className="space-y-8 sm:space-y-10 min-w-0">
                             {/* Seasons Section */}
                             {hasSeasons && (
-                                <section className="space-y-4 sm:space-y-5">
-                                    <SectionHeader title="More Seasons" icon={Tv} />
-                                    <div className="flex flex-wrap gap-2 sm:gap-3">
-                                        {item?.seasons.map((season) => (
-                                            <Button
-                                                key={season.id}
-                                                variant="outline"
-                                                className="flex items-center justify-between rounded-xl bg-card/50 border-border/50 px-4 sm:px-6 py-5 sm:py-6 h-auto backdrop-blur-sm hover:bg-accent hover:border-primary/30 transition-all duration-200 group"
-                                                onClick={() => navigate(`/${season.id}`)}
-                                            >
-                                                <span className="text-sm sm:text-base font-medium text-foreground group-hover:text-foreground">
-                                                    {season.title}
-                                                </span>
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </section>
+                                <SeasonsSection seasons={item?.seasons} />
                             )}
 
                             {/* Characters Section */}
@@ -214,7 +205,7 @@ const Anime = () => {
             </main>
 
 
-            <Footer/>
+            <Footer />
 
             {/* Custom Scrollbar Styles */}
             <style>{`

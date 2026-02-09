@@ -10,6 +10,7 @@ import AZ from "./pages/AZ";
 import Genre from "./pages/Genre";
 import Search from "./pages/Search";
 import Producer from "./pages/Producer";
+import Watch from "./pages/Watch";
 
 function App() {
   return (
@@ -26,11 +27,13 @@ function App() {
         <Route path="/ova" element={<List anime="ova" />} />
         <Route path="/ona" element={<List anime="ona" />} />
         <Route path="/special" element={<List anime="special" />} />
+        <Route path="/watch/:episodeId" element={<Watch />} />
         <Route path="/genre/:name" element={<Genre/>}/>
         <Route path="/producer/:name" element={<Producer/>}/>
         <Route path="/az-list/:letter" element={<AZ/>} />
         <Route path="/search" element={<Search/>}/>
         <Route path="/:id" element={<Anime />} />
+        
         <Route path="/profile" element={<Profile />} />
         <Route path="/continue-watching" element={<ContinueWatching />} />
       </Routes>

@@ -258,8 +258,8 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying }) => {
                                     Home
                                 </Link>
                                 <span className="text-border">/</span>
-                                <Link to="/tv" className="hover:text-primary transition-colors">
-                                    TV
+                                <Link to={`/${info.stats.type === "TV" ? "tv" : "movie"}`} className="hover:text-primary transition-colors">
+                                    {info.stats.type === "TV" ? "Tv" : "Movie"}
                                 </Link>
                                 <span className="text-border">/</span>
                                 <span className="text-foreground font-medium truncate max-w-50 sm:max-w-md">

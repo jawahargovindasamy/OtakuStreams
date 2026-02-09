@@ -69,6 +69,7 @@ const MediaCardPopover = ({
     isPlaying,
     sideOffset = -20
 }) => {
+        
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
@@ -94,7 +95,7 @@ const MediaCardPopover = ({
                 ) : (
                     <div className="space-y-3">
                         <h3 className="font-bold leading-tight text-base sm:text-lg text-foreground line-clamp-2">
-                            {item?.info.name}
+                            {item?.anime.info.name}
                         </h3>
 
                         {/* Meta Info Row */}
@@ -102,62 +103,62 @@ const MediaCardPopover = ({
                             <div className="flex items-center gap-1 mr-1.5">
                                 <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
                                 <span className="font-medium text-foreground">
-                                    {item?.moreInfo.malscore === "?" ? "N/A" : item?.moreInfo.malscore}
+                                    {item?.anime.moreInfo.malscore === "?" ? "N/A" : item?.anime.moreInfo.malscore}
                                 </span>
                             </div>
 
-                            {item?.info.stats.quality && (
+                            {item?.anime.info.stats.quality && (
                                 <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/20">
-                                    {item?.info.stats.quality}
+                                    {item?.anime.info.stats.quality}
                                 </span>
                             )}
 
-                            {item?.info.stats.episodes?.sub > 0 && (
+                            {item?.anime.info.stats.episodes?.sub > 0 && (
                                 <span className="flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
                                     <ClosedCaption className="h-3 w-3" />
-                                    {item?.info.stats.episodes.sub}
+                                    {item?.anime.info.stats.episodes.sub}
                                 </span>
                             )}
 
-                            {item?.info.stats.episodes?.dub > 0 && (
+                            {item?.anime.info.stats.episodes?.dub > 0 && (
                                 <span className="flex items-center gap-0.5 rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
                                     <Mic className="h-3 w-3" />
-                                    {item?.info.stats.episodes.dub}
+                                    {item?.anime.info.stats.episodes.dub}
                                 </span>
                             )}
 
                             <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-secondary-foreground">
-                                {item?.info.stats.type}
+                                {item?.anime.info.stats.type}
                             </span>
                         </div>
 
                         <p className="line-clamp-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                            {item?.info.description}
+                            {item?.anime.info.description}
                         </p>
 
                         {/* Anime Details */}
                         <div className="space-y-1 text-xs text-muted-foreground/90">
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Japanese:</span>
-                                <span className="line-clamp-1">{item?.moreInfo.japanese}</span>
+                                <span className="line-clamp-1">{item?.anime.moreInfo.japanese}</span>
                             </p>
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Synonyms:</span>
-                                <span className="line-clamp-1">{item?.moreInfo.synonyms}</span>
+                                <span className="line-clamp-1">{item?.anime.moreInfo.synonyms}</span>
                             </p>
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Aired:</span>
-                                <span>{item?.moreInfo.aired}</span>
+                                <span>{item?.anime.moreInfo.aired}</span>
                             </p>
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Status:</span>
-                                <span className={item?.moreInfo.status === "Completed" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"}>
-                                    {item?.moreInfo.status}
+                                <span className={item?.anime.moreInfo.status === "Completed" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"}>
+                                    {item?.anime.moreInfo.status}
                                 </span>
                             </p>
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Genres:</span>
-                                <span className="line-clamp-1">{item?.moreInfo.genres?.join(", ")}</span>
+                                <span className="line-clamp-1">{item?.anime.moreInfo.genres?.join(", ")}</span>
                             </p>
                         </div>
 
@@ -167,7 +168,7 @@ const MediaCardPopover = ({
                                 disabled={isPlaying}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePlay(item?.info.id);
+                                    handlePlay(item?.anime.info.id);
                                 }}
                                 className="flex-1 items-center justify-center gap-2 rounded-full 
                                            bg-primary hover:bg-primary/90 text-primary-foreground 
