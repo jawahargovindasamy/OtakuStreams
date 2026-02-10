@@ -2,7 +2,7 @@ import AnimeDetails from '@/components/AnimeDetails';
 import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
 import React, { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import CharactersSection from '@/components/CharactersSection';
@@ -22,13 +22,22 @@ const Anime = () => {
     const [showAllRelated, setShowAllRelated] = useState(false);
     const [showAllPopular, setShowAllPopular] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const preload = location.state?.animeInfo;
+    
 
     useEffect(() => {
         let mounted = true;
         const getAnimeInfo = async () => {
+            if (preload) {
+                setItem(preload);
+                setLoading(false);
+                return;
+            }
             setLoading(true);
             try {
-                const data = await fetchanimeinfo(id, "a");
+                const data = await fetchanimeinfo(id);
                 if (mounted) {
                     setItem(data);
                 }
@@ -42,7 +51,7 @@ const Anime = () => {
         return () => {
             mounted = false;
         };
-    }, [id, fetchanimeinfo])
+    }, [id, fetchanimeinfo, preload]);
 
     const handlePlay = useCallback(
         async (id) => {
@@ -54,7 +63,7 @@ const Anime = () => {
                         state: {
                             animeId: id,
                             episodeList: data.data,
-                            animeInfo : item
+                            animeInfo: item
                         }
                     });
                 }
@@ -63,7 +72,7 @@ const Anime = () => {
                 setIsPlaying(false);
             }
         },
-        [fetchepisodeinfo, navigate,item]
+        [fetchepisodeinfo, navigate, item]
     );
 
     // Loading skeleton

@@ -47,7 +47,9 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     );
 
     const handleNavigate = () => {
-        navigate(`/${id}`);
+        navigate(`/${id}`, {
+            state: { animeInfo: item }
+        });
     };
 
     const handleMouseEnter = () => {
@@ -92,7 +94,7 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     }
 
     // console.log(item);
-    
+
 
     return (
         <MediaCardPopover
