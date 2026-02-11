@@ -166,6 +166,18 @@ export function DataProvider({ children }) {
     }
   };
 
+  const fetchnextepisodeschedule = async (id) => {
+    try {
+      const res = await fetchWithRetry(() =>
+        api.get(`/anime/${id}/next-episode-schedule`)
+      );
+      return res.data.data ?? null;
+    } catch (error) {
+      console.error("Episode fetch failed:", error);
+      return null;
+    }
+  }
+
   const fetchcategories = async (category, page = 1) => {
     try {
       const res = await fetchWithRetry(() =>
@@ -236,6 +248,7 @@ export function DataProvider({ children }) {
         fetchsearchsuggestions,
         fetchepisodeinfo,
         fetchestimatedschedules,
+        fetchnextepisodeschedule,
         fetchcategories,
         fetchgenres,
         fetchproducers,

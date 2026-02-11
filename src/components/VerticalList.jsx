@@ -240,6 +240,7 @@ const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium 
                      text-primary hover:text-primary/80 transition-colors mt-4 
                      group/link px-1 py-2 rounded-lg hover:bg-primary/5"
+          
         >
           View All 
           <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform 

@@ -2,7 +2,7 @@ import AnimeDetails from '@/components/AnimeDetails';
 import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
 import React, { useCallback, useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import CharactersSection from '@/components/CharactersSection';
@@ -14,10 +14,11 @@ import Footer from '@/components/Footer';
 
 const Anime = () => {
     const { id } = useParams();
-    const { fetchanimeinfo, fetchepisodeinfo } = useData();
+    const { fetchanimeinfo, fetchepisodeinfo, fetchnextepisodeschedule } = useData();
 
     const [loading, setLoading] = useState(true);
     const [item, setItem] = useState(null);
+    const [nextEpisode, setNextEpisode] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [showAllRelated, setShowAllRelated] = useState(false);
     const [showAllPopular, setShowAllPopular] = useState(false);
@@ -25,7 +26,23 @@ const Anime = () => {
     const location = useLocation();
 
     const preload = location.state?.animeInfo;
-    
+
+    let formatted = 0;
+
+    if (nextEpisode?.airingTimestamp) {
+        formatted = new Date(nextEpisode.airingTimestamp).toLocaleString("en-US", {
+            timeZone: "Asia/Kolkata",
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+        });
+    }
+
+
 
     useEffect(() => {
         let mounted = true;
@@ -75,6 +92,21 @@ const Anime = () => {
         [fetchepisodeinfo, navigate, item]
     );
 
+    useEffect(() => {
+        const handlefetchnextepisodeschedule = async () => {
+            try {
+                const data = await fetchnextepisodeschedule(id);
+                if (data) {
+                    setNextEpisode(data);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        handlefetchnextepisodeschedule();
+    }, [id]);
+
+
     // Loading skeleton
     if (loading) {
         return (
@@ -110,6 +142,7 @@ const Anime = () => {
                     anime={item?.anime}
                     handlePlay={handlePlay}
                     isPlaying={isPlaying}
+                    nextEpisodeTime={formatted}
                 />
 
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">

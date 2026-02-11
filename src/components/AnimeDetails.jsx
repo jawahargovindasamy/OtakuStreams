@@ -1,4 +1,4 @@
-import { ClosedCaption, Mic, Play, Plus, Check, Share2, Calendar, Clock, Star, Building2, Globe, Clapperboard, Loader2, Users, AppWindow, TrendingUp } from 'lucide-react';
+import { ClosedCaption, Mic, Play, Plus, Check, Share2, Calendar, Clock, Star, Building2, Clapperboard, Loader2, Users, AppWindow, TrendingUp } from 'lucide-react';
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -111,7 +111,7 @@ function StatBadge({ icon: Icon, value, label, colorKey = "emerald" }) {
     );
 }
 
-const AnimeDetails = ({ anime, handlePlay, isPlaying }) => {
+const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
     const [playlist1, setPlaylist1] = useState(null);
     const [showmore, setShowmore] = useState(false);
 
@@ -248,6 +248,15 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying }) => {
                                     </PopoverContent>
                                 </Popover>
                             </div>
+                            <div className='flex justify-center'>
+                                {nextEpisodeTime !== 0 && (
+                                    <Badge variant="secondary" className="mt-4 gap-1.5 px-3 py-1">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        Estimated next episode at {nextEpisodeTime}
+                                    </Badge>
+                                )}
+                            </div>
+
                         </div>
 
                         {/* CENTER – Main content */}

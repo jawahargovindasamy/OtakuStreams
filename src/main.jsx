@@ -6,6 +6,7 @@ import { ThemeProvider } from "./context/theme-provider.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { DataProvider } from "./context/data-provider";
 import { AuthProvider } from "./context/auth-provider";
+import ScrollToTop from "./components/ScrollToTop";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
@@ -13,6 +14,7 @@ createRoot(document.getElementById("root")).render(
     <AuthProvider>
       <DataProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <App />
         </BrowserRouter>
       </DataProvider>

@@ -19,9 +19,10 @@ const Watch = () => {
     const episodeList = location.state?.episodeList;
     const animeInfo = location.state?.animeInfo;
 
-    const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver } = useData();
+    const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver,fetchnextepisodeschedule } = useData();
 
     const [item, setItem] = useState(animeInfo ?? null);
+    const [nextEpisode, setNextEpisode] = useState(null);
     const [episode, setEpisode] = useState(episodeList ?? null);
     const [episodeserver, setEpisodeserver] = useState(null);
     const [loading, setLoading] = useState(!animeInfo);
@@ -39,6 +40,35 @@ const Watch = () => {
 
     const selected = activeDub || activeSub
     const type = activeDub ? "dub" : "sub"
+
+    let formatted = 0;
+
+    if (nextEpisode?.airingTimestamp) {
+        formatted = new Date(nextEpisode.airingTimestamp).toLocaleString("en-US", {
+            timeZone: "Asia/Kolkata",
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+        });
+    }
+
+    useEffect(() => {
+            const handlefetchnextepisodeschedule = async () => {
+                try {
+                    const data = await fetchnextepisodeschedule(episodeId);
+                    if (data) {
+                        setNextEpisode(data);
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            handlefetchnextepisodeschedule();
+        }, [episodeId]);
 
     useEffect(() => {
         if (!episodeserver) return;
@@ -188,6 +218,7 @@ const Watch = () => {
                                 setActiveDub={setActiveDub}
                                 activeRaw={activeRaw}
                                 setActiveRaw={setActiveRaw}
+                                nextEpisodeTime={formatted}
                             />
                         </div>
 
