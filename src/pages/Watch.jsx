@@ -37,8 +37,6 @@ const Watch = () => {
     const [activeRaw, setActiveRaw] = useState(null);
     const [showAllRelated, setShowAllRelated] = useState(false);
     const [showAllPopular, setShowAllPopular] = useState(false);
-
-    const selected = activeDub || activeSub
     const type = activeDub ? "dub" : "sub"
 
     let formatted = 0;

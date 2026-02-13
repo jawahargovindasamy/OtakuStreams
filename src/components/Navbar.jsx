@@ -19,7 +19,7 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
-  SheetTitle, 
+  SheetTitle,
   SheetDescription
 } from "@/components/ui/sheet";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -42,7 +42,7 @@ import Sidebar from "./Sidebar";
 /* ================= Navbar ================= */
 const Navbar = () => {
   const { theme } = useTheme();
-  const { language, setLanguage } = useAuth();
+  const { language, setLanguage, user } = useAuth();
   const { fetchsearchsuggestions } = useData();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +111,7 @@ const Navbar = () => {
                   <SheetTitle>Sidebar navigation</SheetTitle>
                   <SheetDescription>Main application navigation</SheetDescription>
                 </VisuallyHidden>
-                <Sidebar onClose={() => setSidebarOpen(false)}/>
+                <Sidebar onClose={() => setSidebarOpen(false)} />
               </SheetContent>
             </Sheet>
 
@@ -162,9 +162,9 @@ const Navbar = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
                       >
                         <Shuffle className="h-5 w-5" />
@@ -187,14 +187,14 @@ const Navbar = () => {
                         onValueChange={(value) => value && setLanguage(value)}
                         className="flex border border-input rounded-lg bg-muted/50 p-0.5"
                       >
-                        <ToggleGroupItem 
-                          value="EN" 
+                        <ToggleGroupItem
+                          value="EN"
                           className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md"
                         >
                           EN
                         </ToggleGroupItem>
-                        <ToggleGroupItem 
-                          value="JP" 
+                        <ToggleGroupItem
+                          value="JP"
                           className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md"
                         >
                           JP
@@ -212,9 +212,9 @@ const Navbar = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="rounded-full hover:bg-accent hover:text-accent-foreground transition-colors duration-200 relative"
                       >
                         <Bell className="h-5 w-5" strokeWidth={2} />
@@ -233,9 +233,15 @@ const Navbar = () => {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <AvatarDropdown />
-                </NavigationMenuLink>
+                {user ? (
+                  <NavigationMenuLink asChild>
+                    <AvatarDropdown />
+                  </NavigationMenuLink>
+                ) : (
+                  <Link to="/login">
+                    <Button size="sm">Login</Button>
+                  </Link>
+                )}
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -250,16 +256,22 @@ const Navbar = () => {
             >
               <Search className="h-5 w-5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200 relative"
             >
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
             </Button>
             <div className="hover:scale-105 transition-transform duration-200">
-              <AvatarDropdown />
+              {user ? (
+                <AvatarDropdown />
+              ) : (
+                <Link to="/login">
+                  <Button size="sm">Login</Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

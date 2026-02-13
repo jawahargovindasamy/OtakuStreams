@@ -10,16 +10,17 @@ import ScrollToTop from "./components/ScrollToTop";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
-  <ThemeProvider>
-    <AuthProvider>
-      <DataProvider>
-        <BrowserRouter>
+  <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <DataProvider>
           <ScrollToTop />
           <App />
-        </BrowserRouter>
-      </DataProvider>
-    </AuthProvider>
-  </ThemeProvider>,
+        </DataProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  </BrowserRouter>
+
 
   // </StrictMode>,
 );

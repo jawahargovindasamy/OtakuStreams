@@ -12,12 +12,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/context/auth-provider";
 
 const AvatarDropdown = () => {
-  const {user} = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform hover:scale-105 active:scale-95 duration-200">
+        <button className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform hover:scale-105 active:scale-95 duration-200">
           <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-border hover:ring-primary/50 transition-all duration-200">
             <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
@@ -27,8 +27,8 @@ const AvatarDropdown = () => {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent 
-        align="end" 
+      <DropdownMenuContent
+        align="end"
         className="w-64 sm:w-72 bg-popover border-border text-popover-foreground shadow-xl"
         sideOffset={8}
       >
@@ -88,14 +88,14 @@ const AvatarDropdown = () => {
         {/* Logout */}
         <DropdownMenuItem
           className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/30 transition-colors duration-150 p-2.5 mx-1 rounded-lg"
-          onClick={() => console.log("Logout")}
+          onClick={logout}
         >
-          <Link to="/logout" className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-3 w-full">
             <div className="p-1.5 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
               <LogOut className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium">Logout</span>
-          </Link>
+          </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

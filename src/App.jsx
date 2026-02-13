@@ -13,12 +13,18 @@ import Producer from "./pages/Producer";
 import Watch from "./pages/Watch";
 import Watchlist from "./pages/Watchlist";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/home" element={<Home />} />
         <Route path="/subbed-anime" element={<List anime="subbed-anime" />} />
         <Route path="/dubbed-anime" element={<List anime="dubbed-anime" />} />
