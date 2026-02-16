@@ -14,14 +14,18 @@ import HomeSidebar from "@/components/HomeSidebar";
 import HomeSkeleton from "@/components/HomeSkeleton";
 
 import { useData } from "@/context/data-provider";
+import { useAuth } from "@/context/auth-provider";
+import ContinueWatchingCard from "@/components/ContinueWatchingCard";
 
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
   const { homedata } = useData();
-  
+  const { continueWatching } = useAuth();
+
   const [showAll, setShowAll] = useState(false);
   const [scheduledAnimes, setScheduledAnimes] = useState([]);
   const [top10Animes, setTop10Animes] = useState("today");
+
 
   /* -------------------- DATA -------------------- */
   const data = homedata?.data;
@@ -44,12 +48,12 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
-      
+
       <main className="flex-1 w-full">
         <Hero />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10 lg:space-y-12">
-          
+
           {/* Trending Section */}
           <section className="space-y-4 sm:space-y-5 w-full">
             <SectionHeader title="Trending" link="/trending" />
@@ -60,40 +64,58 @@ const Home = () => {
 
           {/* Grid Sections - Top Lists */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 w-full">
-            <VerticalList 
-              anime={data.topAiringAnimes} 
-              title="Top Airing" 
-              link="/top-airing" 
+            <VerticalList
+              anime={data.topAiringAnimes}
+              title="Top Airing"
+              link="/top-airing"
             />
-            <VerticalList 
-              anime={data.mostPopularAnimes} 
-              title="Most Popular" 
-              link="/most-popular" 
+            <VerticalList
+              anime={data.mostPopularAnimes}
+              title="Most Popular"
+              link="/most-popular"
             />
-            <VerticalList 
-              anime={data.mostFavoriteAnimes} 
-              title="Most Favorite" 
-              link="/most-favorite" 
+            <VerticalList
+              anime={data.mostFavoriteAnimes}
+              title="Most Favorite"
+              link="/most-favorite"
             />
-            <VerticalList 
-              anime={data.latestCompletedAnimes} 
-              title="Completed" 
-              link="/completed" 
+            <VerticalList
+              anime={data.latestCompletedAnimes}
+              title="Completed"
+              link="/completed"
             />
           </section>
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 lg:gap-10 w-full">
-            
+
             {/* Main Column */}
             <div className="space-y-8 sm:space-y-10 min-w-0">
-              
+
+              {continueWatching.length > 0 && (
+                <section className="space-y-4 sm:space-y-5 w-full">
+                  <SectionHeader
+                    title="Continue Watching"
+                    icon
+                    link="/continue-watching"
+                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
+                    {continueWatching.map((item) => (
+                      <ContinueWatchingCard
+                        key={item._id}
+                        item={item}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Latest Episodes */}
               <section className="space-y-4 sm:space-y-5 w-full">
-                <SectionHeader 
-                  title="Latest Episodes" 
-                  icon 
-                  link="/recently-updated" 
+                <SectionHeader
+                  title="Latest Episodes"
+                  icon
+                  link="/recently-updated"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                   {data.latestEpisodeAnimes.map((a) => (
@@ -111,10 +133,10 @@ const Home = () => {
 
               {/* Top Upcoming */}
               <section className="space-y-4 sm:space-y-5 w-full">
-                <SectionHeader 
-                  title="Top Upcoming" 
-                  icon 
-                  link="/top-upcoming" 
+                <SectionHeader
+                  title="Top Upcoming"
+                  icon
+                  link="/top-upcoming"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                   {data.topUpcomingAnimes.map((a) => (

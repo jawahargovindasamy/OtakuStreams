@@ -7,7 +7,7 @@ import MediaCardPopover from "./MediaCardPopover";
 
 const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     const { fetchanimeinfo, fetchepisodeinfo } = useData();
-    const { language } = useAuth();
+    const { language, continueWatching } = useAuth();
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -66,19 +66,26 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             setIsPlaying(true);
             try {
                 const data = await fetchepisodeinfo(id);
-                navigate(`/watch/${data.data.episodes[0].episodeId}`, {
-                    state: {
-                        animeId: id,
-                        episodeList: data.data.episodes,
-                        animeInfo: item
-                    }
-                });
+                if (data?.data?.episodes?.length > 0) {
+
+                    const progress = continueWatching.find((item) => item.animeId === id);
+
+                    const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+
+                    navigate(episodeToPlay, {
+                        state: {
+                            animeId: id,
+                            episodeList: data.data,
+                            animeInfo: item
+                        }
+                    });
+                }
             } catch (err) {
                 console.error(err);
                 setIsPlaying(false);
             }
         },
-        [fetchepisodeinfo, navigate, item]
+        [continueWatching, fetchepisodeinfo, navigate, item]
     );
 
     if (loading) {

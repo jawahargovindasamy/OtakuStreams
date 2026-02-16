@@ -11,9 +11,11 @@ import SeasonsSection from '@/components/SeasonsSection';
 import VerticalList from '@/components/VerticalList';
 import MediaCard from '@/components/MediaCard';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/context/auth-provider';
 
 const Anime = () => {
     const { id } = useParams();
+    const { continueWatching } = useAuth();
     const { fetchanimeinfo, fetchepisodeinfo, fetchnextepisodeschedule } = useData();
 
     const [loading, setLoading] = useState(true);
@@ -41,9 +43,7 @@ const Anime = () => {
             hour12: true,
         });
     }
-
-
-
+    
     useEffect(() => {
         let mounted = true;
         const getAnimeInfo = async () => {
@@ -70,13 +70,20 @@ const Anime = () => {
         };
     }, [id, fetchanimeinfo, preload]);
 
+
     const handlePlay = useCallback(
         async (id) => {
             setIsPlaying(true);
+
             try {
                 const data = await fetchepisodeinfo(id);
                 if (data?.data?.episodes?.length > 0) {
-                    navigate(`/watch/${data.data.episodes[0].episodeId}`, {
+
+                    const progress = continueWatching.find((item) => item.animeId === id);
+
+                    const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+
+                    navigate(episodeToPlay, {
                         state: {
                             animeId: id,
                             episodeList: data.data,
@@ -89,7 +96,7 @@ const Anime = () => {
                 setIsPlaying(false);
             }
         },
-        [fetchepisodeinfo, navigate, item]
+        [fetchepisodeinfo, navigate, item,continueWatching]
     );
 
     useEffect(() => {

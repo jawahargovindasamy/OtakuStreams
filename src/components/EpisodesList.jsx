@@ -15,6 +15,9 @@ const EpisodesList = ({
 
   const isGridMode = totalepisodes > 25;
 
+  // ================= HELPERS =================
+  const getEpId = (episodeId) => episodeId.split("ep=")[1];
+
   // ================= RANGES =================
   const ranges = useMemo(() => {
     const list = [];
@@ -37,21 +40,30 @@ const EpisodesList = ({
   const initialRange = ranges[0];
   const currentRange = selectedRange || initialRange;
 
-  // ================= AUTO RANGE SWITCH ON SEARCH =================
+  // ================= AUTO RANGE SWITCH =================
   useEffect(() => {
-    if (!search || !isGridMode) return;
+    if (!isGridMode || !activeEpisode) return;
 
-    const searchNum = parseInt(search);
+    const activeEp = episodeList.find((ep) => {
+      const epId = getEpId(ep.episodeId);
+      return Number(epId) === Number(activeEpisode);
+    });
 
-    if (isNaN(searchNum)) return;
+    if (!activeEp) return;
 
-    if (searchNum < currentRange.start || searchNum > currentRange.end) {
-      const correct = ranges.find(
-        (r) => searchNum >= r.start && searchNum <= r.end
-      );
-      if (correct) setSelectedRange(correct);
+    const epNum = activeEp.number;
+
+    const correctRange = ranges.find(
+      (r) => epNum >= r.start && epNum <= r.end
+    );
+
+    if (!correctRange) return;
+
+    // prevent unnecessary rerenders
+    if (selectedRange?.label !== correctRange.label) {
+      setSelectedRange(correctRange);
     }
-  }, [search, isGridMode, currentRange, ranges]);
+  }, [activeEpisode, episodeList, isGridMode, ranges]);
 
   // ================= FILTER =================
   const filteredEpisodes = useMemo(() => {
@@ -65,8 +77,6 @@ const EpisodesList = ({
       return matchesSearch && inRange;
     });
   }, [episodeList, search, isGridMode, currentRange]);
-
-  const getEpId = (episodeId) => episodeId.split("ep=")[1];
 
   return (
     <div className="w-full max-w-md rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 space-y-4 h-full shadow-lg shadow-primary/5">
@@ -87,7 +97,7 @@ const EpisodesList = ({
 
       {/* ================= SMALL LIST ================= */}
       {!isGridMode && (
-        <div className="space-y-1 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+        <div className="space-y-1 max-h-150 overflow-y-auto custom-scrollbar pr-1">
           {filteredEpisodes.map((ep) => {
             const epId = getEpId(ep.episodeId);
             const isActive = Number(epId) === Number(activeEpisode);
@@ -99,12 +109,11 @@ const EpisodesList = ({
                 role="button"
                 onClick={() => onEpisodeChange(epId)}
                 className={`group flex items-center justify-between rounded-lg px-3 py-2.5 cursor-pointer transition-all duration-200
-                  ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                      : isFillerEp
-                        ? "hover:bg-yellow-500/10 bg-yellow-500/5 border border-yellow-500/20"
-                        : "hover:bg-accent hover:text-accent-foreground"
+                  ${isActive
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                    : isFillerEp
+                      ? "hover:bg-yellow-500/10 bg-yellow-500/5 border border-yellow-500/20"
+                      : "hover:bg-accent hover:text-accent-foreground"
                   }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -205,27 +214,6 @@ const EpisodesList = ({
           No episodes found
         </div>
       )}
-
-      {/* Custom Scrollbar Styles */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: hsl(var(--muted-foreground) / 0.2);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--muted-foreground) / 0.4);
-        }
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
-        }
-      `}</style>
     </div>
   );
 };

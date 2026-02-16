@@ -51,7 +51,7 @@ const VerticalListSkeleton = ({ count = 5 }) => {
 /* -------------------- List Item -------------------- */
 
 const VerticalListItem = ({ anime }) => {
-  const { language } = useAuth();
+  const { language, continueWatching } = useAuth();
   const { fetchanimeinfo, fetchepisodeinfo } = useData();
   const navigate = useNavigate();
 
@@ -106,13 +106,26 @@ const VerticalListItem = ({ anime }) => {
       setIsPlaying(true);
       try {
         const data = await fetchepisodeinfo(id);
-        navigate(`/watch/${data.data.episodes[0].episodeId}`);
+        if (data?.data?.episodes?.length > 0) {
+
+          const progress = continueWatching.find((item) => item.animeId === id);
+
+          const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+
+          navigate(episodeToPlay, {
+            state: {
+              animeId: id,
+              episodeList: data.data,
+              animeInfo: item
+            }
+          });
+        }
       } catch (err) {
         console.error(err);
         setIsPlaying(false);
       }
     },
-    [fetchepisodeinfo, navigate]
+    [continueWatching, fetchepisodeinfo, navigate, item]
   );
 
   return (
@@ -152,7 +165,7 @@ const VerticalListItem = ({ anime }) => {
             <div className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm 
                             flex items-center justify-center text-foreground">
               <svg className="h-4 w-4 fill-current ml-0.5" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
+                <path d="M8 5v14l11-7z" />
               </svg>
             </div>
           </div>
@@ -220,29 +233,29 @@ const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
                          text-primary hover:text-primary/80 transition-colors 
                          group/link"
             >
-              View All 
+              View All
               <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform 
                                      group-hover/link:translate-x-0.5" />
             </Link>
           )}
         </div>
       )}
-      
+
       <div className="flex flex-col gap-2 sm:gap-3">
         {anime.slice(0, list).map((item) => (
           <VerticalListItem key={item.id} anime={item} />
         ))}
       </div>
-      
+
       {link && !title && (
         <Link
           to={link}
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium 
                      text-primary hover:text-primary/80 transition-colors mt-4 
                      group/link px-1 py-2 rounded-lg hover:bg-primary/5"
-          
+
         >
-          View All 
+          View All
           <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform 
                                  group-hover/link:translate-x-0.5" />
         </Link>

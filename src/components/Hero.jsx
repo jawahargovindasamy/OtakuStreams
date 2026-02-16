@@ -28,6 +28,7 @@ import HeroSkelton from "./HeroSkelton";
 
 const Hero = () => {
   const { homedata, fetchepisodeinfo } = useData();
+  const { continueWatching } = useAuth();
   const { language } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
   const [api, setApi] = useState();
@@ -50,7 +51,19 @@ const Hero = () => {
     setIsPlaying(true);
     try {
       const data = await fetchepisodeinfo(id);
-      navigate(`/watch/${data.data.episodes[0].episodeId}`);
+      if (data?.data?.episodes?.length > 0) {
+
+        const progress = continueWatching.find((item) => item.animeId === id);
+
+        const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+
+        navigate(episodeToPlay, {
+          state: {
+            animeId: id,
+            episodeList: data.data,
+          }
+        });
+      }
     } catch (err) {
       console.error(err);
       setIsPlaying(false);
@@ -67,8 +80,8 @@ const Hero = () => {
   }, [api]);
 
   return (
-    <Carousel 
-      className="relative w-full" 
+    <Carousel
+      className="relative w-full"
       plugins={[autoplay.current]}
       setApi={setApi}
       opts={{
@@ -123,7 +136,7 @@ const Hero = () => {
                     <span className="flex items-center rounded-md bg-secondary/80 px-2 py-1 text-secondary-foreground backdrop-blur-sm ring-1 ring-border/50">
                       <Hd className="h-4 w-4" />
                     </span>
-                    
+
                     {/* Episode Counts */}
                     <div className="flex items-center gap-1.5">
                       {item.episodes?.sub > 0 && (
@@ -165,7 +178,7 @@ const Hero = () => {
                         </>
                       )}
                     </Button>
-                    
+
                     <Button
                       onClick={() => navigate(`/${item.id}`)}
                       className="group inline-flex items-center justify-center gap-2 rounded-full bg-secondary/80 px-5 sm:px-8 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-secondary-foreground backdrop-blur-md ring-1 ring-border/50 transition-all duration-300 hover:bg-secondary hover:ring-border hover:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -180,22 +193,21 @@ const Hero = () => {
           </CarouselItem>
         ))}
       </CarouselContent>
-      
+
       {/* Navigation Buttons - Responsive sizing and positioning */}
       <CarouselPrevious className="left-2 sm:left-4 h-8 w-8 sm:h-12 sm:w-12 rounded-full border-border/50 bg-background/20 text-foreground backdrop-blur-md hover:bg-background/40 hover:border-border transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring" />
       <CarouselNext className="right-2 sm:right-4 h-8 w-8 sm:h-12 sm:w-12 rounded-full border-border/50 bg-background/20 text-foreground backdrop-blur-md hover:bg-background/40 hover:border-border transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring" />
-      
+
       {/* Progress Indicators */}
       <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 sm:gap-2">
         {homedata?.data.spotlightAnimes.map((_, idx) => (
           <button
             key={idx}
             onClick={() => api?.scrollTo(idx)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              idx === current 
-                ? "w-6 sm:w-8 bg-primary" 
+            className={`h-1.5 rounded-full transition-all duration-300 ${idx === current
+                ? "w-6 sm:w-8 bg-primary"
                 : "w-1.5 sm:w-2 bg-foreground/30 hover:bg-foreground/50"
-            }`}
+              }`}
             aria-label={`Go to slide ${idx + 1}`}
           />
         ))}

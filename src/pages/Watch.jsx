@@ -11,6 +11,7 @@ import MediaCard from '@/components/MediaCard';
 import VerticalList from '@/components/VerticalList';
 import { Button } from "@/components/ui/button";
 import Footer from '@/components/Footer';
+import { useAuth } from '@/context/auth-provider';
 
 const Watch = () => {
     const { episodeId } = useParams();
@@ -19,18 +20,24 @@ const Watch = () => {
     const episodeList = location.state?.episodeList;
     const animeInfo = location.state?.animeInfo;
 
-    const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver,fetchnextepisodeschedule } = useData();
+    const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver, fetchnextepisodeschedule } = useData();
+    const { updateProgress } = useAuth();
 
     const [item, setItem] = useState(animeInfo ?? null);
     const [nextEpisode, setNextEpisode] = useState(null);
     const [episode, setEpisode] = useState(episodeList ?? null);
+
+    console.log(episode);
+
     const [episodeserver, setEpisodeserver] = useState(null);
     const [loading, setLoading] = useState(!animeInfo);
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const epFromUrl = Number(searchParams.get("ep"));
+    const epFromUrl = searchParams.get("ep");
 
-    const epId = `${episodeId}?ep=${epFromUrl}`;
+    const currentEpisodeData = episode?.episodes?.find(
+        (ep) => ep.episodeId === `${episodeId}?ep=${epFromUrl}`
+    );
 
     const [activeSub, setActiveSub] = useState(null);
     const [activeDub, setActiveDub] = useState(null);
@@ -55,18 +62,18 @@ const Watch = () => {
     }
 
     useEffect(() => {
-            const handlefetchnextepisodeschedule = async () => {
-                try {
-                    const data = await fetchnextepisodeschedule(episodeId);
-                    if (data) {
-                        setNextEpisode(data);
-                    }
-                } catch (err) {
-                    console.error(err);
+        const handlefetchnextepisodeschedule = async () => {
+            try {
+                const data = await fetchnextepisodeschedule(episodeId);
+                if (data) {
+                    setNextEpisode(data);
                 }
+            } catch (err) {
+                console.error(err);
             }
-            handlefetchnextepisodeschedule();
-        }, [episodeId]);
+        }
+        handlefetchnextepisodeschedule();
+    }, [episodeId]);
 
     useEffect(() => {
         if (!episodeserver) return;
@@ -159,6 +166,27 @@ const Watch = () => {
         };
     }, [episodeId, epFromUrl, fetchepisodeserver]);
 
+    useEffect(() => {
+        if (!item || !epFromUrl || !currentEpisodeData) return;
+
+        updateProgress({
+            animeId: episodeId,
+            episodeId: `ep=${epFromUrl}`,
+            animeTitle: item?.anime?.info?.name,
+            animeImage: item?.anime?.info?.poster,
+
+            currentEpisode: currentEpisodeData.number,
+            currentTime: 0,
+            duration: 0,
+
+            episodeTitle:
+                currentEpisodeData.title ||
+                `Episode ${currentEpisodeData.number}`,
+        });
+
+    }, [episodeId, epFromUrl, item, currentEpisodeData, updateProgress]);
+
+
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
@@ -249,7 +277,7 @@ const Watch = () => {
                             <section className="space-y-3 sm:space-y-4">
                                 <SectionHeader title="Related Anime" icon={Users} />
                                 <div className="bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                    <div className="max-h-125 overflow-y-auto custom-scrollbar p-3 sm:p-4">
                                         <VerticalList
                                             anime={item?.relatedAnimes}
                                             list={showAllRelated ? relatedCount : 5}
@@ -283,7 +311,7 @@ const Watch = () => {
                             <section className="space-y-3 sm:space-y-4">
                                 <SectionHeader title="Most Popular" icon={Flame} />
                                 <div className="bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                    <div className="max-h-125 overflow-y-auto custom-scrollbar p-3 sm:p-4">
                                         <VerticalList
                                             anime={item?.mostPopularAnimes}
                                             list={showAllPopular ? popularCount : 5}

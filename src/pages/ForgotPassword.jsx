@@ -113,7 +113,7 @@ const ForgotPassword = () => {
     return (
         <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#0a0a0f] p-4">
             {/* Animated Background Grid */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]" />
 
             {/* Radial Gradient Overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-20%,#7c3aed30,transparent)]" />
@@ -130,8 +130,8 @@ const ForgotPassword = () => {
 
             {/* Decorative Lines */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-purple-500/20 to-transparent" />
-                <div className="absolute top-0 right-1/4 w-px h-full bg-gradient-to-b from-transparent via-pink-500/20 to-transparent" />
+                <div className="absolute top-0 left-1/4 w-px h-full bg-linear-to-b from-transparent via-purple-500/20 to-transparent" />
+                <div className="absolute top-0 right-1/4 w-px h-full bg-linear-to-b from-transparent via-pink-500/20 to-transparent" />
             </div>
 
             {/* Back Button */}
@@ -147,16 +147,16 @@ const ForgotPassword = () => {
             <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent tracking-tight">
+                    <h1 className="text-4xl font-bold bg-linear-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent tracking-tight">
                         OtakuStreams
                     </h1>
                 </div>
 
                 <Card className="w-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+                    <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-purple-500/50 to-transparent" />
 
                     <CardHeader className="text-center space-y-4 pb-6">
-                        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center border border-purple-500/20">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center border border-purple-500/20">
                             {isSuccess ? (
                                 <CheckCircle2 className="h-8 w-8 text-green-400" />
                             ) : (
@@ -225,7 +225,7 @@ const ForgotPassword = () => {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-full h-11 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {loading ? (
                                         <>

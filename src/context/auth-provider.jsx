@@ -6,16 +6,15 @@ import {
   useState,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [language, setLanguage] = useState("EN");
+  const [continueWatching, setContinueWatching] = useState([]);
 
   /* =============================
      Helpers
@@ -26,29 +25,10 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
 
     setUser(null);
+    setContinueWatching([]);
 
 
   }, []);
-
-  const login = useCallback((data) => {
-    localStorage.setItem("token", data.token);
-
-    const mappedUser = {
-      _id: data._id,
-      name: data.username,
-      email: data.email,
-      avatar: data.avatar,
-      role: data.role,
-      createdAt: data.createdAt,
-    };
-
-    localStorage.setItem("user", JSON.stringify(mappedUser));
-    setUser(mappedUser);
-  }, []);
-
-  /* =============================
-     Axios Instance
-  ============================= */
 
   const api = useMemo(() => {
     const instance = axios.create({
@@ -79,46 +59,130 @@ export function AuthProvider({ children }) {
     return instance;
   }, [logout]);
 
-  /* =============================
-     Restore session on refresh
-  ============================= */
+  const fetchContinueWatching = useCallback(async () => {
+    try {
+      const res = await api.get("/continue-watching");
 
+      setContinueWatching(res.data.data || []);
+
+    } catch (error) {
+      console.error("Failed to fetch continue watching:", error);
+      setContinueWatching([]);
+    }
+  }, [api]);
+
+
+
+  const login = useCallback(async (data) => {
+    localStorage.setItem("token", data.token);
+
+    const mappedUser = {
+      _id: data._id,
+      name: data.username,
+      email: data.email,
+      avatar: data.avatar,
+      role: data.role,
+      createdAt: data.createdAt,
+    };
+
+    localStorage.setItem("user", JSON.stringify(mappedUser));
+    setUser(mappedUser);
+
+    await fetchContinueWatching();
+  }, []);
+  
+  const updateProgress = useCallback(
+    async (progressData) => {
+      try {
+        const res = await api.post("/continue-watching", progressData);
+        const updated = res.data.data;
+
+        setContinueWatching((prev) => {
+          const index = prev.findIndex(
+            (i) =>
+              i.animeId === updated.animeId
+          );
+
+          if (index !== -1) {
+            const copy = [...prev];
+            copy[index] = updated;
+
+            const [item] = copy.splice(index, 1);
+            return [item, ...copy];
+          }
+
+          return [updated, ...prev];
+        });
+
+      } catch (error) {
+        console.error("Failed to update progress:", error);
+      }
+    },
+    [api]
+  );
+
+
+
+
+  /* ============================= 
+   Restore session on refresh 
+============================= */
   useEffect(() => {
     const restoreUser = async () => {
+      // Check localStorage first
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+        await fetchContinueWatching();
+        return;
+      }
+
+      // If not in localStorage, fetch from API
       const token = localStorage.getItem("token");
       if (!token) return;
 
       try {
         const res = await api.get("/auth/me");
-
         const data = res.data.data;
 
-        setUser({
+        const mappedUser = {
           _id: data._id,
           name: data.username,
           email: data.email,
           avatar: data.avatar,
           role: data.role,
           createdAt: data.createdAt,
-        });
-      } catch (err) {
+        };
+
+        setUser(mappedUser);
+        localStorage.setItem("user", JSON.stringify(mappedUser));
+
+        await fetchContinueWatching();
+      } catch {
         // token invalid / expired
         logout();
       }
     };
 
     restoreUser();
-  }, [api]);
+  }, [api, fetchContinueWatching, logout]);
+
+
+
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        api,
         language,
         setLanguage,
-        api,
         login,
         logout,
+        continueWatching,
+        setContinueWatching,
+        fetchContinueWatching,
+        updateProgress
       }}
     >
       {children}
