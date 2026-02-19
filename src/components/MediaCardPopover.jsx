@@ -64,12 +64,15 @@ const MediaCardPopover = ({
     handlePlay,
     playlist,
     playlist1,
-    setPlaylist1,
-    children,
+    handlePlaylistChange,
     isPlaying,
-    sideOffset = -20
+    isUpdating,
+    sideOffset = -20,
+    children
 }) => {
-        
+
+    const [playlistOpen, setPlaylistOpen] = React.useState(false);
+
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
@@ -88,7 +91,6 @@ const MediaCardPopover = ({
                            animate-in fade-in-0 zoom-in-95 duration-200"
                 onMouseEnter={() => clearTimeout(timerRef.current)}
                 onMouseLeave={handleMouseLeave}
-                onPointerDownOutside={(e) => e.preventDefault()}
             >
                 {!item ? (
                     <MediaCardPopoverSkeleton />
@@ -189,19 +191,23 @@ const MediaCardPopover = ({
                                 )}
                             </Button>
 
-                            <Popover modal={false}>
+                            <Popover modal={false} open={playlistOpen} onOpenChange={setPlaylistOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
                                         size="icon"
+                                        disabled={isUpdating}
                                         className="rounded-full h-9 w-9 border-border hover:bg-accent hover:text-accent-foreground transition-colors"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        {playlist1 === null ? (
+                                        {isUpdating ? (
+                                            <Spinner className="h-4 w-4" />
+                                        ) : playlist1 === null ? (
                                             <Plus className="h-4 w-4" />
                                         ) : (
                                             <Check className="h-4 w-4 text-emerald-500" />
                                         )}
+
                                     </Button>
                                 </PopoverTrigger>
 
@@ -213,18 +219,23 @@ const MediaCardPopover = ({
                                     <div className="space-y-0.5">
                                         {playlist.map((i) => (
                                             <Button
-                                                key={i}
+                                                key={i.key}
                                                 variant="ghost"
                                                 size="sm"
+                                                disabled={isUpdating}
                                                 className={`w-full justify-between text-xs font-medium transition-colors
-                                                    ${playlist1 === i
+                                                    ${playlist1 === i.key
                                                         ? "bg-primary/10 text-primary hover:bg-primary/20"
                                                         : "hover:bg-accent"
                                                     }`}
-                                                onClick={() => setPlaylist1(i)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePlaylistChange(i);
+                                                    setPlaylistOpen(false);
+                                                }}
                                             >
-                                                {i}
-                                                {playlist1 === i && <Check className="h-3.5 w-3.5" />}
+                                                {i.label}
+                                                {playlist1 === i.key && <Check className="h-3.5 w-3.5" />}
                                             </Button>
                                         ))}
                                     </div>

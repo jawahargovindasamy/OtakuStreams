@@ -1,210 +1,206 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { Check, User, X } from "lucide-react";
+"use client"
+import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
+import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { useAuth } from "@/context/auth-provider"
 
 const avatarCategories = {
-  DragonBall: import.meta.glob("/src/assets/dragonball/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  OnePiece: import.meta.glob("/src/assets/One Piece/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  AttackOnTitan: import.meta.glob("/src/assets/AOT/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  Naruto: import.meta.glob("/src/assets/N/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  HunterxHunter: import.meta.glob("/src/assets/HxH/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  JJK: import.meta.glob("/src/assets/JJK/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-  OnePunchMan: import.meta.glob("/src/assets/OPM/*.{png,jpg,jpeg,webp}", {
-    eager: true,
-    import: "default",
-  }),
-};
+  Attack_on_Titan: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305975/AOT_8_rosy3h.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305974/AOT_7_fi7vm2.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305972/AOT_6_e0mv9u.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305971/AOT_5_hiilfv.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305966/AOT_4_xpdk1j.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305964/AOT_3_yzbt3z.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305963/AOT_2_ckl2ob.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305962/AOT_1_mdihwv.jpg",
+  ],
+  Black_Clover: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771306008/black_clover_9_v8bz3c.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771306006/black_clover_8_uzmsgl.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771306004/black_clover_7_osasw9.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771306003/black_clover_6_umw01k.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771306001/black_clover_5_jgyjr2.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305999/black_clover_4_bufkt4.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305998/black_clover_3_q80tt1.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305996/black_clover_2_ukhyl7.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305995/black_clover_1_qeixwd.jpg",
+  ],
+  Hunter_X_Hunter: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305941/HxH_9_lrpfsv.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305939/HxH_8_xbzwqe.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305938/HxH_7_mio00j.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305938/HxH_6_gtcbdk.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305933/HxH_5_getle5.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305932/HxH_4_fgmafa.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305930/HxH_3_icg41j.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305929/HxH_2_l02jqp.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305928/HxH_1_nbgqqv.jpg",
+  ],
+  JJK: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305912/jjk_13_q1gumf.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305912/jjk_12_memp13.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305910/jjk_11_ubttqq.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305909/jjk_10_issnfc.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305907/jjk_9_dwyhne.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305906/jjk_8_dwpdq6.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305905/jjk_7_k8u64m.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305901/jjk_6_njmnut.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305900/jjk_5_dcljbd.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305899/jjk_4_svgcom.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305898/jjk_3_ijtgpz.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305896/jjk_2_a2x9fy.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305896/jjk_1_b6edkk.jpg",
+  ],
+  Naruto: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305872/naruto_14_esvija.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305871/naruto_13_ewxrqk.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305871/naruto_12_v3821m.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305867/naruto_11_qrz21i.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305866/naruto_10_qxf3d8.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305865/naruto_9_kaisse.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305863/naruto_8_aucmm9.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305862/naruto_7_ofhb08.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305862/naruto_6_d5jobr.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305860/naruto_5_w6js8s.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305859/naruto_4_woyide.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305858/naruto_3_u29nrx.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305858/naruto_2_qvjqda.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305857/naruto_1_lkdowq.jpg",
+  ],
+  One_Piece: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305833/one_piece_11_itfgms.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305833/one_piece_10_x96js9.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305832/one_piece_9_v2su4x.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305828/one_piece_8_gll46r.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305827/one_piece_7_cbnz6f.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305827/one_piece_6_qppmi2.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305826/one_piece_5_j9b0p3.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305825/one_piece_4_thztao.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305824/one_piece_3_hexrnq.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305823/one_piece_2_eoopdo.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305822/One_piece_1_h3pqrm.jpg",
+  ],
+  One_Punch_man: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305782/One_punch_man_7_sdhrie.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305781/One_punch_man_6_tkopxv.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305780/One_punch_man_5_puhlw7.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305779/One_punch_man_4_tg9lwb.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305779/One_punch_man_3_iakqih.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305778/One_punch_man_2_ykiuaf.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305778/One_punch_man_1_axnhxj.jpg",
+  ],
+  Sakamoto: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305717/Sakamoto_11_fwwwnj.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305716/Sakamoto_10_zdehfh.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305716/Sakamoto_9_en2txg.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305715/Sakamoto_8_yljgtl.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305715/Sakamoto_7_l9mrr1.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305714/Sakamoto_6_qtlldm.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305714/Sakamoto_5_xvwoxr.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305713/Sakamoto_4_qxyl5k.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305713/Sakamoto_3_odbxxm.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305713/Sakamoto_2_yjjipb.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305712/Sakamoto_1_itkrqj.jpg",
+  ],
+  Solo_leveling: [
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305667/Solo_leveling_9_xjrpeb.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305667/Solo_leveling_10_iog5de.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305667/Solo_leveling_7_yhtdsd.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305667/Solo_leveling_8_ihfctv.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_6_w3a02z.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_4_qihtta.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_5_jslsde.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_3_bjil0c.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_1_o0kupe.jpg",
+    "https://res.cloudinary.com/dp1orljzz/image/upload/v1771305666/Solo_leveling_2_nct62k.jpg",
+  ]
+}
 
-const formatCategoryName = (name) => {
-  return name.replace(/([A-Z])/g, " $1").trim();
-};
+export default function AvatarPicker({
+  open,
+  onOpenChange,
+  setOpen,
+  selectedAvatar,
+}) {
+  const categories = Object.keys(avatarCategories)
+  const [selectedCategory, setSelectedCategory] = useState(categories[0])
 
-export default function AvatarPicker({ open, onOpenChange, onSelect, selectedAvatar = null }) {
-  const [activeCategory, setActiveCategory] = useState("DragonBall");
-  const [hoveredAvatar, setHoveredAvatar] = useState(null);
+  const {updateProfile} = useAuth();
 
-  const images = Object.values(avatarCategories[activeCategory]);
-  const categories = Object.keys(avatarCategories);
+  const handleSelect = async(url) => {
+    await updateProfile({
+      avatar: url
+    })
+    setOpen(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 gap-0 bg-background border-border max-h-[90vh] flex flex-col">
-        
-        {/* Fixed Header */}
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border bg-muted/30 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                <User className="h-4 w-4 sm:h-5 sm:w-5" />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-base sm:text-lg font-bold text-foreground truncate">
-                  Choose Your Avatar
-                </DialogTitle>
-                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
-                  Select from {categories.length} anime series
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-8 w-8 shrink-0 -mr-2"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </div>
-
-          {/* Categories - Horizontal Scrollable */}
-          <div className="mt-3 sm:mt-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent -mx-1 px-1">
-            <div className="flex gap-1.5 sm:gap-2 w-max min-w-full">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={activeCategory === category ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setActiveCategory(category)}
-                  className={cn(
-                    "rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 border shrink-0",
-                    activeCategory === category
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-secondary/50 text-secondary-foreground border-transparent hover:bg-secondary hover:border-border"
-                  )}
-                >
-                  #{formatCategoryName(category)}
-                </Button>
-              ))}
-            </div>
-          </div>
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] bg-[#0f172a] border-gray-800 p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogHeader className="flex flex-row items-center justify-between p-6 pb-4 shrink-0">
+          <DialogTitle className="text-2xl font-bold text-white tracking-tight">
+            Select Your Avatar
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-hidden min-h-0">
-          <ScrollArea className="h-full">
-            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              
-              {/* Info Bar */}
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs sm:text-sm font-semibold text-foreground">
-                  {formatCategoryName(activeCategory)}
-                </h3>
-                <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-2 py-0.5 sm:py-1 rounded-full">
-                  {images.length} avatars
-                </span>
-              </div>
+        <div className="px-6 pb-6 overflow-hidden flex flex-col min-h-0">
+          <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className=" flex flex-col min-h-0">
+            {/* CATEGORY BUTTONS - Wrap to next line instead of scroll */}
+            <TabsList className="flex flex-wrap w-full gap-2 h-auto mb-6 bg-[#1e293b] rounded-xl shrink-0">
+              {categories.map((category) => (
+                <TabsTrigger
+                  key={category}
+                  value={category}
+                  className="text-sm font-medium transition-all duration-200 whitespace-nowrap px-2 rounded-lg text-gray-400 hover:text-white data-[state=active]:text-white data-[state=active]:bg-white/10 cursor-pointer"
+                >
+                  {category.replace(/_/g, " ")}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-              {/* Avatar Grid - All visible with vertical scroll */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 pb-4">
-                {images.map((src, index) => {
-                  const isSelected = selectedAvatar === src;
-                  const isHovered = hoveredAvatar === src;
-
-                  return (
-                    <button
-                      key={`${activeCategory}-${index}`}
-                      onClick={() => {
-                        onSelect(src);
-                        onOpenChange(false);
-                      }}
-                      onMouseEnter={() => setHoveredAvatar(src)}
-                      onMouseLeave={() => setHoveredAvatar(null)}
-                      className={cn(
-                        "group relative aspect-square rounded-lg sm:rounded-xl bg-muted/50",
-                        "transition-all duration-200",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        "hover:scale-105 hover:shadow-md hover:shadow-primary/10",
-                        isSelected &&
-                          "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 shadow-lg shadow-primary/20"
-                      )}
-                    >
-                      {/* Image Container */}
-                      <div className="absolute inset-0 p-1 sm:p-1.5">
-                        <div className="relative h-full w-full rounded-md sm:rounded-lg overflow-hidden bg-background">
-                          <img
-                            src={src}
-                            alt={`${activeCategory} avatar ${index + 1}`}
-                            className={cn(
-                              "h-full w-full object-cover transition-transform duration-300",
-                              isHovered && !isSelected && "scale-110",
-                              isSelected && "scale-105"
-                            )}
+            {/* AVATAR GRIDS - Scrollable container */}
+            <div className="overflow-y-auto min-h-0 pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+              {categories.map((category) => (
+                <TabsContent key={category} value={category} className="mt-0">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                    {avatarCategories[category].map((url, idx) => (
+                      <Card
+                        key={`${category}-${idx}`}
+                        onClick={() => handleSelect(url)}
+                        className={cn(
+                          "cursor-pointer overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95",
+                          "border-2 hover:border-blue-500/50 bg-[#1e293b] border-gray-700/50 py-0 rounded-full",
+                          selectedAvatar === url
+                            ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-[#0f172a] scale-105 border-blue-500 shadow-lg shadow-blue-500/20"
+                            : ""
+                        )}
+                      >
+                        <Avatar className="w-full h-full aspect-square">
+                          <AvatarImage
+                            src={url}
+                            alt={`${category} avatar ${idx + 1}`}
+                            className="object-contain"
                             loading="lazy"
                           />
-
-                          {/* Selection Overlay */}
-                          <div
-                            className={cn(
-                              "absolute inset-0 bg-primary/30 transition-opacity duration-200 flex items-center justify-center",
-                              isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                            )}
-                          >
-                            {isSelected && (
-                              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Border */}
-                      <div
-                        className={cn(
-                          "absolute inset-0 rounded-lg sm:rounded-xl border-2 transition-colors pointer-events-none",
-                          isSelected
-                            ? "border-primary"
-                            : "border-transparent group-hover:border-primary/50"
-                        )}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Bottom padding for scroll */}
-              <div className="h-2" />
+                        </Avatar>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+              ))}
             </div>
-          </ScrollArea>
-        </div>
-
-        {/* Fixed Footer */}
-        <div className="border-t border-border bg-muted/30 px-4 py-3 sm:px-6 sm:py-4 shrink-0 flex items-center justify-between">
-          <span className="text-[10px] sm:text-xs text-muted-foreground">
-            Click any avatar to select it
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="rounded-full text-xs sm:text-sm px-3 sm:px-4"
-          >
-            Cancel
-          </Button>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

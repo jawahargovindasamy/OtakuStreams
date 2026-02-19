@@ -15,6 +15,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [language, setLanguage] = useState("EN");
   const [continueWatching, setContinueWatching] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+
+  const [ignoredFolders, setIgnoredFolders] = useState({
+    watching: false,
+    onHold: false,
+    planToWatch: false,
+    dropped: false,
+    completed: false,
+  });
+
+  useEffect(() => {
+    if (!user?.notificationIgnore) return;
+
+    setIgnoredFolders({
+      watching: user.notificationIgnore.watching,
+      onHold: user.notificationIgnore.on_hold,
+      planToWatch: user.notificationIgnore.plan_to_watch,
+      dropped: user.notificationIgnore.dropped,
+      completed: user.notificationIgnore.completed,
+    });
+  }, [user]);
+
 
   /* =============================
      Helpers
@@ -72,25 +94,114 @@ export function AuthProvider({ children }) {
   }, [api]);
 
 
+  const fetchWatchlist = useCallback(async (status) => {
+    try {
+      const res = await api.get("/watchlist", {
+        params: status ? { ...status } : {},
+      });
+
+      if (!status)
+        setWatchlist(res.data.data || []);
+
+      return res.data.data || [];
+
+    } catch (error) {
+      console.error("Failed to fetch watchlist:", error);
+      setWatchlist([]);
+    }
+  }, [api])
+
+  const watchlistMap = useMemo(() => {
+    const map = new Map();
+
+    watchlist.forEach((item) => {
+      map.set(item.animeId, item);
+    });
+
+    return map;
+  }, [watchlist]);
+
+  const updateWatchlist = useCallback(
+    async (id, status) => {
+      try {
+        const res = await api.put(`/watchlist/${id}`, {
+          status,
+        });
+
+        const updatedItem = res.data.data;
+
+        setWatchlist((prev) => {
+          const index = prev.findIndex(
+            (item) => item._id === updatedItem._id
+          );
+
+          if (index !== -1) {
+            const copy = [...prev];
+            copy[index] = updatedItem;
+            return copy;
+          }
+
+          return [updatedItem, ...prev];
+        });
+
+        return updatedItem;
+      } catch (error) {
+        console.error("Failed to update watchlist:", error);
+        throw error;
+      }
+    },
+    [api]
+  );
+
+  const addWatchlist = useCallback(async (animeId, animeTitle, animeImage, status) => {
+    try {
+      const res = await api.post("/watchlist", {
+        animeId: animeId,
+        animeTitle: animeTitle,
+        animeImage: animeImage,
+        status: status,
+      });
+
+      const updatedItem = res.data.data;
+
+      console.log(updatedItem);
+
+
+      setWatchlist((prev) => [updatedItem, ...prev]);
+
+      return updatedItem;
+
+    } catch (error) {
+      console.error("Failed to Add watchlist:", error);
+    }
+  }, [api])
+
+
+  // const 
+
+
+  const removeWatchlist = useCallback(async (id) => {
+    try {
+      await api.delete(`/watchlist/${id}`);
+      setWatchlist((prev) => prev.filter((item) => item._id !== id))
+
+    } catch (error) {
+      console.error("Failed to fetch Remove watchlist:", error);
+    }
+
+
+  }, [api]);
 
   const login = useCallback(async (data) => {
     localStorage.setItem("token", data.token);
 
-    const mappedUser = {
-      _id: data._id,
-      name: data.username,
-      email: data.email,
-      avatar: data.avatar,
-      role: data.role,
-      createdAt: data.createdAt,
-    };
-
-    localStorage.setItem("user", JSON.stringify(mappedUser));
-    setUser(mappedUser);
+    localStorage.setItem("user", JSON.stringify(data));
+    setUser(data);
 
     await fetchContinueWatching();
-  }, []);
-  
+    await fetchWatchlist();
+  }, [fetchContinueWatching, fetchWatchlist]);
+
   const updateProgress = useCallback(
     async (progressData) => {
       try {
@@ -121,6 +232,39 @@ export function AuthProvider({ children }) {
     [api]
   );
 
+  const updateProfile = useCallback(
+    async (profileData) => {
+      try {
+        const res = await api.put("users/profile", profileData);
+        const updated = res.data.data;
+
+        setUser(updated);
+        localStorage.setItem("user", JSON.stringify(updated));
+
+        if (!res.data.success) {
+          throw new Error(res.data.message);
+        }
+
+
+      } catch (error) {
+        console.error("Failed to update progress:", error);
+      }
+    }, [api])
+
+  const updateSettings = useCallback(
+    async (settings) => {
+      try {
+        const res = await api.put("users/settings", settings);
+        const updated = res.data.data;
+
+        setUser(updated);
+        localStorage.setItem("user", JSON.stringify(updated));
+      } catch (error) {
+        console.error("Failed to update progress:", error);
+      }
+    }, [api]);
+
+
 
 
 
@@ -134,6 +278,7 @@ export function AuthProvider({ children }) {
       if (storedUser) {
         setUser(JSON.parse(storedUser));
         await fetchContinueWatching();
+        await fetchWatchlist();
         return;
       }
 
@@ -145,19 +290,11 @@ export function AuthProvider({ children }) {
         const res = await api.get("/auth/me");
         const data = res.data.data;
 
-        const mappedUser = {
-          _id: data._id,
-          name: data.username,
-          email: data.email,
-          avatar: data.avatar,
-          role: data.role,
-          createdAt: data.createdAt,
-        };
-
-        setUser(mappedUser);
-        localStorage.setItem("user", JSON.stringify(mappedUser));
+        setUser(data);
+        localStorage.setItem("user", JSON.stringify(data));
 
         await fetchContinueWatching();
+        await fetchWatchlist();
       } catch {
         // token invalid / expired
         logout();
@@ -165,7 +302,7 @@ export function AuthProvider({ children }) {
     };
 
     restoreUser();
-  }, [api, fetchContinueWatching, logout]);
+  }, [api, fetchContinueWatching, fetchWatchlist, logout]);
 
 
 
@@ -177,12 +314,23 @@ export function AuthProvider({ children }) {
         api,
         language,
         setLanguage,
+        ignoredFolders,
+        setIgnoredFolders,
         login,
         logout,
         continueWatching,
         setContinueWatching,
+        watchlist,
+        setWatchlist,
         fetchContinueWatching,
-        updateProgress
+        fetchWatchlist,
+        watchlistMap,
+        updateWatchlist,
+        addWatchlist,
+        removeWatchlist,
+        updateProgress,
+        updateProfile,
+        updateSettings,
       }}
     >
       {children}

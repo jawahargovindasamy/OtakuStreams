@@ -1,5 +1,5 @@
 import { ClosedCaption, Mic, Play, Plus, Check, Share2, Calendar, Clock, Star, Building2, Clapperboard, Loader2, Users, AppWindow, TrendingUp } from 'lucide-react';
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from '@/context/auth-provider';
 
 // Color styles mapping for Tailwind
 const colorStyles = {
@@ -19,17 +20,33 @@ const colorStyles = {
     orange: "bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400",
 };
 
-// Utility to convert strings to URL-friendly slugs
-const slugify = (text) => {
-    if (!text) return '';
-    return text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
-};
+// Static playlist configuration - outside component to prevent recreation
+const PLAYLIST_CONFIG = [
+    { key: "watching", label: "Watching" },
+    { key: "plan_to_watch", label: "Plan to Watch" },
+    { key: "on_hold", label: "On-Hold" },
+    { key: "completed", label: "Completed" },
+    { key: "dropped", label: "Dropped" },
+    { key: "remove", label: "Remove" },
+];
+
+// Utility to convert strings to URL-friendly slugs with caching
+const slugify = (() => {
+    const cache = new Map();
+    return (text) => {
+        if (!text) return '';
+        if (cache.has(text)) return cache.get(text);
+        const result = text
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w-]+/g, '')
+            .replace(/--+/g, '-');
+        cache.set(text, result);
+        return result;
+    };
+})();
 
 function Meta({ label, value, icon: Icon, href, isArray }) {
     if (!value || value === '?' || (Array.isArray(value) && value.length === 0)) return null;
@@ -39,7 +56,7 @@ function Meta({ label, value, icon: Icon, href, isArray }) {
             return (
                 <div className="flex flex-wrap gap-1">
                     {value.map((item, index) => (
-                        <span key={item}>
+                        <span key={`${item}-${index}`}>
                             <Link
                                 to={`/producer/${slugify(item)}`}
                                 className="text-sm text-primary font-medium hover:underline hover:text-primary/80 transition-colors"
@@ -111,21 +128,123 @@ function StatBadge({ icon: Icon, value, label, colorKey = "emerald" }) {
     );
 }
 
+// Custom hook for safe async operations
+function useSafeAsync() {
+    const isMountedRef = useRef(true);
+    
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+    
+    const safeExecute = useCallback(async (asyncFn, onSuccess, onError) => {
+        try {
+            const result = await asyncFn();
+            if (isMountedRef.current) onSuccess?.(result);
+            return result;
+        } catch (error) {
+            if (isMountedRef.current) onError?.(error);
+            throw error;
+        }
+    }, []);
+    
+    return safeExecute;
+}
+
 const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
+    const { user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
     const [playlist1, setPlaylist1] = useState(null);
     const [showmore, setShowmore] = useState(false);
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    
+    const safeExecute = useSafeAsync();
 
-    const playlist = useMemo(
-        () => [
-            "Watching",
-            "On-Hold",
-            "Plan to Watch",
-            "Completed",
-            "Dropped",
-            "Remove",
-        ],
-        []
-    );
+    // Memoized label map
+    const playlistLabelMap = useMemo(() => {
+        const map = new Map();
+        PLAYLIST_CONFIG.forEach((item) => {
+            map.set(item.key, item.label);
+        });
+        return map;
+    }, []);
+
+    // Safer backdrop image construction
+    const backdropImage = useMemo(() => {
+        if (!anime?.info?.poster) return '';
+        try {
+            const url = new URL(anime.info.poster);
+            const pathname = url.pathname.replace('/poster/', '/banner/');
+            return `${url.origin}${pathname}${url.search}`;
+        } catch {
+            return anime.info.poster.replace(/\/poster\//g, '/banner/').replace(/poster\./g, 'banner.');
+        }
+    }, [anime?.info?.poster]);
+
+    // Sync with watchlistMap
+    useEffect(() => {
+        if (!user || !anime?.info?.id) {
+            setPlaylist1(null);
+            return;
+        }
+        const item = watchlistMap.get(anime.info.id);
+        setPlaylist1(item?.status || null);
+    }, [user, anime?.info?.id, watchlistMap]);
+
+    const handlePlaylistChange = useCallback(async (item) => {
+        if (isUpdating) return;
+        
+        const existing = watchlistMap.get(anime.info.id);
+        const previousStatus = playlist1;
+        
+        setIsUpdating(true);
+        
+        // Optimistic update
+        if (item.key === 'remove') {
+            setPlaylist1(null);
+        } else {
+            setPlaylist1(item.key);
+        }
+        setPopoverOpen(false);
+
+        try {
+            await safeExecute(async () => {
+                if (item.key === "remove") {
+                    if (existing?._id) {
+                        await removeWatchlist(existing._id);
+                    }
+                    return;
+                }
+
+                if (existing?._id) {
+                    await updateWatchlist(existing._id, item.key);
+                } else {
+                    await addWatchlist(
+                        anime.info.id,
+                        anime.info.name,
+                        anime.info.poster,
+                        item.key
+                    );
+                }
+            }, null, () => {
+                // Rollback on error
+                setPlaylist1(previousStatus);
+            });
+        } finally {
+            setIsUpdating(false);
+        }
+    }, [anime.info, watchlistMap, playlist1, isUpdating, safeExecute, removeWatchlist, updateWatchlist, addWatchlist]);
+
+    const handlePlayClick = useCallback(() => {
+        if (!isPlaying && anime?.info?.id) {
+            handlePlay(anime.info.id);
+        }
+    }, [isPlaying, anime?.info?.id, handlePlay]);
+
+    const handleShare = useCallback(() => {
+        navigator.clipboard.writeText(window.location.href);
+    }, []);
 
     if (!anime?.info) {
         return (
@@ -144,7 +263,6 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
     }
 
     const { info, moreInfo } = anime;
-    const backdropImage = info.poster?.replace('poster', 'banner') || info.poster;
 
     return (
         <div className="relative min-h-150">
@@ -187,7 +305,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                             <div className="lg:hidden flex gap-3 max-w-75 mx-auto">
                                 <Button
                                     disabled={isPlaying}
-                                    onClick={() => handlePlay(info.id)}
+                                    onClick={handlePlayClick}
                                     className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
                                              font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
                                              hover:scale-[1.02] active:scale-95"
@@ -199,10 +317,13 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                     )}
                                     Watch Now
                                 </Button>
-                                <Popover modal={false}>
+                                <Popover
+                                    modal={false}
+                                >
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
+                                            disabled={isUpdating}
                                             className="h-12 px-6 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
                                                      transition-all duration-200 hover:border-primary/30"
                                         >
@@ -214,7 +335,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                             ) : (
                                                 <div className='flex items-center gap-2'>
                                                     <Check className="h-5 w-5 text-emerald-500" />
-                                                    <span>{playlist1}</span>
+                                                    <span>{playlistLabelMap.get(playlist1)}</span>
                                                 </div>
                                             )}
                                         </Button>
@@ -226,20 +347,20 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                         className="w-48 p-1.5 border-border/50 bg-popover/95 backdrop-blur-xl shadow-xl"
                                     >
                                         <div className="space-y-0.5">
-                                            {playlist.map((item) => (
+                                            {PLAYLIST_CONFIG.map((item) => (
                                                 <Button
-                                                    key={item}
+                                                    key={item.key}
                                                     variant="ghost"
                                                     size="sm"
                                                     className={`w-full justify-between text-sm font-medium transition-all duration-200 rounded-lg
-                                                        ${playlist1 === item
+                                                        ${playlist1 === item.key
                                                             ? "bg-primary/10 text-primary hover:bg-primary/20"
                                                             : "hover:bg-accent text-foreground"
                                                         }`}
-                                                    onClick={() => setPlaylist1(item === 'Remove' ? null : item)}
+                                                    onClick={() => handlePlaylistChange(item)}
                                                 >
-                                                    {item}
-                                                    {playlist1 === item && item !== 'Remove' && (
+                                                    {item.label}
+                                                    {playlist1 === item.key && item.label !== 'Remove' && (
                                                         <Check className="h-4 w-4 text-primary" />
                                                     )}
                                                 </Button>
@@ -329,7 +450,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                             <div className="hidden lg:flex gap-3">
                                 <Button
                                     disabled={isPlaying}
-                                    onClick={() => handlePlay(info.id)}
+                                    onClick={handlePlayClick}
                                     className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
                                              font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
                                              hover:scale-[1.02] active:scale-95 text-base"
@@ -351,6 +472,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
+                                            disabled={isUpdating}
                                             className="h-12 px-6 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
                                                      transition-all duration-200 hover:border-primary/30"
                                         >
@@ -362,7 +484,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                             ) : (
                                                 <div className='flex items-center gap-2'>
                                                     <Check className="h-5 w-5 text-emerald-500" />
-                                                    <span>{playlist1}</span>
+                                                    <span>{playlistLabelMap.get(playlist1)}</span>
                                                 </div>
                                             )}
                                         </Button>
@@ -374,20 +496,20 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                         className="w-48 p-1.5 border-border/50 bg-popover/95 backdrop-blur-xl shadow-xl"
                                     >
                                         <div className="space-y-0.5">
-                                            {playlist.map((item) => (
+                                            {PLAYLIST_CONFIG.map((item) => (
                                                 <Button
-                                                    key={item}
+                                                    key={item.key}
                                                     variant="ghost"
                                                     size="sm"
                                                     className={`w-full justify-between text-sm font-medium transition-all duration-200 rounded-lg
-                                                        ${playlist1 === item
+                                                        ${playlist1 === item.key
                                                             ? "bg-primary/10 text-primary hover:bg-primary/20"
                                                             : "hover:bg-accent text-foreground"
                                                         }`}
-                                                    onClick={() => setPlaylist1(item === 'Remove' ? null : item)}
+                                                    onClick={() => handlePlaylistChange(item)}
                                                 >
-                                                    {item}
-                                                    {playlist1 === item && item !== 'Remove' && (
+                                                    {item.label}
+                                                    {playlist1 === item.key && item.label !== 'Remove' && (
                                                         <Check className="h-4 w-4 text-primary" />
                                                     )}
                                                 </Button>
@@ -401,9 +523,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                     size="icon"
                                     className="h-12 w-12 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
                                              transition-all duration-200 hover:scale-105"
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(window.location.href);
-                                    }}
+                                    onClick={handleShare}
                                 >
                                     <Share2 className="h-5 w-5" />
                                 </Button>
@@ -485,7 +605,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                                 </p>
                                                 <div className="flex flex-wrap gap-x-1 gap-y-1">
                                                     {moreInfo.producers.map((producer, index) => (
-                                                        <span key={producer}>
+                                                        <span key={`${producer}-${index}`}>
                                                             <Link
                                                                 to={`/producer/${slugify(producer)}`}
                                                                 className="text-sm text-primary font-medium hover:underline hover:text-primary/80 transition-colors"
@@ -524,7 +644,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default AnimeDetails
+export default AnimeDetails;

@@ -19,7 +19,7 @@ const SecondaryNavbar = () => {
     {
       name: "Watch List",
       icon: Heart,
-      path: "/watch-list",
+      path: "/watchlist",
     },
     {
       name: "Notifications",
@@ -42,7 +42,7 @@ const SecondaryNavbar = () => {
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-            Hi, <span className="text-primary">{user?.name || 'Guest'}</span>
+            Hi, <span className="text-primary">{user?.name || user?.username || 'Guest'}</span>
           </h2>
         </div>
       </div>

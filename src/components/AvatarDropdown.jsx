@@ -19,9 +19,9 @@ const AvatarDropdown = () => {
       <DropdownMenuTrigger asChild>
         <button className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform hover:scale-105 active:scale-95 duration-200">
           <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-border hover:ring-primary/50 transition-all duration-200">
-            <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
+            <AvatarImage src={user.avatar} alt={user.name || user.username} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-              {user.name?.charAt(0) || 'U'}
+              {user.name?.charAt(0) || user.username?.charAt(0) || 'G'}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -34,7 +34,7 @@ const AvatarDropdown = () => {
       >
         {/* User Info */}
         <DropdownMenuLabel className="space-y-1 p-3">
-          <p className="text-sm font-semibold leading-none text-foreground">{user.name}</p>
+          <p className="text-sm font-semibold leading-none text-foreground">{user.name || user.username}</p>
           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
         </DropdownMenuLabel>
 

@@ -7,15 +7,15 @@ import React, { useState } from 'react';
 import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
@@ -26,10 +26,10 @@ const ContinueWatching = () => {
 
     const handleClearAll = async () => {
         setIsClearing(true);
-        
+
         try {
             await api.delete("/continue-watching");
-            
+
             // Clear local state immediately for better UX
             setContinueWatching([]);
             setOpen(false);
@@ -49,7 +49,7 @@ const ContinueWatching = () => {
         <div className="min-h-screen bg-background">
             <Navbar />
             <SecondaryNavbar />
-            
+
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10">
                 <section className="space-y-4 sm:space-y-5 w-full">
                     <div className="flex items-center justify-between">
@@ -57,12 +57,12 @@ const ContinueWatching = () => {
                             title="Continue Watching"
                             className="text-foreground tracking-tight"
                         />
-                        
+
                         {continueWatching.length > 0 && (
                             <AlertDialog open={open} onOpenChange={setOpen}>
                                 <AlertDialogTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         size="sm"
                                         className="group flex items-center gap-2 text-destructive border-destructive/20 hover:text-destructive-foreground hover:border-destructive"
                                     >
@@ -83,7 +83,7 @@ const ContinueWatching = () => {
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
-                                        <AlertDialogCancel 
+                                        <AlertDialogCancel
                                             disabled={isClearing}
                                             className="mt-0 sm:w-24"
                                         >
@@ -108,34 +108,34 @@ const ContinueWatching = () => {
                 </section>
 
                 {continueWatching.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 w-full mt-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-6 w-full mt-6">
                         {continueWatching.map((item) => (
-                            <ContinueWatchingCard 
-                                key={item._id} 
-                                item={item} 
+                            <ContinueWatchingCard
+                                key={item._id}
+                                item={item}
                             />
                         ))}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 sm:py-32 text-center">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                            <svg 
-                                className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/60" 
-                                fill="none" 
-                                stroke="currentColor" 
+                            <svg
+                                className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/60"
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={1.5} 
-                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" 
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
                                 />
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={1.5} 
-                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                 />
                             </svg>
                         </div>

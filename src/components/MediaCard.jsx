@@ -7,10 +7,27 @@ import MediaCardPopover from "./MediaCardPopover";
 
 const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
     const { fetchanimeinfo, fetchepisodeinfo } = useData();
-    const { language, continueWatching } = useAuth();
+    const { user, language, continueWatching, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
+    const navigate = useNavigate();
+
+    const timerRef = useRef(null);
+    const [open, setOpen] = useState(false);
+    const [playlist1, setPlaylist1] = useState(null);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const playlist = useMemo(
+        () => [
+            { key: "watching", label: "Watching", },
+            { key: "on_hold", label: "On-Hold", },
+            { key: "plan_to_watch", label: "Plan to Watch", },
+            { key: "dropped", label: "Dropped", },
+            { key: "completed", label: "Completed", },
+            { key: "remove", label: "Remove", }
+        ], []
+    );
 
     useEffect(() => {
         let mounted = true;
@@ -28,23 +45,17 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
         };
     }, [id, fetchanimeinfo])
 
-    const navigate = useNavigate();
+    useEffect(() => {
+        if (!user || !id) {
+            setPlaylist1(null);
+            return;
+        }
 
-    const timerRef = useRef(null);
-    const [open, setOpen] = useState(false);
-    const [playlist1, setPlaylist1] = useState(null);
+        const item = watchlistMap.get(id);
 
-    const playlist = useMemo(
-        () => [
-            "Watching",
-            "On-Hold",
-            "Plan to Watch",
-            "Completed",
-            "Dropped",
-            "Remove",
-        ],
-        []
-    );
+        setPlaylist1(item?.status || null);
+
+    }, [user, id, watchlistMap])
 
     const handleNavigate = () => {
         navigate(`/${id}`, {
@@ -60,6 +71,65 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => setOpen(false), 200);
     };
+
+    const handlePlaylistChange = useCallback(
+        async (selected) => {
+            if (!user || !id || isUpdating) return;
+
+            const existing = watchlistMap.get(id);
+            const previousStatus = playlist1;
+
+            setIsUpdating(true);
+
+            // Optimistic update
+            if (selected.key === "remove") {
+                setPlaylist1(null);
+            } else {
+                setPlaylist1(selected.key);
+            }
+
+            // Close popover
+            setOpen(false);
+
+            try {
+                if (selected.key === "remove") {
+                    if (existing?._id) {
+                        await removeWatchlist(existing._id);
+                    }
+                } else {
+                    if (existing?._id) {
+                        await updateWatchlist(existing._id, selected.key);
+                    } else {
+                        await addWatchlist(
+                            id,
+                            item?.anime?.info?.name,
+                            item?.anime?.info?.poster,
+                            selected.key
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error("Watchlist update failed:", error);
+
+                // Rollback on failure
+                setPlaylist1(previousStatus);
+            } finally {
+                setIsUpdating(false);
+            }
+        },
+        [
+            user,
+            id,
+            playlist1,
+            isUpdating,
+            watchlistMap,
+            removeWatchlist,
+            updateWatchlist,
+            addWatchlist,
+            item
+        ]
+    );
+
 
     const handlePlay = useCallback(
         async (id) => {
@@ -113,7 +183,8 @@ const MediaCard = ({ id, jname = "", rank = null, showRank = false }) => {
             handlePlay={handlePlay}
             playlist={playlist}
             playlist1={playlist1}
-            setPlaylist1={setPlaylist1}
+            handlePlaylistChange={handlePlaylistChange}
+            isUpdating={isUpdating}
             isPlaying={isPlaying}
         >
             <div

@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import SecondaryNavbar from "@/components/SecondaryNavbar";
 import React, { useState, useEffect } from "react";
-import { User, Pencil, ChevronDown, ChevronUp, Lock, Mail, CalendarDays, Camera } from "lucide-react";
+import { User, ChevronDown, ChevronUp, Lock, Mail, CalendarDays, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,9 +14,8 @@ import AvatarPicker from "@/components/AvatarPicker";
 import { AnimatePresence } from "framer-motion";
 
 const Profile = () => {
-  const { user, setUser, api } = useAuth();
-
-  const [name, setName] = useState(user?.name || "");
+  const { user, api, updateProfile } = useAuth();
+  const [name, setName] = useState();
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [open, setOpen] = useState(false);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -25,7 +24,7 @@ const Profile = () => {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
-    setName(user?.name || "");
+    setName(user?.username || user?.name || "");
   }, [user]);
 
   /* =============================
@@ -73,16 +72,10 @@ const Profile = () => {
      Profile Save Handler
   ============================= */
   const handleProfileSave = async () => {
-    try {
-      const { data } = await api.put("/users/profile", { name });
-
-      setUser((prev) => ({ ...prev, name: data.data.username }));
-      alert("Profile updated successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update profile");
-    }
-  };
+    await updateProfile({
+      username: name
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -160,7 +153,7 @@ const Profile = () => {
                 <button
                   type="button"
                   onClick={() => setShowPasswordFields(!showPasswordFields)}
-                  className="flex items-center justify-between w-full group py-2 rounded-lg hover:bg-accent/50 px-3 -ml-3 transition-colors"
+                  className="flex items-center justify-between w-full group py-2 rounded-lg hover:bg-accent/50 px-3 -ml-3 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <div className="p-1.5 rounded-md bg-primary/10 text-primary">
@@ -256,7 +249,7 @@ const Profile = () => {
 
                 <button
                   onClick={() => setOpen(true)}
-                  className="absolute bottom-1 right-1 bg-primary text-primary-foreground p-2.5 sm:p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="absolute bottom-1 right-1 bg-primary text-primary-foreground p-2.5 sm:p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
                   aria-label="Change avatar"
                 >
                   <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -275,10 +268,7 @@ const Profile = () => {
       <AvatarPicker
         open={open}
         onOpenChange={setOpen}
-        onSelect={(selectedAvatar) => {
-          setUser((prevUser) => ({ ...prevUser, avatar: selectedAvatar }));
-          setOpen(false);
-        }}
+        setOpen={setOpen}
         selectedAvatar={user?.avatar}
       />
     </div>

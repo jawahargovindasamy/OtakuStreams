@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,8 +12,9 @@ import ThemeTogglePill from './ThemeTogglePill';
 
 const Sidebar = ({ onClose }) => {
     const { theme } = useTheme();
-    const {user} = useAuth();
+    const { user } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
     const { language, setLanguage } = useAuth();
 
     const navItems = [
@@ -124,15 +125,18 @@ const Sidebar = ({ onClose }) => {
 
             {/* Bottom User Section */}
             <div className="p-4 border-t border-border/50 bg-muted/30">
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
+                <button
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group cursor-pointer"
+                    onClick={() => navigate('/settings')}
+                >
                     <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-border hover:ring-primary/50 transition-all duration-200">
-                        <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
+                        <AvatarImage src={user.avatar} alt={user.name || user.username} className="object-cover" />
                         <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                            {user.name?.charAt(0) || 'U'}
+                            {user.name?.charAt(0) || user.username?.charAt(0) || 'U'}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
+                        <p className="text-sm font-bold text-foreground truncate">{user.name || user.username}</p>
                     </div>
                     <Settings
                         size={16}

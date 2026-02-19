@@ -51,28 +51,30 @@ const VerticalListSkeleton = ({ count = 5 }) => {
 /* -------------------- List Item -------------------- */
 
 const VerticalListItem = ({ anime }) => {
-  const { language, continueWatching } = useAuth();
+  const { language, continueWatching, user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
+
   const { fetchanimeinfo, fetchepisodeinfo } = useData();
   const navigate = useNavigate();
 
   const [item, setItem] = useState(null);
   const [open, setOpen] = useState(false);
   const [playlist1, setPlaylist1] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const timerRef = useRef(null);
 
   const playlist = useMemo(
     () => [
-      "Watching",
-      "On-Hold",
-      "Plan to Watch",
-      "Completed",
-      "Dropped",
-      "Remove",
-    ],
-    []
+      { key: "watching", label: "Watching", },
+      { key: "on_hold", label: "On-Hold", },
+      { key: "plan_to_watch", label: "Plan to Watch", },
+      { key: "dropped", label: "Dropped", },
+      { key: "completed", label: "Completed", },
+      { key: "remove", label: "Remove", }
+    ],[]
   );
+
 
   useEffect(() => {
     let mounted = true;
@@ -92,6 +94,18 @@ const VerticalListItem = ({ anime }) => {
     };
   }, [anime.id, fetchanimeinfo]);
 
+  useEffect(() => {
+    if (!user || !anime.id) {
+      setPlaylist1(null);
+      return;
+    }
+
+    const item = watchlistMap.get(anime.id);
+
+    setPlaylist1(item?.status || null);
+
+  }, [user, anime.id, watchlistMap])
+
   const handleMouseEnter = () => {
     timerRef.current = setTimeout(() => setOpen(true), 400);
   };
@@ -100,6 +114,50 @@ const VerticalListItem = ({ anime }) => {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setOpen(false), 200);
   };
+
+  const handlePlaylistChange = useCallback(
+    async (selected) => {
+      if (!user || !anime.id || isUpdating) return;
+
+      const existing = watchlistMap.get(anime.id);
+      const previousStatus = playlist1;
+
+      setIsUpdating(true);
+
+      // Optimistic update
+      if (selected.key === "remove") {
+        setPlaylist1(null);
+      } else {
+        setPlaylist1(selected.key);
+      }
+
+      setOpen(false);
+
+      try {
+        if (selected.key === "remove") {
+          if (existing?._id) {
+            await removeWatchlist(existing._id);
+          }
+        } else {
+          if (existing?._id) {
+            await updateWatchlist(existing._id, selected.key);
+          } else {
+            await addWatchlist(
+              anime.id,
+              anime.name,
+              anime.poster,
+              selected.key
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Watchlist update failed:", error);
+        setPlaylist1(previousStatus);
+      } finally {
+        setIsUpdating(false);
+      }
+    }, [user, anime, playlist1, isUpdating, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist]);
+
 
   const handlePlay = useCallback(
     async (id) => {
@@ -138,7 +196,8 @@ const VerticalListItem = ({ anime }) => {
       handlePlay={handlePlay}
       playlist={playlist}
       playlist1={playlist1}
-      setPlaylist1={setPlaylist1}
+      handlePlaylistChange={handlePlaylistChange}
+      isUpdating={isUpdating}
       isPlaying={isPlaying}
       sideOffset={10}
     >
