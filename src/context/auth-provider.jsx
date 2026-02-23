@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
   const [language, setLanguage] = useState("EN");
   const [continueWatching, setContinueWatching] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [notification, setNotification] = useState([]);
 
   const [ignoredFolders, setIgnoredFolders] = useState({
     watching: false,
@@ -111,6 +112,17 @@ export function AuthProvider({ children }) {
     }
   }, [api])
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await api.get("/notification");
+      setNotification(res.data || []);
+
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+      setNotification([]);
+    }
+  }, [api])
+
   const watchlistMap = useMemo(() => {
     const map = new Map();
 
@@ -200,7 +212,27 @@ export function AuthProvider({ children }) {
 
     await fetchContinueWatching();
     await fetchWatchlist();
-  }, [fetchContinueWatching, fetchWatchlist]);
+    await fetchNotifications();
+  }, [fetchContinueWatching, fetchWatchlist, fetchNotifications]);
+
+
+  const markRead = useCallback(async (notificationId) => {
+    try {
+      await api.put(`/notification/${notificationId}/read`);
+      setNotification((prev) => prev.map((item) => item._id === notificationId ? { ...item, read: true } : item));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  }, [api])
+
+  const clearNotifications = useCallback(async () => {
+    try {
+      await api.delete("/notification/clear");
+      setNotification([]);
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
+  }, [api])
 
   const updateProgress = useCallback(
     async (progressData) => {
@@ -265,9 +297,6 @@ export function AuthProvider({ children }) {
     }, [api]);
 
 
-
-
-
   /* ============================= 
    Restore session on refresh 
 ============================= */
@@ -279,6 +308,7 @@ export function AuthProvider({ children }) {
         setUser(JSON.parse(storedUser));
         await fetchContinueWatching();
         await fetchWatchlist();
+        await fetchNotifications();
         return;
       }
 
@@ -295,6 +325,7 @@ export function AuthProvider({ children }) {
 
         await fetchContinueWatching();
         await fetchWatchlist();
+        await fetchNotifications();
       } catch {
         // token invalid / expired
         logout();
@@ -302,7 +333,7 @@ export function AuthProvider({ children }) {
     };
 
     restoreUser();
-  }, [api, fetchContinueWatching, fetchWatchlist, logout]);
+  }, [api, fetchContinueWatching, fetchWatchlist, fetchNotifications, logout]);
 
 
 
@@ -322,8 +353,10 @@ export function AuthProvider({ children }) {
         setContinueWatching,
         watchlist,
         setWatchlist,
+        notification,
         fetchContinueWatching,
         fetchWatchlist,
+        fetchNotifications,
         watchlistMap,
         updateWatchlist,
         addWatchlist,
@@ -331,6 +364,8 @@ export function AuthProvider({ children }) {
         updateProgress,
         updateProfile,
         updateSettings,
+        markRead,
+        clearNotifications,
       }}
     >
       {children}

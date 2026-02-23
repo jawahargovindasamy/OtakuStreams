@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Play, CalendarX, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from '@/context/auth-provider';
 
 const ScheduleEpisodeList = ({ animes = [] }) => {
+    const { language } = useAuth();
     const navigate = useNavigate();
     const [showAll, setShowAll] = useState(false);
     
@@ -60,7 +62,7 @@ const ScheduleEpisodeList = ({ animes = [] }) => {
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                 <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary 
                                             transition-colors line-clamp-1">
-                                    {anime.name}
+                                    {language === "EN" ? anime.name  : anime.jname}
                                 </h3>
                                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                                     Episode {anime.episode} • {anime.type || 'TV'}

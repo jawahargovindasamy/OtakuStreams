@@ -12,7 +12,7 @@ const FILTER_OPTIONS = [
   { key: "all", label: "All" },
   { key: "watching", label: "Watching" },
   { key: "on_hold", label: "On Hold" },
-  { key: "plan_to_watch", label: "Plan to Watch" },
+  { key: "plan_to_watch", label: "Plan To Watch" },
   { key: "dropped", label: "Dropped" },
   { key: "completed", label: "Completed" },
 ];

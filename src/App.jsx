@@ -1,5 +1,5 @@
 import "./App.css";
-import { Route, Router, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import Notification from "./pages/Notification";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
         <Route path="/continue-watching" element={<ContinueWatching />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/notification" element={<Notification />} />
       </Routes>
     </>
   );

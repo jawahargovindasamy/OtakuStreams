@@ -37,12 +37,13 @@ import { useAuth } from "@/context/auth-provider";
 import { useData } from "@/context/data-provider";
 import SearchPopover from "./SearchPopover";
 import Sidebar from "./Sidebar";
+import NotificationDropdown from "./NotificationDropdown";
 
 
 /* ================= Navbar ================= */
 const Navbar = () => {
   const { theme } = useTheme();
-  const { language, setLanguage, user } = useAuth();
+  const { language, setLanguage, user, notification } = useAuth();
   const { fetchsearchsuggestions } = useData();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -209,23 +210,7 @@ const Navbar = () => {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="rounded-full hover:bg-accent hover:text-accent-foreground transition-colors duration-200 relative"
-                      >
-                        <Bell className="h-5 w-5" strokeWidth={2} />
-                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border">
-                      Notifications
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <NotificationDropdown notifications={notification} />
               </NavigationMenuItem>
 
               <NavigationMenuItem className="mx-1">

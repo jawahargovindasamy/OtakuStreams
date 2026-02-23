@@ -20,12 +20,14 @@ import ContinueWatchingCard from "@/components/ContinueWatchingCard";
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
   const { homedata } = useData();
-  const { continueWatching } = useAuth();
+  const { continueWatching,notification } = useAuth();
 
   const [showAll, setShowAll] = useState(false);
   const [scheduledAnimes, setScheduledAnimes] = useState([]);
   const [top10Animes, setTop10Animes] = useState("today");
 
+  console.log(notification);
+  
 
   /* -------------------- DATA -------------------- */
   const data = homedata?.data;
