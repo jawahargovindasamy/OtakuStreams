@@ -209,9 +209,7 @@ const AZ = () => {
                         key={a.id}
                         className="group transition-all duration-300 hover:-translate-y-1"
                       >
-                        <MediaCard
-                          id={a.id}
-                          jname={a.jname}
+                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub}
                           className="h-full transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
                         />
                       </div>

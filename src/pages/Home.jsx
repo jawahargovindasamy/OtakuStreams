@@ -16,6 +16,7 @@ import HomeSkeleton from "@/components/HomeSkeleton";
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
 import ContinueWatchingCard from "@/components/ContinueWatchingCard";
+import VerticalList1 from "@/components/VerticalList1";
 
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
@@ -25,12 +26,13 @@ const Home = () => {
   const [showAll, setShowAll] = useState(false);
   const [scheduledAnimes, setScheduledAnimes] = useState([]);
   const [top10Animes, setTop10Animes] = useState("today");
-
-  console.log(notification);
   
 
   /* -------------------- DATA -------------------- */
   const data = homedata?.data;
+
+  // console.log(data?.latestEpisodeAnimes);
+  
 
 
   /* -------------------- LOADING STATE -------------------- */
@@ -121,7 +123,7 @@ const Home = () => {
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                   {data.latestEpisodeAnimes.map((a) => (
-                    <MediaCard key={a.id} id={a.id} jname={a.jname} />
+                    <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub}  />
                   ))}
                 </div>
               </section>
@@ -142,7 +144,7 @@ const Home = () => {
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                   {data.topUpcomingAnimes.map((a) => (
-                    <MediaCard key={a.id} id={a.id} jname={a.jname} />
+                    <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub}  />
                   ))}
                 </div>
               </section>

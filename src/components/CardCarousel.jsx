@@ -31,11 +31,13 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
               key={anime.id}
               className="shrink-0 basis-[45%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%] xl:basis-[15%] min-w-0"
             >
-              <MediaCard 
-                id={anime.id} 
-                jname={anime.jname} 
-                rank={showRank ? index + 1 : null} 
-                showRank={showRank} 
+              <MediaCard
+                id={anime.id}
+                name={anime.name}
+                jname={anime.jname}
+                poster={anime.poster}
+                rank={showRank ? index + 1 : null}
+                showRank={showRank}
               />
             </div>
           ))}

@@ -24,7 +24,7 @@ const NotificationDropdown = ({ notifications = [] }) => {
 
     useEffect(() => {
         if (open) {
-            fetchNotifications(true); // force refresh
+            fetchNotifications(true);
         }
     }, [open]);
 

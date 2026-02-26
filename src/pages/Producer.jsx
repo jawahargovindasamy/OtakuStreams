@@ -121,7 +121,7 @@ const Producer = () => {
                             ) : (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                                     {item?.animes?.map((a) => (
-                                        <MediaCard key={a.id} id={a.id} jname={a.jname} />
+                                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub} />
                                     ))}
                                 </div>
                             )}

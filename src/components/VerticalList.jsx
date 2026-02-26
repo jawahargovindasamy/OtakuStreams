@@ -13,7 +13,6 @@ import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
 import MediaCardPopover from "@/components/MediaCardPopover";
 
-/* -------------------- Skeleton Components -------------------- */
 
 const VerticalListSkeletonItem = () => {
   return (
@@ -48,21 +47,19 @@ const VerticalListSkeleton = ({ count = 5 }) => {
   );
 };
 
-/* -------------------- List Item -------------------- */
 
 const VerticalListItem = ({ anime }) => {
-  const { language, continueWatching, user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
-
   const { fetchanimeinfo, fetchepisodeinfo } = useData();
+  const { user, language, continueWatching, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
   const navigate = useNavigate();
-
   const [item, setItem] = useState(null);
   const [open, setOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [playlist1, setPlaylist1] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const timerRef = useRef(null);
+  const fetchingRef = useRef(false);
 
   const playlist = useMemo(
     () => [
@@ -72,27 +69,16 @@ const VerticalListItem = ({ anime }) => {
       { key: "dropped", label: "Dropped", },
       { key: "completed", label: "Completed", },
       { key: "remove", label: "Remove", }
-    ],[]
+    ], []
   );
 
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadInfo = async () => {
-      try {
-        const data = await fetchanimeinfo(anime.id, "n");
-        if (mounted) setItem(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    loadInfo();
     return () => {
-      mounted = false;
+      clearTimeout(timerRef.current);
     };
-  }, [anime.id, fetchanimeinfo]);
+  }, []);
+
 
   useEffect(() => {
     if (!user || !anime.id) {
@@ -106,14 +92,77 @@ const VerticalListItem = ({ anime }) => {
 
   }, [user, anime.id, watchlistMap])
 
+
+  const handlefetch = useCallback(async () => {
+    if (item) return item;
+
+    if (fetchingRef.current) {
+      return fetchingRef.current; // return same promise
+    }
+
+    fetchingRef.current = (async () => {
+      try {
+        const data = await fetchanimeinfo(anime.id);
+        setItem(data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching anime info:", error);
+        return null;
+      } finally {
+        fetchingRef.current = null; // reset
+      }
+    })();
+    return fetchingRef.current;
+  }, [item, anime.id, fetchanimeinfo]);
+
+  const handleNavigate = async () => {
+    const data = item || await handlefetch();
+    if (!data) return;
+
+    navigate(`/${anime.id}`, {
+      state: { animeInfo: data },
+    });
+  };
+
   const handleMouseEnter = () => {
-    timerRef.current = setTimeout(() => setOpen(true), 400);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setOpen(true);
+    }, 400);
+
+    handlefetch();
   };
 
   const handleMouseLeave = () => {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setOpen(false), 200);
   };
+
+  const handlePlay = useCallback(
+    async (id) => {
+      setIsPlaying(true);
+      try {
+        const animeInfo = await handlefetch();
+        const data = await fetchepisodeinfo(id);
+        if (data?.data?.episodes?.length > 0) {
+          const progress = continueWatching.find((item) => item.animeId === id);
+          const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+          navigate(episodeToPlay, {
+            state: {
+              animeId: id,
+              episodeList: data.data,
+              animeInfo
+            }
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsPlaying(false);
+      }
+    },
+    [continueWatching, fetchepisodeinfo, navigate, handlefetch]
+  );
 
   const handlePlaylistChange = useCallback(
     async (selected) => {
@@ -131,6 +180,7 @@ const VerticalListItem = ({ anime }) => {
         setPlaylist1(selected.key);
       }
 
+      // Close popover
       setOpen(false);
 
       try {
@@ -144,46 +194,32 @@ const VerticalListItem = ({ anime }) => {
           } else {
             await addWatchlist(
               anime.id,
-              anime.name,
-              anime.poster,
+              item?.anime?.info?.name,
+              item?.anime?.info?.poster,
               selected.key
             );
           }
         }
       } catch (error) {
         console.error("Watchlist update failed:", error);
+
+        // Rollback on failure
         setPlaylist1(previousStatus);
       } finally {
         setIsUpdating(false);
       }
-    }, [user, anime, playlist1, isUpdating, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist]);
-
-
-  const handlePlay = useCallback(
-    async (id) => {
-      setIsPlaying(true);
-      try {
-        const data = await fetchepisodeinfo(id);
-        if (data?.data?.episodes?.length > 0) {
-
-          const progress = continueWatching.find((item) => item.animeId === id);
-
-          const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
-
-          navigate(episodeToPlay, {
-            state: {
-              animeId: id,
-              episodeList: data.data,
-              animeInfo: item
-            }
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        setIsPlaying(false);
-      }
     },
-    [continueWatching, fetchepisodeinfo, navigate, item]
+    [
+      user,
+      anime.id,
+      playlist1,
+      isUpdating,
+      watchlistMap,
+      removeWatchlist,
+      updateWatchlist,
+      addWatchlist,
+      item
+    ]
   );
 
   return (
@@ -199,30 +235,29 @@ const VerticalListItem = ({ anime }) => {
       handlePlaylistChange={handlePlaylistChange}
       isUpdating={isUpdating}
       isPlaying={isPlaying}
-      sideOffset={10}
     >
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={() => navigate(`/${anime.id}`)}
+        onClick={() => handleNavigate()}
         className="group flex items-center gap-3 cursor-pointer rounded-xl p-2.5 sm:p-3 
-                   bg-card hover:bg-accent transition-all duration-300 ease-out
-                   border border-transparent hover:border-border/50
-                   hover:shadow-lg hover:shadow-primary/5 hover:translate-x-1"
+                           bg-card hover:bg-accent transition-all duration-300 ease-out
+                           border border-transparent hover:border-border/50
+                           hover:shadow-lg hover:shadow-primary/5 hover:translate-x-1"
       >
         <div className="relative shrink-0">
           <img
             src={anime.poster}
             alt={language === "EN" ? anime.name : anime.jname}
             className="w-14 h-20 sm:w-16 sm:h-24 rounded-lg object-cover shadow-md 
-                       group-hover:shadow-xl transition-shadow duration-300"
+                               group-hover:shadow-xl transition-shadow duration-300"
             loading="lazy"
           />
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 
-                          transition-opacity duration-300 rounded-lg flex items-center justify-center">
+                                  transition-opacity duration-300 rounded-lg flex items-center justify-center">
             <div className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm 
-                            flex items-center justify-center text-foreground">
+                                    flex items-center justify-center text-foreground">
               <svg className="h-4 w-4 fill-current ml-0.5" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -232,17 +267,17 @@ const VerticalListItem = ({ anime }) => {
 
         <div className="flex flex-col min-w-0 flex-1">
           <h3 className="font-semibold sm:font-bold text-sm sm:text-base leading-tight 
-                         text-foreground line-clamp-2 group-hover:text-primary 
-                         transition-colors duration-200">
+                                 text-foreground line-clamp-2 group-hover:text-primary 
+                                 transition-colors duration-200">
             {language === "EN" ? anime.name : anime.jname}
           </h3>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {anime.episodes?.sub > 0 && (
               <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 
-                               px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                               font-semibold text-emerald-600 dark:text-emerald-400 
-                               ring-1 ring-emerald-500/20">
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-emerald-600 dark:text-emerald-400 
+                                       ring-1 ring-emerald-500/20">
                 <ClosedCaption className="h-3 w-3" />
                 {anime.episodes.sub}
               </span>
@@ -250,9 +285,9 @@ const VerticalListItem = ({ anime }) => {
 
             {anime.episodes?.dub > 0 && (
               <span className="flex items-center gap-1 rounded-md bg-blue-500/10 
-                               px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                               font-semibold text-blue-600 dark:text-blue-400 
-                               ring-1 ring-blue-500/20">
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-blue-600 dark:text-blue-400 
+                                       ring-1 ring-blue-500/20">
                 <Mic className="h-3 w-3" />
                 {anime.episodes.dub}
               </span>
@@ -260,7 +295,7 @@ const VerticalListItem = ({ anime }) => {
 
             {anime.type && (
               <span className="rounded-md bg-secondary px-1.5 py-0.5 sm:px-2 sm:py-1 
-                               text-[10px] sm:text-xs font-semibold text-secondary-foreground">
+                                       text-[10px] sm:text-xs font-semibold text-secondary-foreground">
                 {anime.type}
               </span>
             )}
@@ -268,12 +303,13 @@ const VerticalListItem = ({ anime }) => {
         </div>
       </div>
     </MediaCardPopover>
-  );
-};
 
-/* -------------------- Vertical List -------------------- */
+  )
+
+}
 
 const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
+
   if (!anime || anime.length === 0) {
     return <VerticalListSkeleton count={list} />;
   }
@@ -289,12 +325,12 @@ const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
             <Link
               to={link}
               className="flex items-center gap-1 text-xs sm:text-sm font-medium 
-                         text-primary hover:text-primary/80 transition-colors 
-                         group/link"
+                                     text-primary hover:text-primary/80 transition-colors 
+                                     group/link"
             >
               View All
               <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform 
-                                     group-hover/link:translate-x-0.5" />
+                                                 group-hover/link:translate-x-0.5" />
             </Link>
           )}
         </div>
@@ -306,21 +342,22 @@ const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
         ))}
       </div>
 
+
       {link && !title && (
         <Link
           to={link}
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium 
-                     text-primary hover:text-primary/80 transition-colors mt-4 
-                     group/link px-1 py-2 rounded-lg hover:bg-primary/5"
+                                 text-primary hover:text-primary/80 transition-colors mt-4 
+                                 group/link px-1 py-2 rounded-lg hover:bg-primary/5"
 
         >
           View All
           <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform 
-                                 group-hover/link:translate-x-0.5" />
+                                             group-hover/link:translate-x-0.5" />
         </Link>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default VerticalList;
+export default VerticalList

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 
 /* -------------------- Axios Instance -------------------- */
 
@@ -10,7 +10,7 @@ const api = axios.create({
 
 /* -------------------- Retry Helper -------------------- */
 
-const fetchWithRetry = async (fn, retries = 20, delay = 1000) => {
+const fetchWithRetry = async (fn, retries = 5, delay = 1000) => {
   try {
     return await fn();
   } catch (error) {
@@ -19,7 +19,7 @@ const fetchWithRetry = async (fn, retries = 20, delay = 1000) => {
 
     if (retries > 0 && shouldRetry) {
       await new Promise((res) => setTimeout(res, delay));
-      return fetchWithRetry(fn, retries - 1, delay * 2);
+      return fetchWithRetry(fn, retries - 1, Math.min(delay * 2, 8000));
     }
 
     throw error;
@@ -32,61 +32,118 @@ const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
   const [homedata, setHomedata] = useState(null);
-  const [searchdata, setSearchdata] = useState(null);
+
+  const cacheRef = useRef(new Map());
+  const inFlightRef = useRef(new Map());
+  const CACHE_TTL = 1000 * 60 * 10;
+
+
+
+  const fetchWithCache = async (key, fn) => {
+    const now = Date.now();
+    const cached = cacheRef.current.get(key);
+
+    // 🧹 Remove expired cache
+    if (cached && now - cached.timestamp >= CACHE_TTL) {
+      cacheRef.current.delete(key);
+    }
+
+    // ✅ Return valid cache
+    if (cached && now - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
+    // 🔁 Deduplicate in-flight requests
+    if (inFlightRef.current.has(key)) {
+      return inFlightRef.current.get(key);
+    }
+
+    const promise = (async () => {
+      try {
+        const result = await fn();
+
+        cacheRef.current.set(key, {
+          data: result,
+          timestamp: Date.now(),
+        });
+
+        return result;
+      } finally {
+        inFlightRef.current.delete(key);
+      }
+    })();
+
+    inFlightRef.current.set(key, promise);
+    return promise;
+  };
 
   /* -------------------- HOME -------------------- */
   const fetchHomedata = async () => {
     try {
-      const res = await fetchWithRetry(() =>
-        api.get("/home")
-      );
-      setHomedata(res.data);
+      const data = await fetchWithCache("home", async () => {
+        const res = await fetchWithRetry(() =>
+          api.get("/home")
+        );
+        return res.data;
+      });
+
+      setHomedata(data);
+      return data;
     } catch (error) {
       console.error("Home fetch failed:", error);
+      return null;
     }
   };
 
   /* -------------------- A–Z LIST -------------------- */
   const fetchazlistdata = async (azlist, page = 1) => {
-    try {
-      const res = await api.get(`/azlist/${azlist}`, {
-        params: { page },
-      });
-      return res.data?.data ?? null;
-    } catch (error) {
-      console.error("AZ list fetch failed:", error);
-    }
+    const key = `azlist-${azlist}-page-${page}`;
+
+    return fetchWithCache(key, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/azlist/${azlist}`, {
+            params: { page },
+          })
+        );
+
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("AZ list fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   /* -------------------- ANIME INFO -------------------- */
   const fetchanimeinfo = async (id) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/anime/${id}`)
-      );
-      return res.data?.data ?? null;
-    } catch (error) {
-      console.error("Anime info fetch failed:", error);
-      return null;
-    }
+    return fetchWithCache(`anime-${id}`, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/anime/${id}`)
+        );
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("Anime info fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   /* -------------------- SEARCH -------------------- */
 
-  const fetchsearch = async (keyword, page = "n") => {
-    try {
+  const fetchsearch = async (keyword, page = 1) => {
+    const key = `search-${keyword}-page-${page}`;
+
+    return fetchWithCache(key, async () => {
       const res = await fetchWithRetry(() =>
-        api.get(`/search?q=${keyword}`)
+        api.get(`/search`, {
+          params: { q: keyword, page }
+        })
       );
-      if (page === "n") {
-        return res.data?.data?.anime ?? null;
-      } else {
-        return res.data?.data ?? null;
-      }
-    } catch (error) {
-      console.error("Anime info fetch failed:", error);
-      return null;
-    }
+
+      return res.data?.data ?? null;
+    });
   };
 
   const fetchadvancedsearch = async ({
@@ -143,27 +200,36 @@ export function DataProvider({ children }) {
 
   /* -------------------- EPISODES -------------------- */
   const fetchepisodeinfo = async (id) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/anime/${id}/episodes`)
-      );
-      return res.data ?? null;
-    } catch (error) {
-      console.error("Episode fetch failed:", error);
-      return null;
-    }
+    return fetchWithCache(`episodes-${id}`, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/anime/${id}/episodes`)
+        );
+        return res.data ?? null;
+      } catch (error) {
+        console.error("Episode fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   const fetchestimatedschedules = async (date) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/schedule?date=${date}`)
-      );
-      return res.data ?? null;
-    } catch (error) {
-      console.error("Episode fetch failed:", error);
-      return null;
-    }
+    const key = `schedule-${date}`;
+
+    return fetchWithCache(key, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/schedule`, {
+            params: { date },
+          })
+        );
+
+        return res.data ?? null;
+      } catch (error) {
+        console.error("Schedule fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   const fetchnextepisodeschedule = async (id) => {
@@ -232,14 +298,19 @@ export function DataProvider({ children }) {
 
   /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
-    fetchHomedata();
+    const cached = cacheRef.current.get("home");
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setHomedata(cached.data);
+    } else {
+      fetchHomedata();
+    }
   }, []);
 
   return (
     <DataContext.Provider
       value={{
         homedata,
-        searchdata,
         fetchHomedata,
         fetchazlistdata,
         fetchanimeinfo,

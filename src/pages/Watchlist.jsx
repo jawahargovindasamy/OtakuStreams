@@ -94,6 +94,9 @@ const Watchlist = () => {
     ));
   }, [active, handleFilterChange]);
 
+  console.log(items);
+
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
@@ -119,10 +122,7 @@ const Watchlist = () => {
         ) : items.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-6 w-full mt-6">
             {items.map((item) => (
-              <MediaCard
-                key={item._id}
-                id={item.animeId}
-              />
+              <MediaCard key={item.animeId} id={item.animeId} name={item.animeTitle} poster={item.animeImage} />
             ))}
           </div>
         ) : (

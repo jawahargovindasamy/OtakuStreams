@@ -2,7 +2,7 @@ import EpisodesList from '@/components/EpisodesList';
 import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
 import React, { useEffect, useState } from 'react'
-import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import SeasonsSection from '@/components/SeasonsSection';
 import EpisodeServer from '@/components/EpisodeServer';
@@ -45,6 +45,8 @@ const Watch = () => {
     const [showAllRelated, setShowAllRelated] = useState(false);
     const [showAllPopular, setShowAllPopular] = useState(false);
     const type = activeDub ? "dub" : "sub"
+
+    const navigate = useNavigate();
 
     let formatted = 0;
 
@@ -186,8 +188,6 @@ const Watch = () => {
 
     }, [episodeId, epFromUrl, item, currentEpisodeData, updateProgress]);
 
-
-
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
             <Navbar />
@@ -207,7 +207,7 @@ const Watch = () => {
                         <span className="group-hover:underline underline-offset-4">{item?.anime.info.stats.type === "TV" ? "Tv" : "Movie"}</span>
                     </Link>
                     <span className="text-muted-foreground/40 font-light">/</span>
-                    <span className="text-foreground font-medium">{item?.anime.info.name}</span>
+                    <span className="text-foreground font-medium cursor-pointer" onClick={()=> navigate(`/${item?.anime.info.id}`)}>{item?.anime.info.name}</span>
                 </nav>
             </div>
 
@@ -265,7 +265,7 @@ const Watch = () => {
                                 <SectionHeader title="Recommended For You" icon={ThumbsUp} />
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 w-full">
                                     {item?.recommendedAnimes.map((a) => (
-                                        <MediaCard key={a.id} id={a.id} jname={a.jname} />
+                                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub} />
                                     ))}
                                 </div>
                             </section>
@@ -277,7 +277,7 @@ const Watch = () => {
                             <section className="space-y-3 sm:space-y-4">
                                 <SectionHeader title="Related Anime" icon={Users} />
                                 <div className="bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                    <div className="max-h-125 overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                    <div className="p-3 sm:p-4">
                                         <VerticalList
                                             anime={item?.relatedAnimes}
                                             list={showAllRelated ? relatedCount : 5}
@@ -311,7 +311,7 @@ const Watch = () => {
                             <section className="space-y-3 sm:space-y-4">
                                 <SectionHeader title="Most Popular" icon={Flame} />
                                 <div className="bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                    <div className="max-h-125 overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                    <div className="p-3 sm:p-4">
                                         <VerticalList
                                             anime={item?.mostPopularAnimes}
                                             list={showAllPopular ? popularCount : 5}
