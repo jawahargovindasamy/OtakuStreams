@@ -32,7 +32,7 @@ const ScheduleEpisodeList = ({ animes = [] }) => {
 
     return (
         <div className="space-y-2">
-            <ScrollArea className={showAll ? "h-150" : "h-auto"}>
+            <ScrollArea>
                 <div className="space-y-2 pr-2">
                     {displayedAnimes.map((anime, index) => (
                         <div

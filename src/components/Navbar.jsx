@@ -190,13 +190,13 @@ const Navbar = () => {
                       >
                         <ToggleGroupItem
                           value="EN"
-                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md"
+                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md cursor-pointer"
                         >
                           EN
                         </ToggleGroupItem>
                         <ToggleGroupItem
                           value="JP"
-                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md"
+                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md cursor-pointer"
                         >
                           JP
                         </ToggleGroupItem>

@@ -39,17 +39,17 @@ export function DataProvider({ children }) {
 
 
 
-  const fetchWithCache = async (key, fn) => {
+  const fetchWithCache = async (key, fn, ttl = CACHE_TTL) => {
     const now = Date.now();
     const cached = cacheRef.current.get(key);
 
     // 🧹 Remove expired cache
-    if (cached && now - cached.timestamp >= CACHE_TTL) {
+    if (cached && now - cached.timestamp >= ttl) {
       cacheRef.current.delete(key);
     }
 
     // ✅ Return valid cache
-    if (cached && now - cached.timestamp < CACHE_TTL) {
+    if (cached && now - cached.timestamp < ttl) {
       return cached.data;
     }
 
@@ -215,6 +215,7 @@ export function DataProvider({ children }) {
 
   const fetchestimatedschedules = async (date) => {
     const key = `schedule-${date}`;
+    const ONE_DAY = 1000 * 60 * 60 * 24;
 
     return fetchWithCache(key, async () => {
       try {
@@ -229,7 +230,7 @@ export function DataProvider({ children }) {
         console.error("Schedule fetch failed:", error);
         return null;
       }
-    });
+    },ONE_DAY);
   };
 
   const fetchnextepisodeschedule = async (id) => {
@@ -245,43 +246,60 @@ export function DataProvider({ children }) {
   }
 
   const fetchcategories = async (category, page = 1) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/category/${category}`, {
-          params: { page },
-        })
-      );
-      return res.data.data ?? null;
-    } catch (error) {
-      console.error("AZ list fetch failed:", error);
-    }
+    const key = `category-${category}-page-${page}`;
+
+    return fetchWithCache(key, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/category/${category}`, {
+            params: { page },
+          })
+        );
+
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("Category fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   const fetchgenres = async (name, page = 1) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/genre/${name}`, {
-          params: { page },
-        })
-      );
+    const key = `genre-${name}-page-${page}`;
 
-      return res.data.data ?? null;
-    } catch (error) {
-      console.error("AZ list fetch failed:", error);
-    }
+    return fetchWithCache(key, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/genre/${name}`, {
+            params: { page },
+          })
+        );
+
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("Genre fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   const fetchproducers = async (name, page = 1) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/producer/${name}`, {
-          params: { page },
-        })
-      );
-      return res.data.data ?? null;
-    } catch (error) {
-      console.error("AZ list fetch failed:", error);
-    }
+    const key = `producer-${name}-page-${page}`;
+
+    return fetchWithCache(key, async () => {
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/producer/${name}`, {
+            params: { page },
+          })
+        );
+
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("Producer fetch failed:", error);
+        return null;
+      }
+    });
   };
 
   const fetchepisodeserver = async (id) => {

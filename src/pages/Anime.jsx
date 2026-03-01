@@ -139,7 +139,7 @@ const Anime = () => {
     const hasPopular = item?.mostPopularAnimes && item?.mostPopularAnimes.length > 0;
 
     const relatedCount = item?.relatedAnimes?.length || 0;
-    const popularCount = item?.mostPopularAnimes?.length || 0;
+    const popularCount = item?.mostPopularAnimes?.length || 0;  
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -158,7 +158,7 @@ const Anime = () => {
                         <div className="space-y-8 sm:space-y-10 min-w-0">
                             {/* Seasons Section */}
                             {hasSeasons && (
-                                <SeasonsSection seasons={item?.seasons} />
+                                <SeasonsSection seasons={item?.seasons} id={id} />
                             )}
 
                             {/* Characters Section */}

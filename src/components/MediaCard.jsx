@@ -3,6 +3,7 @@ import { useData } from '@/context/data-provider';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import MediaCardPopover from './MediaCardPopover';
+import { ClosedCaption, Mic } from 'lucide-react';
 
 const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = null, showRank = false }) => {
 
@@ -260,11 +261,27 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = 
                         {language === "EN" ? name : jname}
                     </h3>
 
-                    {type && (
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                            {type} {sub && `• ${sub} Sub`} {dub && `• ${dub} Dub`}
-                        </p>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                        {type && (
+                            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                                {type}
+                            </p>
+                        )}
+                        {sub && (
+                            <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 sm:px-1 sm:py-1 text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
+                                <ClosedCaption className="h-3 w-3" />
+                                {sub}
+                            </span>
+                        )}
+                        {dub && (
+                            <span className="flex items-center gap-1 rounded-md bg-blue-500/10 sm:px-1 sm:py-1 text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
+                                <Mic className="h-3 w-3" />
+                                {dub}
+                            </span>
+                        )}
+                    </div>
+
+
                 </div>
             </div>
         </MediaCardPopover>

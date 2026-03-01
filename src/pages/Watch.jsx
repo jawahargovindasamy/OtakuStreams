@@ -27,8 +27,6 @@ const Watch = () => {
     const [nextEpisode, setNextEpisode] = useState(null);
     const [episode, setEpisode] = useState(episodeList ?? null);
 
-    console.log(episode);
-
     const [episodeserver, setEpisodeserver] = useState(null);
     const [loading, setLoading] = useState(!animeInfo);
 
@@ -250,7 +248,7 @@ const Watch = () => {
 
                         <div className='mt-2'>
                             {hasSeasons && (
-                                <SeasonsSection seasons={item?.seasons} />
+                                <SeasonsSection seasons={item?.seasons} id={episodeId} />
                             )}
                         </div>
                     </div>
