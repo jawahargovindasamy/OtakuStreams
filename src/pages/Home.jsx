@@ -16,7 +16,6 @@ import HomeSkeleton from "@/components/HomeSkeleton";
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
 import ContinueWatchingCard from "@/components/ContinueWatchingCard";
-import VerticalList1 from "@/components/VerticalList1";
 
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
