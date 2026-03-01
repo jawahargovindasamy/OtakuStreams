@@ -103,7 +103,7 @@ const Home = () => {
                     link="/continue-watching"
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                    {continueWatching.map((item) => (
+                    {continueWatching.slice(0,5).map((item) => (
                       <ContinueWatchingCard
                         key={item._id}
                         item={item}
