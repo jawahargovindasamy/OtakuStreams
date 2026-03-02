@@ -211,14 +211,14 @@ const Watch = () => {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
                 <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[340px_1fr] gap-6 lg:gap-8">
-                    <div>
+                    <div className="order-3 lg:order-1">
                         <EpisodesList
                             episodeList={episode?.episodes}
                             totalepisodes={episode?.totalEpisodes}
                             activeEpisode={epFromUrl}
                             onEpisodeChange={(id) => setSearchParams({ ep: id })} />
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-4 order-1 lg:order-2">
                         <div className="rounded-2xl overflow-hidden border border-border/50 shadow-lg shadow-primary/5 bg-card">
                             <iframe
                                 src={`https://megaplay.buzz/stream/s-2/${epFromUrl}/${type}`}

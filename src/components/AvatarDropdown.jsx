@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlayCircle, Heart, Settings, LogOut, User } from "lucide-react";
+import { PlayCircle, Heart, Settings, LogOut, User, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/auth-provider";
 
@@ -68,6 +68,16 @@ const AvatarDropdown = () => {
               <Heart className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium">Watchlist</span>
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Notification */}
+        <DropdownMenuItem className="cursor-pointer focus:bg-accent focus:text-accent-foreground transition-colors duration-150 p-2.5 mx-1 rounded-lg">
+          <Link to="/notification" className="flex items-center gap-3 w-full">
+            <div className="p-1.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <Bell className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-medium">Notification</span>
           </Link>
         </DropdownMenuItem>
 

@@ -79,13 +79,15 @@ export function DataProvider({ children }) {
 
   /* -------------------- HOME -------------------- */
   const fetchHomedata = async () => {
+    const FIVE_HOURS = 1000 * 60 * 60 * 5;
     try {
       const data = await fetchWithCache("home", async () => {
         const res = await fetchWithRetry(() =>
           api.get("/home")
         );
         return res.data;
-      });
+      }, FIVE_HOURS
+    );
 
       setHomedata(data);
       return data;
@@ -230,19 +232,29 @@ export function DataProvider({ children }) {
         console.error("Schedule fetch failed:", error);
         return null;
       }
-    },ONE_DAY);
+    }, ONE_DAY);
   };
 
   const fetchnextepisodeschedule = async (id) => {
-    try {
-      const res = await fetchWithRetry(() =>
-        api.get(`/anime/${id}/next-episode-schedule`)
-      );
-      return res.data.data ?? null;
-    } catch (error) {
-      console.error("Episode fetch failed:", error);
-      return null;
-    }
+    const key = `next-episode-schedule-${id}`;
+    const ONE_HOUR = 1000 * 60 * 60;
+
+    return fetchWithCache(
+      key, async () => {
+        try {
+
+          const res = await fetchWithRetry(() =>
+            api.get(`/anime/${id}/next-episode-schedule`)
+          );
+          return res.data?.data ?? null;
+
+        } catch (error) {
+          console.error("Next episode schedule fetch failed:", error);
+          return null;
+        }
+      },
+      ONE_HOUR
+    )
   }
 
   const fetchcategories = async (category, page = 1) => {

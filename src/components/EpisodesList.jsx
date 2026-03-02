@@ -79,7 +79,7 @@ const EpisodesList = ({
   }, [episodeList, search, isGridMode, currentRange]);
 
   return (
-    <div className="w-full max-w-md rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 space-y-4 h-full shadow-lg shadow-primary/5">
+    <div className="w-full rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 space-y-4 h-full shadow-lg shadow-primary/5">
       {/* HEADER */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-tight">List of episodes:</h2>
