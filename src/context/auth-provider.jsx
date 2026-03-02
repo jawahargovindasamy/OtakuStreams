@@ -115,7 +115,7 @@ export function AuthProvider({ children }) {
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get("/notification");
-      setNotification(res.data || []);
+      setNotification(res.data.data || []);
 
     } catch (error) {
       console.error("Failed to fetch notifications:", error);

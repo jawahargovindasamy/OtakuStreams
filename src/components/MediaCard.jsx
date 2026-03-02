@@ -86,11 +86,10 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = 
 
     const handleMouseEnter = () => {
         clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => {
+        timerRef.current = setTimeout(async() => {
             setOpen(true);
-        }, 400);
-
-        handlefetch();
+            await handlefetch();
+        }, 500);
     };
 
     const handleMouseLeave = () => {
