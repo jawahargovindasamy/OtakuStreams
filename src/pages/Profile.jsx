@@ -15,7 +15,7 @@ import { AnimatePresence } from "framer-motion";
 
 const Profile = () => {
   const { user, api, updateProfile } = useAuth();
-  const [name, setName] = useState();
+  const [name, setName] = useState("");
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [open, setOpen] = useState(false);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -100,14 +100,14 @@ const Profile = () => {
           <CardContent className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8">
 
             {/* Form Section */}
-            <div className="space-y-5 sm:space-y-6">
+            <div className="space-y-5 sm:space-y-6 order-2 lg:order-1">
               {/* Email */}
               <div className="space-y-2">
                 <Label className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                   <Mail className="h-3.5 w-3.5" /> Email Address
                 </Label>
                 <div className="relative">
-                  <Input value={user?.email} readOnly className="bg-muted/50 text-foreground border-border/50 h-10 sm:h-11 pr-24" />
+                  <Input value={user?.email || ""} readOnly className="bg-muted/50 text-foreground border-border/50 h-10 sm:h-11 pr-24" />
                   <Badge
                     variant="secondary"
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
@@ -239,7 +239,7 @@ const Profile = () => {
             </div>
 
             {/* Avatar Section */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-linear-to-b from-muted/30 to-muted/10 border border-border/50 p-6 sm:p-8 space-y-4">
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-linear-to-b from-muted/30 to-muted/10 border border-border/50 p-6 sm:p-8 space-y-4 order-1 lg:order-2">
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-linear-to-r from-primary to-primary/50 rounded-full opacity-30 group-hover:opacity-50 blur transition duration-500" />
                 <Avatar className="relative h-32 w-32 sm:h-36 sm:w-36 ring-4 ring-background shadow-2xl">

@@ -243,9 +243,11 @@ const Navbar = () => {
             </Button>
 
             {/* Notification Dropdown */}
-            <NotificationDropdown notifications={notification} />
+            <div className="pe-1">
+              <NotificationDropdown notifications={notification} />
+            </div>
             
-            
+
             <div className="hover:scale-105 transition-transform duration-200">
               {user ? (
                 <AvatarDropdown />
