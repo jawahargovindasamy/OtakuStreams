@@ -165,7 +165,7 @@ const Anime = () => {
                             {hasCharacters && (
                                 <CharactersSection charactersVoiceActors={item?.anime?.info?.charactersVoiceActors} />
                             )}
-
+                            
                             {/* Recommended Section */}
                             {hasRecommended && (
                                 <section className="space-y-4 sm:space-y-5 w-full">

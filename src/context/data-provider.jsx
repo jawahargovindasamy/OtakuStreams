@@ -36,6 +36,8 @@ export function DataProvider({ children }) {
   const cacheRef = useRef(new Map());
   const inFlightRef = useRef(new Map());
   const CACHE_TTL = 1000 * 60 * 10;
+  const FIVE_HOURS = 1000 * 60 * 60 * 5;
+  const ONE_DAY = 1000 * 60 * 60 * 24;
 
 
 
@@ -62,10 +64,12 @@ export function DataProvider({ children }) {
       try {
         const result = await fn();
 
-        cacheRef.current.set(key, {
-          data: result,
-          timestamp: Date.now(),
-        });
+        if (result !== null) {
+          cacheRef.current.set(key, {
+            data: result,
+            timestamp: Date.now(),
+          });
+        }
 
         return result;
       } finally {
@@ -79,7 +83,6 @@ export function DataProvider({ children }) {
 
   /* -------------------- HOME -------------------- */
   const fetchHomedata = async () => {
-    const FIVE_HOURS = 1000 * 60 * 60 * 5;
     try {
       const data = await fetchWithCache("home", async () => {
         const res = await fetchWithRetry(() =>
@@ -87,7 +90,7 @@ export function DataProvider({ children }) {
         );
         return res.data;
       }, FIVE_HOURS
-    );
+      );
 
       setHomedata(data);
       return data;
@@ -114,7 +117,7 @@ export function DataProvider({ children }) {
         console.error("AZ list fetch failed:", error);
         return null;
       }
-    });
+    }, FIVE_HOURS);
   };
 
   /* -------------------- ANIME INFO -------------------- */
@@ -129,7 +132,7 @@ export function DataProvider({ children }) {
         console.error("Anime info fetch failed:", error);
         return null;
       }
-    });
+    }, FIVE_HOURS);
   };
 
   /* -------------------- SEARCH -------------------- */
@@ -138,14 +141,18 @@ export function DataProvider({ children }) {
     const key = `search-${keyword}-page-${page}`;
 
     return fetchWithCache(key, async () => {
-      const res = await fetchWithRetry(() =>
-        api.get(`/search`, {
-          params: { q: keyword, page }
-        })
-      );
-
-      return res.data?.data ?? null;
-    });
+      try {
+        const res = await fetchWithRetry(() =>
+          api.get(`/search`, {
+            params: { q: keyword, page }
+          })
+        );
+        return res.data?.data ?? null;
+      } catch (error) {
+        console.error("Schedule fetch failed:", error);
+        return null;
+      }
+    }, FIVE_HOURS);
   };
 
   const fetchadvancedsearch = async ({
@@ -162,42 +169,84 @@ export function DataProvider({ children }) {
     sort,
     genres,
   }) => {
-    try {
-      const params = {
-        q,
-        page,
-        type,
-        status,
-        rated,
-        score: score?.toLowerCase(),
-        season,
-        language,
-        start_date,
-        end_date,
-        sort,
-        genres: genres?.length ? genres.map(g => g.toLowerCase()).join(",") : undefined,
-      };
+    const stableGenres = genres?.length
+      ? [...genres].sort().map(g => g.toLowerCase())
+      : undefined;
+    const key = `advanced-search-${JSON.stringify({
+      q,
+      page,
+      type,
+      status,
+      rated,
+      score,
+      season,
+      language,
+      start_date,
+      end_date,
+      sort,
+      genres: stableGenres,
+    })}`;
 
-      const res = await fetchWithRetry(() => api.get("/search", { params }));
-      return res.data?.data ?? null;
-    } catch (error) {
-      console.error("Search fetch failed:", error);
-      return null;
-    }
+    return fetchWithCache(
+      key,
+      async () => {
+        try {
+          const params = {
+            q,
+            page,
+            type,
+            status,
+            rated,
+            score: score?.toLowerCase(),
+            season,
+            language,
+            start_date,
+            end_date,
+            sort,
+            genres: stableGenres?.length
+              ? stableGenres.join(",")
+              : undefined,
+          };
+
+          const res = await fetchWithRetry(() =>
+            api.get("/search", { params })
+          );
+
+          return res.data?.data ?? null;
+        } catch (error) {
+          console.error("Advanced search fetch failed:", error);
+          return null;
+        }
+      },
+      FIVE_HOURS
+    );
   };
 
 
   /* -------------------- SEARCH SUGGESTIONS -------------------- */
   const fetchsearchsuggestions = async (q) => {
-    try {
-      const res = await api.get("/search/suggestion", {
-        params: { q },
-      });
-      return res.data;
-    } catch (error) {
-      console.error("Search suggestions failed:", error);
-      return null;
-    }
+    if (!q) return null;
+
+    const key = `search-suggestions-${q.toLowerCase()}`;
+
+    return fetchWithCache(
+      key,
+      async () => {
+        try {
+          const res = await fetchWithRetry(() =>
+            api.get("/search/suggestion", {
+              params: { q },
+            })
+          );
+
+          return res.data ?? null;
+        } catch (error) {
+          console.error("Search suggestions failed:", error);
+          return null;
+        }
+      },
+      FIVE_HOURS
+    );
   };
 
   /* -------------------- EPISODES -------------------- */
@@ -217,7 +266,6 @@ export function DataProvider({ children }) {
 
   const fetchestimatedschedules = async (date) => {
     const key = `schedule-${date}`;
-    const ONE_DAY = 1000 * 60 * 60 * 24;
 
     return fetchWithCache(key, async () => {
       try {
@@ -273,7 +321,7 @@ export function DataProvider({ children }) {
         console.error("Category fetch failed:", error);
         return null;
       }
-    });
+    }, FIVE_HOURS);
   };
 
   const fetchgenres = async (name, page = 1) => {
@@ -292,7 +340,7 @@ export function DataProvider({ children }) {
         console.error("Genre fetch failed:", error);
         return null;
       }
-    });
+    }, FIVE_HOURS);
   };
 
   const fetchproducers = async (name, page = 1) => {
@@ -311,7 +359,7 @@ export function DataProvider({ children }) {
         console.error("Producer fetch failed:", error);
         return null;
       }
-    });
+    }, FIVE_HOURS);
   };
 
   const fetchepisodeserver = async (id) => {
@@ -330,7 +378,7 @@ export function DataProvider({ children }) {
   useEffect(() => {
     const cached = cacheRef.current.get("home");
 
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < FIVE_HOURS) {
       setHomedata(cached.data);
     } else {
       fetchHomedata();

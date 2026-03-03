@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
 import { useSearchParams } from 'react-router-dom';
 import MediaCard from '@/components/MediaCard';
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Static filter configuration outside component
 const FILTER_OPTIONS = [
@@ -22,6 +23,19 @@ const Watchlist = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
+  const ITEMS_PER_PAGE = 30;
+  const [page, setPage] = useState(() => {
+    const pageParam = searchParams.get("page");
+    const parsed = parseInt(pageParam, 10);
+    return parsed > 0 ? parsed : 1;
+  });
+
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return items.slice(start, start + ITEMS_PER_PAGE);
+  }, [items, page]);
 
   // Memoized type param
   const typeParam = useMemo(() => searchParams.get("type"), [searchParams]);
@@ -38,6 +52,31 @@ const Watchlist = () => {
       setItems(watchlist);
     }
   }, [watchlist, typeParam]);
+
+  useEffect(() => {
+    const pageParam = searchParams.get("page");
+    const parsed = parseInt(pageParam, 10);
+    const newPage = parsed > 0 ? parsed : 1;
+
+    setPage((prev) => (prev === newPage ? prev : newPage));
+  }, [searchParams]);
+
+
+  useEffect(() => {
+    const currentPage = searchParams.get("page");
+    const currentType = searchParams.get("type");
+
+    const nextPage = page > 1 ? page.toString() : null;
+    const nextType = typeParam || null;
+
+    if (currentPage === nextPage && currentType === nextType) return;
+
+    const params = {};
+    if (nextType) params.type = nextType;
+    if (nextPage) params.page = nextPage;
+
+    setSearchParams(params, { replace: true });
+  }, [page, typeParam, searchParams, setSearchParams]);
 
   // Fetch filtered data when typeParam changes
   useEffect(() => {
@@ -71,6 +110,8 @@ const Watchlist = () => {
   }, [typeParam, fetchWatchlist]);
 
   const handleFilterChange = useCallback((label) => {
+    setPage(1); // reset page
+
     if (label === "All") {
       setSearchParams({});
     } else {
@@ -94,8 +135,51 @@ const Watchlist = () => {
     ));
   }, [active, handleFilterChange]);
 
-  console.log(items);
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
 
+    setPage(newPage);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [totalPages]);
+
+  const getPageNumbers = useCallback(() => {
+    const pages = [];
+
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    pages.push(1);
+
+    if (page > 3) {
+      pages.push("...");
+    }
+
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (page < totalPages - 2) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages);
+    }
+  }, [totalPages, page]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -120,10 +204,68 @@ const Watchlist = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : items.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-6 w-full mt-6">
-            {items.map((item) => (
-              <MediaCard key={item.animeId} id={item.animeId} name={item.animeTitle} poster={item.animeImage} />
-            ))}
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-6 w-full mt-6">
+              {paginatedItems.map((item) => (
+                <MediaCard key={item.animeId} id={item.animeId} name={item.animeTitle} poster={item.animeImage} />
+              ))}
+            </div>
+            {totalPages > 1 && !loading && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border/50">
+                <p className="text-sm text-muted-foreground order-2 sm:order-1">
+                  Page <span className="text-foreground font-medium">{page}</span> of{" "}
+                  <span className="text-foreground font-medium">{totalPages}</span>
+                </p>
+
+                <div className="flex items-center gap-2 order-1 sm:order-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                    className="h-9 w-9 p-0 rounded-lg border-border/50 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((pageNum, idx) =>
+                      pageNum === "..." ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="w-9 h-9 flex items-center justify-center text-muted-foreground text-sm"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`h-9 w-9 p-0 rounded-lg text-sm font-medium transition-all duration-200 ${page === pageNum
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
+                            : "border-border/50 hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === totalPages}
+                    className="h-9 w-9 p-0 rounded-lg border-border/50 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 sm:py-32 text-center">

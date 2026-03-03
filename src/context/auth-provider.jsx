@@ -5,10 +5,13 @@ import {
   useMemo,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import axios from "axios";
 
 const AuthContext = createContext(null);
+
+const THREE_HOURS = 1000 * 60 * 60 * 3;
 
 export function AuthProvider({ children }) {
 
@@ -25,6 +28,41 @@ export function AuthProvider({ children }) {
     dropped: false,
     completed: false,
   });
+
+  const cacheRef = useRef(new Map());
+  const inFlightRef = useRef(new Map());
+
+  const fetchWithCache = useCallback(async (key, fn, ttl = THREE_HOURS) => {
+    const now = Date.now();
+    const cached = cacheRef.current.get(key);
+
+    if (cached && now - cached.timestamp >= ttl) {
+      cacheRef.current.delete(key);
+    }
+
+    if (cached && now - cached.timestamp < ttl) {
+      return cached.data;
+    }
+
+    if (inFlightRef.current.has(key)) {
+      return inFlightRef.current.get(key);
+    }
+
+    const promise = (async () => {
+      try {
+        const result = await fn();
+        if (result !== null) {
+          cacheRef.current.set(key, { data: result, timestamp: Date.now() });
+        }
+        return result;
+      } finally {
+        inFlightRef.current.delete(key);
+      }
+    })();
+
+    inFlightRef.current.set(key, promise);
+    return promise;
+  }, []);
 
   useEffect(() => {
     if (!user?.notificationIgnore) return;
@@ -46,6 +84,9 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    cacheRef.current.clear();
+    inFlightRef.current.clear();
 
     setUser(null);
     setContinueWatching([]);
@@ -84,33 +125,39 @@ export function AuthProvider({ children }) {
 
   const fetchContinueWatching = useCallback(async () => {
     try {
-      const res = await api.get("/continue-watching");
+      const data = await fetchWithCache("continue-watching", async () => {
+        const res = await api.get("/continue-watching");
+        return res.data.data ?? null;
+      });
 
-      setContinueWatching(res.data.data || []);
-
+      setContinueWatching(data || []);
     } catch (error) {
       console.error("Failed to fetch continue watching:", error);
       setContinueWatching([]);
     }
-  }, [api]);
+  }, [api, fetchWithCache]);
 
 
   const fetchWatchlist = useCallback(async (status) => {
+    const cacheKey = status
+      ? `watchlist-${JSON.stringify(status)}`
+      : "watchlist-all";
+
     try {
-      const res = await api.get("/watchlist", {
-        params: status ? { ...status } : {},
+      const data = await fetchWithCache(cacheKey, async () => {
+        const res = await api.get("/watchlist", {
+          params: status ? { ...status } : {},
+        });
+        return res.data.data ?? null;
       });
 
-      if (!status)
-        setWatchlist(res.data.data || []);
-
-      return res.data.data || [];
-
+      if (!status) setWatchlist(data || []);
+      return data || [];
     } catch (error) {
       console.error("Failed to fetch watchlist:", error);
       setWatchlist([]);
     }
-  }, [api])
+  }, [api, fetchWithCache]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -156,6 +203,8 @@ export function AuthProvider({ children }) {
           return [updatedItem, ...prev];
         });
 
+        cacheRef.current.delete("watchlist-all");
+
         return updatedItem;
       } catch (error) {
         console.error("Failed to update watchlist:", error);
@@ -180,6 +229,7 @@ export function AuthProvider({ children }) {
 
 
       setWatchlist((prev) => [updatedItem, ...prev]);
+      cacheRef.current.delete("watchlist-all");
 
       return updatedItem;
 
@@ -196,6 +246,7 @@ export function AuthProvider({ children }) {
     try {
       await api.delete(`/watchlist/${id}`);
       setWatchlist((prev) => prev.filter((item) => item._id !== id))
+      cacheRef.current.delete("watchlist-all");
 
     } catch (error) {
       console.error("Failed to fetch Remove watchlist:", error);
@@ -209,6 +260,8 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem("user", JSON.stringify(data));
     setUser(data);
+
+    cacheRef.current.clear();
 
     await fetchContinueWatching();
     await fetchWatchlist();
@@ -256,6 +309,8 @@ export function AuthProvider({ children }) {
 
           return [updated, ...prev];
         });
+
+        cacheRef.current.delete("continue-watching");
 
       } catch (error) {
         console.error("Failed to update progress:", error);

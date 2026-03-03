@@ -54,7 +54,7 @@ const ContinueWatchingCard = ({ item }) => {
                 size="icon"
                 onClick={handleRemove}
                 disabled={isDeleting}
-                className="absolute top-3 right-3 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/60 text-white hover:bg-destructive hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 focus-visible:opacity-100"
+                className="absolute top-3 right-3 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/60 text-white hover:bg-destructive hover:text-white opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:scale-110"
                 aria-label="Remove from continue watching"
             >
                 {isDeleting ? (

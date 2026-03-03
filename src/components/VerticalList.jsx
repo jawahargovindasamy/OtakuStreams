@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
 import MediaCardPopover from "@/components/MediaCardPopover";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 
 const VerticalListSkeletonItem = () => {
@@ -60,6 +61,8 @@ const VerticalListItem = ({ anime }) => {
 
   const timerRef = useRef(null);
   const fetchingRef = useRef(false);
+
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const playlist = useMemo(
     () => [
@@ -126,7 +129,7 @@ const VerticalListItem = ({ anime }) => {
 
   const handleMouseEnter = () => {
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async() => {
+    timerRef.current = setTimeout(async () => {
       setOpen(true);
       await handlefetch();
     }, 500);
@@ -221,6 +224,79 @@ const VerticalListItem = ({ anime }) => {
     ]
   );
 
+  const CardContent = (
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={() => handleNavigate()}
+      className="group flex items-center gap-3 cursor-pointer rounded-xl p-2.5 sm:p-3 
+                           bg-card hover:bg-accent transition-all duration-300 ease-out
+                           border border-transparent hover:border-border/50
+                           hover:shadow-lg hover:shadow-primary/5 hover:translate-x-1"
+    >
+      <div className="relative shrink-0">
+        <img
+          src={anime.poster}
+          alt={language === "EN" ? anime.name : anime.jname}
+          className="w-14 h-20 sm:w-16 sm:h-24 rounded-lg object-cover shadow-md 
+                               group-hover:shadow-xl transition-shadow duration-300"
+          loading="lazy"
+        />
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 
+                                  transition-opacity duration-300 rounded-lg flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm 
+                                    flex items-center justify-center text-foreground">
+            <svg className="h-4 w-4 fill-current ml-0.5" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col min-w-0 flex-1">
+        <h3 className="font-semibold sm:font-bold text-sm sm:text-base leading-tight 
+                                 text-foreground line-clamp-2 group-hover:text-primary 
+                                 transition-colors duration-200">
+          {language === "EN" ? anime.name : anime.jname}
+        </h3>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {anime.episodes?.sub > 0 && (
+            <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-emerald-600 dark:text-emerald-400 
+                                       ring-1 ring-emerald-500/20">
+              <ClosedCaption className="h-3 w-3" />
+              {anime.episodes.sub}
+            </span>
+          )}
+
+          {anime.episodes?.dub > 0 && (
+            <span className="flex items-center gap-1 rounded-md bg-blue-500/10 
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-blue-600 dark:text-blue-400 
+                                       ring-1 ring-blue-500/20">
+              <Mic className="h-3 w-3" />
+              {anime.episodes.dub}
+            </span>
+          )}
+
+          {anime.type && (
+            <span className="rounded-md bg-secondary px-1.5 py-0.5 sm:px-2 sm:py-1 
+                                       text-[10px] sm:text-xs font-semibold text-secondary-foreground">
+              {anime.type}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!isDesktop) {
+    return CardContent;
+  }
+
   return (
     <MediaCardPopover
       item={item}
@@ -235,76 +311,9 @@ const VerticalListItem = ({ anime }) => {
       isUpdating={isUpdating}
       isPlaying={isPlaying}
     >
-      <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={() => handleNavigate()}
-        className="group flex items-center gap-3 cursor-pointer rounded-xl p-2.5 sm:p-3 
-                           bg-card hover:bg-accent transition-all duration-300 ease-out
-                           border border-transparent hover:border-border/50
-                           hover:shadow-lg hover:shadow-primary/5 hover:translate-x-1"
-      >
-        <div className="relative shrink-0">
-          <img
-            src={anime.poster}
-            alt={language === "EN" ? anime.name : anime.jname}
-            className="w-14 h-20 sm:w-16 sm:h-24 rounded-lg object-cover shadow-md 
-                               group-hover:shadow-xl transition-shadow duration-300"
-            loading="lazy"
-          />
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 
-                                  transition-opacity duration-300 rounded-lg flex items-center justify-center">
-            <div className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm 
-                                    flex items-center justify-center text-foreground">
-              <svg className="h-4 w-4 fill-current ml-0.5" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col min-w-0 flex-1">
-          <h3 className="font-semibold sm:font-bold text-sm sm:text-base leading-tight 
-                                 text-foreground line-clamp-2 group-hover:text-primary 
-                                 transition-colors duration-200">
-            {language === "EN" ? anime.name : anime.jname}
-          </h3>
-
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {anime.episodes?.sub > 0 && (
-              <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 
-                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                                       font-semibold text-emerald-600 dark:text-emerald-400 
-                                       ring-1 ring-emerald-500/20">
-                <ClosedCaption className="h-3 w-3" />
-                {anime.episodes.sub}
-              </span>
-            )}
-
-            {anime.episodes?.dub > 0 && (
-              <span className="flex items-center gap-1 rounded-md bg-blue-500/10 
-                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                                       font-semibold text-blue-600 dark:text-blue-400 
-                                       ring-1 ring-blue-500/20">
-                <Mic className="h-3 w-3" />
-                {anime.episodes.dub}
-              </span>
-            )}
-
-            {anime.type && (
-              <span className="rounded-md bg-secondary px-1.5 py-0.5 sm:px-2 sm:py-1 
-                                       text-[10px] sm:text-xs font-semibold text-secondary-foreground">
-                {anime.type}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      {CardContent}
     </MediaCardPopover>
-
   )
-
 }
 
 const VerticalList = ({ anime = null, list = 5, title = null, link }) => {

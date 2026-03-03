@@ -131,13 +131,13 @@ function StatBadge({ icon: Icon, value, label, colorKey = "emerald" }) {
 // Custom hook for safe async operations
 function useSafeAsync() {
     const isMountedRef = useRef(true);
-    
+
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
         };
     }, []);
-    
+
     const safeExecute = useCallback(async (asyncFn, onSuccess, onError) => {
         try {
             const result = await asyncFn();
@@ -148,7 +148,7 @@ function useSafeAsync() {
             throw error;
         }
     }, []);
-    
+
     return safeExecute;
 }
 
@@ -158,7 +158,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
     const [showmore, setShowmore] = useState(false);
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-    
+
     const safeExecute = useSafeAsync();
 
     // Memoized label map
@@ -194,12 +194,12 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
 
     const handlePlaylistChange = useCallback(async (item) => {
         if (isUpdating) return;
-        
+
         const existing = watchlistMap.get(anime.info.id);
         const previousStatus = playlist1;
-        
+
         setIsUpdating(true);
-        
+
         // Optimistic update
         if (item.key === 'remove') {
             setPlaylist1(null);
@@ -283,6 +283,23 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
 
                         {/* LEFT – Poster */}
                         <div className="space-y-4">
+                            {/* Mobile / Tablet Breadcrumb */}
+                            <nav className="flex lg:hidden items-center gap-2 text-sm text-muted-foreground flex-wrap mb-4">
+                                <Link to="/home" className="hover:text-primary transition-colors">
+                                    Home
+                                </Link>
+                                <span className="text-border">/</span>
+                                <Link
+                                    to={`/${info.stats.type === "TV" ? "tv" : "movie"}`}
+                                    className="hover:text-primary transition-colors"
+                                >
+                                    {info.stats.type === "TV" ? "Tv" : "Movie"}
+                                </Link>
+                                <span className="text-border">/</span>
+                                <span className="text-foreground font-medium truncate max-w-40">
+                                    {info.name}
+                                </span>
+                            </nav>
                             <div className="relative group max-w-75 lg:max-w-none mx-auto lg:mx-0">
                                 <div className="absolute -inset-1 bg-linear-to-r from-primary/20 to-primary/40 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
                                 <img
@@ -299,6 +316,56 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                                         </Badge>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Mobile / Tablet Title + Stats */}
+                            <div className="lg:hidden space-y-4 text-center">
+                                <div>
+                                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-2">
+                                        {info.name}
+                                    </h1>
+                                    {moreInfo?.japanese && (
+                                        <p className="text-lg text-muted-foreground font-medium">
+                                            {moreInfo.japanese}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center gap-3">
+                                    {info.stats?.quality && (
+                                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 px-2.5 py-1">
+                                            {info.stats.quality}
+                                        </Badge>
+                                    )}
+
+                                    {info.stats?.episodes?.sub > 0 && (
+                                        <StatBadge
+                                            icon={ClosedCaption}
+                                            value={info.stats.episodes.sub}
+                                            label="SUB"
+                                            colorKey="emerald"
+                                        />
+                                    )}
+
+                                    {info.stats?.episodes?.dub > 0 && (
+                                        <StatBadge
+                                            icon={Mic}
+                                            value={info.stats.episodes.dub}
+                                            label="DUB"
+                                            colorKey="blue"
+                                        />
+                                    )}
+
+                                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                        <Clock className="w-4 h-4" />
+                                        <span>{info.stats?.duration || '24 min'}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                        <Calendar className="w-4 h-4" />
+                                        <span>{info.stats?.type || 'TV'}</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Mobile-only action buttons */}
@@ -383,7 +450,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                         {/* CENTER – Main content */}
                         <div className="space-y-6">
                             {/* Breadcrumb */}
-                            <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                            <nav className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                                 <Link to="/home" className="hover:text-primary transition-colors">
                                     Home
                                 </Link>
@@ -398,7 +465,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                             </nav>
 
                             {/* Title */}
-                            <div>
+                            <div className="hidden lg:block text-left">
                                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-2">
                                     {info.name}
                                 </h1>
@@ -410,7 +477,7 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                             </div>
 
                             {/* Stats Row */}
-                            <div className="flex flex-wrap items-center gap-3">
+                            <div className="hidden lg:flex flex-wrap items-center justify-start gap-3">
                                 {info.stats?.quality && (
                                     <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 px-2.5 py-1">
                                         {info.stats.quality}
