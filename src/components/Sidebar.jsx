@@ -12,7 +12,7 @@ import ThemeTogglePill from './ThemeTogglePill';
 
 const Sidebar = ({ onClose }) => {
     const { theme } = useTheme();
-    const { user } = useAuth();
+    const { user, handleRandom } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const { language, setLanguage } = useAuth();
@@ -64,6 +64,7 @@ const Sidebar = ({ onClose }) => {
                     variant="outline"
                     size="icon"
                     className="border-border hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                    onClick={() => { handleRandom(); onClose }}
                 >
                     <Shuffle className="h-4 w-4" />
                 </Button>
@@ -92,7 +93,19 @@ const Sidebar = ({ onClose }) => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto 
+                scrollbar-thin
+                    scrollbar-track-transparent
+                    scrollbar-thumb-primary/20
+                    hover:scrollbar-thumb-primary/50
+                    scrollbar-thumb-rounded-full
+                    [&::-webkit-scrollbar]:w-1.5
+                    [&::-webkit-scrollbar-track]:bg-transparent
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    [&::-webkit-scrollbar-thumb]:bg-primary/20
+                    [&::-webkit-scrollbar-thumb]:transition-colors
+                    [&::-webkit-scrollbar-thumb]:duration-300
+                    hover:[&::-webkit-scrollbar-thumb]:bg-primary/50">
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.path;
 

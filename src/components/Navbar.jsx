@@ -43,7 +43,7 @@ import NotificationDropdown from "./NotificationDropdown";
 /* ================= Navbar ================= */
 const Navbar = () => {
   const { theme } = useTheme();
-  const { language, setLanguage, user, notification } = useAuth();
+  const { language, setLanguage, user, notification, handleRandom } = useAuth();
   const { fetchsearchsuggestions } = useData();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,6 +167,7 @@ const Navbar = () => {
                         variant="ghost"
                         size="icon"
                         className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                        onClick={() => handleRandom()}
                       >
                         <Shuffle className="h-5 w-5" />
                       </Button>
@@ -246,7 +247,7 @@ const Navbar = () => {
             <div className="pe-1">
               <NotificationDropdown notifications={notification} />
             </div>
-            
+
 
             <div className="hover:scale-105 transition-transform duration-200">
               {user ? (

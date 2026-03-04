@@ -8,6 +8,7 @@ import {
   useRef,
 } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,7 @@ export function AuthProvider({ children }) {
   const [continueWatching, setContinueWatching] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [notification, setNotification] = useState([]);
+  const navigate = useNavigate();
 
   const [ignoredFolders, setIgnoredFolders] = useState({
     watching: false,
@@ -391,6 +393,18 @@ export function AuthProvider({ children }) {
   }, [api, fetchContinueWatching, fetchWatchlist, fetchNotifications, logout]);
 
 
+  const handleRandom = async () => {
+    try {
+      const { data } = await api.get("/random");
+
+      if (data?.success && data?.data?.id) {
+        navigate(`/${data.data.id}`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
 
   return (
@@ -421,6 +435,7 @@ export function AuthProvider({ children }) {
         updateSettings,
         markRead,
         clearNotifications,
+        handleRandom,
       }}
     >
       {children}

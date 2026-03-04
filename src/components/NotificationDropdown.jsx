@@ -65,7 +65,10 @@ const NotificationDropdown = ({ notifications = [] }) => {
                 </div>
 
                 {/* Notification List */}
-                <div className="max-h-100 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                <div className="max-h-100 overflow-y-auto 
+                    scrollbar-thin scrollbar-track-transparent scrollbar-thumb-primary/20 hover:scrollbar-thumb-primary/50 scrollbar-thumb-rounded-full
+                    [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:transition-colors [&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:bg-primary/50"
+                >
                     {notifications.length === 0 ? (
                         <div className="p-8 text-center">
                             <Bell className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" strokeWidth={1.5} />
