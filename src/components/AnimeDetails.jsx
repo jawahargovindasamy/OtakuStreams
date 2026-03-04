@@ -153,7 +153,7 @@ function useSafeAsync() {
     return safeExecute;
 }
 
-const AnimeDetails = ({ id,anime, handlePlay, isPlaying, nextEpisodeTime }) => {
+const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => {
     const { user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
     const [playlist1, setPlaylist1] = useState(null);
     const [showmore, setShowmore] = useState(false);
@@ -190,12 +190,12 @@ const AnimeDetails = ({ id,anime, handlePlay, isPlaying, nextEpisodeTime }) => {
         }
         const item = watchlistMap.get(id);
         setPlaylist1(item?.status || null);
-    }, [user, anime?.info?.id,id, watchlistMap]);
+    }, [user, anime?.info?.id, id, watchlistMap]);
 
     const handlePlaylistChange = useCallback(async (item) => {
         if (isUpdating) return;
 
-        const existing = watchlistMap.get(anime.info.id);
+        const existing = watchlistMap.get(id);
         const previousStatus = playlist1;
 
         setIsUpdating(true);
@@ -220,7 +220,7 @@ const AnimeDetails = ({ id,anime, handlePlay, isPlaying, nextEpisodeTime }) => {
                     await updateWatchlist(existing._id, item.key);
                 } else {
                     await addWatchlist(
-                        anime.info.id,
+                        id,
                         anime.info.name,
                         anime.info.poster,
                         item.key
@@ -233,7 +233,7 @@ const AnimeDetails = ({ id,anime, handlePlay, isPlaying, nextEpisodeTime }) => {
         } finally {
             setIsUpdating(false);
         }
-    }, [anime.info, watchlistMap, playlist1, isUpdating, safeExecute, removeWatchlist, updateWatchlist, addWatchlist]);
+    }, [anime.info, watchlistMap, playlist1, isUpdating, safeExecute, removeWatchlist, updateWatchlist, addWatchlist, id]);
 
     const handlePlayClick = useCallback(() => {
         if (!isPlaying && anime?.info?.id) {
