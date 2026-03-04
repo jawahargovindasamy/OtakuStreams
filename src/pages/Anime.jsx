@@ -150,6 +150,7 @@ const Anime = () => {
                     handlePlay={handlePlay}
                     isPlaying={isPlaying}
                     nextEpisodeTime={formatted}
+                    id={id}
                 />
 
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">

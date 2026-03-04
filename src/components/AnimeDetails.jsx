@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from '@/context/auth-provider';
+import { Item } from '@radix-ui/react-dropdown-menu';
 
 // Color styles mapping for Tailwind
 const colorStyles = {
@@ -152,11 +153,10 @@ function useSafeAsync() {
     return safeExecute;
 }
 
-const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
+const AnimeDetails = ({ id,anime, handlePlay, isPlaying, nextEpisodeTime }) => {
     const { user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
     const [playlist1, setPlaylist1] = useState(null);
     const [showmore, setShowmore] = useState(false);
-    const [popoverOpen, setPopoverOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const safeExecute = useSafeAsync();
@@ -184,13 +184,13 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
 
     // Sync with watchlistMap
     useEffect(() => {
-        if (!user || !anime?.info?.id) {
+        if (!user || !id) {
             setPlaylist1(null);
             return;
         }
-        const item = watchlistMap.get(anime.info.id);
+        const item = watchlistMap.get(id);
         setPlaylist1(item?.status || null);
-    }, [user, anime?.info?.id, watchlistMap]);
+    }, [user, anime?.info?.id,id, watchlistMap]);
 
     const handlePlaylistChange = useCallback(async (item) => {
         if (isUpdating) return;
@@ -206,7 +206,6 @@ const AnimeDetails = ({ anime, handlePlay, isPlaying, nextEpisodeTime }) => {
         } else {
             setPlaylist1(item.key);
         }
-        setPopoverOpen(false);
 
         try {
             await safeExecute(async () => {
