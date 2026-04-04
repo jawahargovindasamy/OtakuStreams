@@ -342,27 +342,6 @@ const Watch = () => {
             </div>
 
             <Footer />
-
-            {/* Custom Scrollbar Styles */}
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 5px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: hsl(var(--primary) / 0.3);
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--primary) / 0.5);
-                }
-                .custom-scrollbar {
-                    scrollbar-width: thin;
-                    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
-                }
-            `}</style>
         </div>
     )
 }

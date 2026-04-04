@@ -97,7 +97,7 @@ const EpisodesList = ({
 
       {/* ================= SMALL LIST ================= */}
       {!isGridMode && (
-        <div className="space-y-1 max-h-150 overflow-y-auto custom-scrollbar pr-1">
+        <div className="space-y-1 max-h-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1">
           {filteredEpisodes.map((ep) => {
             const epId = getEpId(ep.episodeId);
             const isActive = Number(epId) === Number(activeEpisode);
@@ -181,7 +181,7 @@ const EpisodesList = ({
           </div>
 
           {/* GRID */}
-          <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto custom-scrollbar pr-1">
+          <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1">
             {filteredEpisodes.map((ep) => {
               const epId = getEpId(ep.episodeId);
               const isActive = Number(epId) === Number(activeEpisode);

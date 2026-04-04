@@ -187,7 +187,7 @@ const Anime = () => {
                                 <section className="space-y-3 sm:space-y-4">
                                     <SectionHeader title="Related Anime" icon={Users} />
                                     <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                        <div className="max-h-175 overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                        <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
                                             <VerticalList
                                                 anime={item?.relatedAnimes}
                                                 list={showAllRelated ? relatedCount : 5}
@@ -221,7 +221,7 @@ const Anime = () => {
                                 <section className="space-y-3 sm:space-y-4">
                                     <SectionHeader title="Most Popular" icon={Flame} />
                                     <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                        <div className="max-h-175 overflow-y-auto custom-scrollbar p-3 sm:p-4">
+                                        <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
                                             <VerticalList
                                                 anime={item?.mostPopularAnimes}
                                                 list={showAllPopular ? popularCount : 5}
