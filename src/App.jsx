@@ -1,56 +1,59 @@
 import "./App.css";
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import ContinueWatching from "./pages/ContinueWatching";
-import Anime from "./pages/Anime";
-import List from "./pages/List";
-import AZ from "./pages/AZ";
-import Genre from "./pages/Genre";
-import Search from "./pages/Search";
-import Producer from "./pages/Producer";
-import Watch from "./pages/Watch";
-import Watchlist from "./pages/Watchlist";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import Notification from "./pages/Notification";
+
+/* ---- Lazy-loaded pages (each becomes its own split chunk) ---- */
+const LandingPage      = lazy(() => import("./pages/LandingPage"));
+const Home             = lazy(() => import("./pages/Home"));
+const Profile          = lazy(() => import("./pages/Profile"));
+const ContinueWatching = lazy(() => import("./pages/ContinueWatching"));
+const Anime            = lazy(() => import("./pages/Anime"));
+const List             = lazy(() => import("./pages/List"));
+const AZ               = lazy(() => import("./pages/AZ"));
+const Genre            = lazy(() => import("./pages/Genre"));
+const Search           = lazy(() => import("./pages/Search"));
+const Producer         = lazy(() => import("./pages/Producer"));
+const Watch            = lazy(() => import("./pages/Watch"));
+const Watchlist        = lazy(() => import("./pages/Watchlist"));
+const Settings         = lazy(() => import("./pages/Settings"));
+const Login            = lazy(() => import("./pages/Login"));
+const Register         = lazy(() => import("./pages/Register"));
+const ForgotPassword   = lazy(() => import("./pages/ForgotPassword"));
+const Notification     = lazy(() => import("./pages/Notification"));
 
 function App() {
   return (
-    <>
+    <Suspense fallback={null}>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/most-popular" element={<List anime="most-popular" />} />
-        <Route path="/top-airing" element={<List anime="top-airing" />} />
-        <Route path="/most-favorite" element={<List anime="most-favorite" />} />
-        <Route path="/completed" element={<List anime="completed" />} />
-        <Route path="/movie" element={<List anime="movie" />} />
-        <Route path="/tv" element={<List anime="tv" />} />
-        <Route path="/ova" element={<List anime="ova" />} />
-        <Route path="/ona" element={<List anime="ona" />} />
-        <Route path="/special" element={<List anime="special" />} />
-        <Route path="/top-upcoming" element={<List anime="top-upcoming" />} />
-        <Route path="/recently-updated" element={<List anime="recently-updated" />} />
+        <Route path="/"                    element={<LandingPage />} />
+        <Route path="/login"               element={<Login />} />
+        <Route path="/register"            element={<Register />} />
+        <Route path="/forgot-password"     element={<ForgotPassword />} />
+        <Route path="/home"                element={<Home />} />
+        <Route path="/most-popular"        element={<List anime="most-popular" />} />
+        <Route path="/top-airing"          element={<List anime="top-airing" />} />
+        <Route path="/most-favorite"       element={<List anime="most-favorite" />} />
+        <Route path="/completed"           element={<List anime="completed" />} />
+        <Route path="/movie"               element={<List anime="movie" />} />
+        <Route path="/tv"                  element={<List anime="tv" />} />
+        <Route path="/ova"                 element={<List anime="ova" />} />
+        <Route path="/ona"                 element={<List anime="ona" />} />
+        <Route path="/special"             element={<List anime="special" />} />
+        <Route path="/top-upcoming"        element={<List anime="top-upcoming" />} />
+        <Route path="/recently-updated"    element={<List anime="recently-updated" />} />
         <Route path="/watch/:id/:episodeNumber" element={<Watch />} />
-        <Route path="/genre/:name" element={<Genre />} />
-        <Route path="/producer/:name" element={<Producer />} />
-        <Route path="/az-list/:letter" element={<AZ />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/:name/:id" element={<Anime />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/continue-watching" element={<ContinueWatching />} />
-        <Route path="/watchlist" element={<Watchlist />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/notification" element={<Notification />} />
+        <Route path="/genre/:name"         element={<Genre />} />
+        <Route path="/producer/:name"      element={<Producer />} />
+        <Route path="/az-list/:letter"     element={<AZ />} />
+        <Route path="/search"              element={<Search />} />
+        <Route path="/:name/:id"           element={<Anime />} />
+        <Route path="/profile"             element={<Profile />} />
+        <Route path="/continue-watching"   element={<ContinueWatching />} />
+        <Route path="/watchlist"           element={<Watchlist />} />
+        <Route path="/settings"            element={<Settings />} />
+        <Route path="/notification"        element={<Notification />} />
       </Routes>
-    </>
+    </Suspense>
   );
 }
 
