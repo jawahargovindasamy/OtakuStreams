@@ -270,17 +270,6 @@ const Filter = ({ filters, onFilterChange, onReset, keyword }) => {
                                 onChange={(val) => handleFilterChange('season', val)}
                             />
                             <FilterSelect
-                                placeholder="Language"
-                                options={[
-                                    { label: "All Languages", value: "all" },
-                                    { label: "Subtitles", value: "sub" },
-                                    { label: "Dubbed", value: "dub" },
-                                    { label: "Sub & Dub", value: "sub-&-dub" },
-                                ]}
-                                value={localFilters.language}
-                                onChange={(val) => handleFilterChange('language', val)}
-                            />
-                            <FilterSelect
                                 placeholder="Sort By"
                                 options={[
                                     { label: "Default", value: "default" },

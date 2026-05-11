@@ -233,7 +233,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
         } finally {
             setIsUpdating(false);
         }
-    }, [anime.info, watchlistMap, playlist1, isUpdating, safeExecute, removeWatchlist, updateWatchlist, addWatchlist, id]);
+    }, [anime?.info, watchlistMap, playlist1, isUpdating, safeExecute, removeWatchlist, updateWatchlist, addWatchlist, id]);
 
     const handlePlayClick = useCallback(() => {
         if (!isPlaying && anime?.info?.id) {

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const CharacterCard = ({ item }) => {
+  if (!item || !item.character) return null;
   const { character, voiceActor } = item;
 
   return (
@@ -15,8 +16,8 @@ const CharacterCard = ({ item }) => {
         {/* Character Image */}
         <div className="relative shrink-0">
           <img
-            src={character.poster}
-            alt={character.name}
+            src={character.poster || "/placeholder-avatar.png"}
+            alt={character.name || "Unknown"}
             className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover ring-2 ring-border/50 group-hover:ring-primary/30 transition-all duration-300"
           />
           <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-card" />
@@ -27,36 +28,42 @@ const CharacterCard = ({ item }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <p className="text-sm sm:text-base font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1 cursor-default">
-                {character.name}
+                {character.name || "Unknown"}
               </p>
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-popover text-popover-foreground border-border">
-              {character.name}
+              {character.name || "Unknown"}
             </TooltipContent>
           </Tooltip>
-          <p className="text-xs text-muted-foreground mt-0.5">{character.cast}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{character.cast || ""}</p>
         </div>
 
         {/* Voice Actor Info */}
         <div className="min-w-0 text-right flex-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="text-sm sm:text-base font-medium text-foreground leading-tight line-clamp-1 cursor-default">
-                {voiceActor.name}
-              </p>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-popover text-popover-foreground border-border">
-              {voiceActor.name}
-            </TooltipContent>
-          </Tooltip>
-          <p className="text-xs text-muted-foreground mt-0.5">{voiceActor.cast}</p>
+          {voiceActor ? (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-sm sm:text-base font-medium text-foreground leading-tight line-clamp-1 cursor-default">
+                    {voiceActor.name}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-popover text-popover-foreground border-border">
+                  {voiceActor.name}
+                </TooltipContent>
+              </Tooltip>
+              <p className="text-xs text-muted-foreground mt-0.5">{voiceActor.cast}</p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">No Voice Actor Info</p>
+          )}
         </div>
 
         {/* Voice Actor Image */}
         <div className="relative shrink-0">
           <img
-            src={voiceActor.poster}
-            alt={voiceActor.name}
+            src={voiceActor?.poster || "/placeholder-avatar.png"} // Added fallback for poster
+            alt={voiceActor?.name || "Unknown"}
             className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 ring-2 ring-border/50 group-hover:ring-primary/30"
           />
         </div>

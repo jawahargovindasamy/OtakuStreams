@@ -19,8 +19,6 @@ const Sidebar = ({ onClose }) => {
 
     const navItems = [
         { path: "/home", label: "Home" },
-        { path: "/subbed-anime", label: "Subbed Anime" },
-        { path: "/dubbed-anime", label: "Dubbed Anime" },
         { path: "/most-popular", label: "Most Popular" },
         { path: "/movie", label: "Movies" },
         { path: "/tv", label: "TV Series" },

@@ -1,9 +1,10 @@
 import { useAuth } from '@/context/auth-provider';
 import { useData } from '@/context/data-provider';
+import { slugify } from '@/lib/utils';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import MediaCardPopover from './MediaCardPopover';
-import { Check, ClosedCaption, EllipsisVertical, Mic } from 'lucide-react';
+import { Check, ClosedCaption, EllipsisVertical, Mic, Star } from 'lucide-react';
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import {
     Popover,
@@ -13,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
-const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = null, showRank = false }) => {
+const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, rank = null, showRank = false }) => {
 
     const { fetchanimeinfo, fetchepisodeinfo } = useData();
     const { user, language, continueWatching, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
@@ -88,15 +89,15 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = 
     const handleNavigate = async () => {
         const data = await handlefetch();
         if (data) {
-            navigate(`/${id}`, { state: { animeInfo: data } });
+            navigate(`/${slugify(name)}/${id}`, { state: { animeInfo: data } });
         }
     }
 
     const handleMouseEnter = () => {
         clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(async () => {
+        handlefetch();
+        timerRef.current = setTimeout(() => {
             setOpen(true);
-            await handlefetch();
         }, 500);
     };
 
@@ -113,7 +114,9 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = 
                 const data = await fetchepisodeinfo(id);
                 if (data?.data?.episodes?.length > 0) {
                     const progress = continueWatching.find((item) => item.animeId === id);
-                    const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+                    const episodeToPlay = progress 
+                        ? `/watch/${id}/${progress.episodeId}` 
+                        : `/watch/${id}/${data.data.episodes[0].number}`;
                     navigate(episodeToPlay, {
                         state: {
                             animeId: id,
@@ -312,23 +315,20 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", sub, dub, rank = 
                     {language === "EN" ? name : jname ? jname : name}
                 </h3>
 
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                    {type && (
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                            {type}
-                        </p>
+                <div className="mt-2 flex items-center gap-x-2 text-muted-foreground text-[10px] sm:text-[11px] font-medium whitespace-nowrap overflow-hidden">
+                    {type && <span className="line-clamp-1">{type}</span>}
+                    {year && (
+                        <div className="flex items-center gap-x-1.5">
+                            <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0" />
+                            <span>{year}</span>
+                        </div>
                     )}
-                    {sub && (
-                        <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 sm:px-1 sm:py-1 text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
-                            <ClosedCaption className="h-3 w-3" />
-                            {sub}
-                        </span>
-                    )}
-                    {dub && (
-                        <span className="flex items-center gap-1 rounded-md bg-blue-500/10 sm:px-1 sm:py-1 text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
-                            <Mic className="h-3 w-3" />
-                            {dub}
-                        </span>
+                    {rating && (
+                        <div className="flex items-center gap-x-1.5 text-amber-600 dark:text-amber-400">
+                            <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0" />
+                            <Star className="h-3 w-3 fill-current" />
+                            <span>{rating}</span>
+                        </div>
                     )}
                 </div>
             </div>

@@ -4,10 +4,18 @@ import Navbar from '@/components/Navbar'
 import SectionHeader from '@/components/SectionHeader';
 import Top10 from '@/components/Top10';
 import { useData } from '@/context/data-provider';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronLeft, ChevronRight, Loader2, SlidersHorizontal } from 'lucide-react';
 import Footer from '@/components/Footer';
 import VerticalList from '@/components/VerticalList';
 
@@ -23,32 +31,36 @@ const Genre = () => {
         const parsed = parseInt(pageParam, 10);
         return parsed > 0 ? parsed : 1;
     });
+    const [types, setTypes] = useState(() => {
+        return searchParams.get('type') || "";
+    });
     const [showAll, setShowAll] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Sync page state with URL when anime category changes or when URL is manually edited
+    // Sync page & types state with URL when anime category changes
     useEffect(() => {
         const pageParam = searchParams.get('page');
         const parsed = parseInt(pageParam, 10);
         const newPage = parsed > 0 ? parsed : 1;
         setPage(newPage);
+
+        const t = searchParams.get('type');
+        setTypes(t || "");
     }, [name, searchParams]);
 
-    // Update URL when page changes (only for page > 1)
+    // Update URL when page or types changes
     useEffect(() => {
-        if (page > 1) {
-            setSearchParams({ page: page.toString() }, { replace: true });
-        } else {
-            // Remove page param when on page 1 for cleaner URL
-            setSearchParams({}, { replace: true });
-        }
-    }, [page, setSearchParams]);
+        const params = {};
+        if (page > 1) params.page = page.toString();
+        if (types) params.type = types;
+        setSearchParams(params, { replace: true });
+    }, [page, types, setSearchParams]);
 
     useEffect(() => {
         const getAnimeInfo = async () => {
             setLoading(true);
             try {
-                const data = await fetchgenres(name, page);
+                const data = await fetchgenres(name, page, types);
                 setItem(data);
             } catch (error) {
                 console.error("Failed to fetch anime list:", error);
@@ -57,7 +69,10 @@ const Genre = () => {
             }
         }
         getAnimeInfo()
-    }, [name, fetchgenres, page]);
+    }, [name, fetchgenres, page, types]);
+
+    // No client-side filtering needed as it's handled by API
+    const displayedAnimes = item?.animes || [];
 
     const totalPages = item?.totalPages || 1;
 
@@ -102,10 +117,62 @@ const Genre = () => {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-6 sm:pt-8 lg:pt-10">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 lg:gap-10 w-full">
                     <main className="flex-1 w-full space-y-6 sm:space-y-8">
-                        {/* Header */}
-                        <div className="space-y-2">
-                            <SectionHeader title={item?.genreName || name} />
-                        </div>
+                        {/* Header with Filter */}
+                        <SectionHeader
+                            title={item?.genreName || name}
+                            filter={
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border-border/50 hover:bg-accent transition-all duration-200 ${
+                                                types ? "border-primary/50 text-primary bg-primary/5" : ""
+                                            }`}
+                                        >
+                                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                                            <span className="text-xs font-medium hidden sm:inline">
+                                                {!types
+                                                    ? "Filter"
+                                                    : types.toUpperCase()}
+                                            </span>
+                                            {types && (
+                                                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                                                    1
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-44">
+                                        <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center justify-between">
+                                            Media Type
+                                            {types && (
+                                                <button
+                                                    onClick={() => { setTypes(""); setPage(1); }}
+                                                    className="text-[10px] text-primary hover:underline font-medium"
+                                                >
+                                                    Clear
+                                                </button>
+                                            )}
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {["tv", "movie", "ona", "ova", "special"].map((t) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={t}
+                                                checked={types === t}
+                                                onCheckedChange={(checked) => {
+                                                    setTypes(checked ? t : "");
+                                                    setPage(1);
+                                                }}
+                                                className="capitalize cursor-pointer"
+                                            >
+                                                {t.toUpperCase()}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            }
+                        />
 
                         {/* Grid Content */}
                         <section className="space-y-4 sm:space-y-5 w-full min-h-100">
@@ -120,11 +187,18 @@ const Genre = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                                    {item?.animes?.map((a) => (
-                                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub} />
-                                    ))}
-                                </div>
+                                    displayedAnimes.length > 0 ? (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
+                                            {displayedAnimes.map((a) => (
+                                                <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
+                                            <p className="text-lg font-medium">No anime found</p>
+                                            <p className="text-sm">Try removing some filters or going back a page</p>
+                                        </div>
+                                    )
                             )}
                         </section>
 

@@ -14,7 +14,6 @@ const List = ({ anime }) => {
     const { fetchcategories } = useData();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Initialize page from URL or default to 1
     const [item, setItem] = useState(null);
     const [page, setPage] = useState(() => {
         const pageParam = searchParams.get('page');
@@ -25,20 +24,18 @@ const List = ({ anime }) => {
     const [top10Animes, setTop10Animes] = useState("today");
     const [loading, setLoading] = useState(false);
 
-    // Sync page state with URL when anime category changes or when URL is manually edited
+    // Sync page with URL when category changes
     useEffect(() => {
         const pageParam = searchParams.get('page');
         const parsed = parseInt(pageParam, 10);
-        const newPage = parsed > 0 ? parsed : 1;
-        setPage(newPage);
+        setPage(parsed > 0 ? parsed : 1);
     }, [anime, searchParams]);
 
-    // Update URL when page changes (only for page > 1)
+    // Update URL when page changes
     useEffect(() => {
         if (page > 1) {
             setSearchParams({ page: page.toString() }, { replace: true });
         } else {
-            // Remove page param when on page 1 for cleaner URL
             setSearchParams({}, { replace: true });
         }
     }, [page, setSearchParams]);
@@ -55,7 +52,7 @@ const List = ({ anime }) => {
                 setLoading(false);
             }
         }
-        getAnimeInfo()
+        getAnimeInfo();
     }, [anime, fetchcategories, page]);
 
     const totalPages = item?.totalPages || 1;
@@ -67,11 +64,9 @@ const List = ({ anime }) => {
         }
     };
 
-    // Generate page numbers to display
     const getPageNumbers = () => {
         const pages = [];
         const maxVisible = 5;
-
         if (totalPages <= maxVisible) {
             for (let i = 1; i <= totalPages; i++) pages.push(i);
         } else {
@@ -101,9 +96,7 @@ const List = ({ anime }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 lg:gap-10 w-full">
                     <main className="flex-1 w-full space-y-6 sm:space-y-8">
                         {/* Header */}
-                        <div className="space-y-2">
-                            <SectionHeader title={item?.category || anime} />
-                        </div>
+                        <SectionHeader title={item?.category || anime} />
 
                         {/* Grid Content */}
                         <section className="space-y-4 sm:space-y-5 w-full min-h-100">
@@ -118,11 +111,18 @@ const List = ({ anime }) => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                                    {item?.animes?.map((a) => (
-                                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub} />
-                                    ))}
-                                </div>
+                                item?.animes?.length > 0 ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
+                                        {item.animes.map((a) => (
+                                            <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-64 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
+                                        <p className="text-lg font-medium">No more anime found</p>
+                                        <p className="text-sm">Try going back to a previous page</p>
+                                    </div>
+                                )
                             )}
                         </section>
 

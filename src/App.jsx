@@ -27,8 +27,6 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/subbed-anime" element={<List anime="subbed-anime" />} />
-        <Route path="/dubbed-anime" element={<List anime="dubbed-anime" />} />
         <Route path="/most-popular" element={<List anime="most-popular" />} />
         <Route path="/top-airing" element={<List anime="top-airing" />} />
         <Route path="/most-favorite" element={<List anime="most-favorite" />} />
@@ -40,12 +38,12 @@ function App() {
         <Route path="/special" element={<List anime="special" />} />
         <Route path="/top-upcoming" element={<List anime="top-upcoming" />} />
         <Route path="/recently-updated" element={<List anime="recently-updated" />} />
-        <Route path="/watch/:episodeId" element={<Watch />} />
+        <Route path="/watch/:id/:episodeNumber" element={<Watch />} />
         <Route path="/genre/:name" element={<Genre />} />
         <Route path="/producer/:name" element={<Producer />} />
         <Route path="/az-list/:letter" element={<AZ />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/:id" element={<Anime />} />
+        <Route path="/:name/:id" element={<Anime />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/continue-watching" element={<ContinueWatching />} />
         <Route path="/watchlist" element={<Watchlist />} />

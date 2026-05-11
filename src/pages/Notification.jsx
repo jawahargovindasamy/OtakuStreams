@@ -2,6 +2,7 @@ import Navbar from '@/components/Navbar';
 import SecondaryNavbar from '@/components/SecondaryNavbar';
 import { useAuth } from '@/context/auth-provider';
 import { Link } from 'react-router-dom';
+import { slugify } from '@/lib/utils';
 import {
     Bell,
     Check,
@@ -230,7 +231,7 @@ const Notification = () => {
                                         >
                                             {/* Image */}
                                             <Link
-                                                to={`/${item.animeId}`}
+                                                to={`/${slugify(item.animeTitle)}/${item.animeId}`}
                                                 onClick={() => handleNavigate(item._id)}
                                                 className="relative shrink-0"
                                             >
@@ -269,7 +270,7 @@ const Notification = () => {
                                                         </Link>
 
                                                         <Link
-                                                            to={`/${item.animeId}`}
+                                                            to={`/${slugify(item.animeTitle)}/${item.animeId}`}
                                                             onClick={() => handleNavigate(item._id)}
                                                         >
                                                             <h3 className={`text-sm sm:text-lg font-semibold leading-tight mb-1 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors ${isUnread ? 'text-foreground' : 'text-muted-foreground'
@@ -302,7 +303,7 @@ const Notification = () => {
                                                             </Button>
                                                         )}
                                                         <Link
-                                                            to={`/${item.animeId}`}
+                                                            to={`/${slugify(item.animeTitle)}/${item.animeId}`}
                                                             onClick={() => handleNavigate(item._id)}
                                                             className="p-1.5 sm:p-2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                                                         >

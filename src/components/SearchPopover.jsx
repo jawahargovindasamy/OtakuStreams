@@ -22,6 +22,7 @@ import {
 
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { slugify } from "@/lib/utils";
 
 
 import { useAuth } from "@/context/auth-provider";
@@ -102,7 +103,7 @@ const SearchPopover = ({
                                         key={result.id}
                                         className="p-2 rounded-lg hover:bg-accent transition-colors duration-150 cursor-pointer aria-selected:bg-accent"
                                         onSelect={() => {
-                                            navigate(`/${result.id}`);
+                                            navigate(`/${slugify(result.name)}/${result.id}`);
                                             setOpen(false);
                                         }}
                                     >

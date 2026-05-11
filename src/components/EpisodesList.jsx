@@ -16,7 +16,10 @@ const EpisodesList = ({
   const isGridMode = totalepisodes > 25;
 
   // ================= HELPERS =================
-  const getEpId = (episodeId) => episodeId.split("ep=")[1];
+  const getEpId = (episodeId) => {
+    if (!episodeId) return "";
+    return episodeId.includes("ep=") ? episodeId.split("ep=")[1] : episodeId;
+  };
 
   // ================= RANGES =================
   const ranges = useMemo(() => {

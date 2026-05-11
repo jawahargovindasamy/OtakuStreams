@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MediaCard from "./MediaCard";
 
-const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
+const CardCarousel = ({ animes = [], showRank = false, loop = false, hideRating = false, hideYear = false }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop,
     align: "start",
@@ -28,7 +28,7 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
         <div className="flex gap-3 sm:gap-4 lg:gap-5 touch-pan-y">
           {animes.map((anime, index) => (
             <div
-              key={anime.id}
+              key={`${anime.id}-${index}`}
               className="shrink-0 basis-[45%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%] xl:basis-[15%] min-w-0"
             >
               <MediaCard
@@ -38,6 +38,8 @@ const CardCarousel = ({ animes = [], showRank = false, loop = false }) => {
                 poster={anime.poster}
                 rank={showRank ? index + 1 : null}
                 showRank={showRank}
+                rating={hideRating ? null : anime.rating}
+                year={hideYear ? null : anime.year}
               />
             </div>
           ))}

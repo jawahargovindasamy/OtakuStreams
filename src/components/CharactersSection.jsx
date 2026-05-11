@@ -18,8 +18,8 @@ const CharactersSection = ({ charactersVoiceActors }) => {
 
       {/* Grid */}
       <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {charactersVoiceActors.map((item) => (
-          <CharacterCard key={item.character.id} item={item} />
+        {charactersVoiceActors.map((item, index) => (
+          <CharacterCard key={item?.character?.id || index} item={item} />
         ))}
       </div>
     </section>

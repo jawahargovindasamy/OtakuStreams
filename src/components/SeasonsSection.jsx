@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { slugify } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import SectionHeader from '@/components/SectionHeader';
 
@@ -27,7 +28,7 @@ const SeasonsSection = ({ seasons, id }) => {
                                     : 'bg-card/50 border-border/50 hover:bg-accent hover:border-primary/30'
                                 }
                             `}
-                            onClick={() => navigate(`/${season.id}`)}
+                            onClick={() => navigate(`/${slugify(season.title)}/${season.id}`)}
                         >
                             <span className="truncate text-sm font-medium" title={season.title}>
                                 {season.title}

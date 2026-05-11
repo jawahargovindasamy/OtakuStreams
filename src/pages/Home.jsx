@@ -57,7 +57,7 @@ const Home = () => {
           <section className="space-y-4 sm:space-y-5 w-full">
             <SectionHeader title="Trending" link="/trending" />
             <div className="w-full">
-              <CardCarousel animes={data.trendingAnimes} showRank loop />
+              <CardCarousel animes={data.trendingAnimes} showRank loop hideRating hideYear />
             </div>
           </section>
 
@@ -99,9 +99,9 @@ const Home = () => {
                     link="/continue-watching"
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                    {continueWatching.slice(0,5).map((item) => (
+                    {continueWatching.slice(0,5).map((item, index) => (
                       <ContinueWatchingCard
-                        key={item._id}
+                        key={`${item._id}-${index}`}
                         item={item}
                       />
                     ))}
@@ -117,8 +117,8 @@ const Home = () => {
                   link="/recently-updated"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                  {data.latestEpisodeAnimes.map((a) => (
-                    <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub}  />
+                  {data.latestEpisodeAnimes.map((a, index) => (
+                    <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year}  />
                   ))}
                 </div>
               </section>
@@ -138,8 +138,8 @@ const Home = () => {
                   link="/top-upcoming"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                  {data.topUpcomingAnimes.map((a) => (
-                    <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} sub={a.episodes.sub} dub={a.episodes.dub}  />
+                  {data.topUpcomingAnimes.map((a, index) => (
+                    <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year}  />
                   ))}
                 </div>
               </section>

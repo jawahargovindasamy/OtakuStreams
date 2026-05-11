@@ -13,7 +13,8 @@ const ContinueWatchingCard = ({ item }) => {
     const progress = item?.duration > 0 ? Math.min((item.currentTime / item.duration) * 100, 100) : 0;
 
     const handleContinue = () => {
-        navigate(`/watch/${item.animeId}?${item.episodeId}`, {
+        const episodeNum = item.episodeId.replace('ep=', '');
+        navigate(`/watch/${item.animeId}/${episodeNum}`, {
             state: {
                 animeId: item.animeId,
                 resumeTime: item.currentTime,

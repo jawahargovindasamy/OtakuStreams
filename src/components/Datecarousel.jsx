@@ -82,7 +82,7 @@ const DateCarousel = ({ onScheduleChange }) => {
             setIsLoading(true);
             try {
                 const data = await fetchestimatedschedules(selectedDateFormatted);
-                onScheduleChange(data?.data?.scheduledAnimes || []);
+                onScheduleChange(data?.scheduledAnimes || []);
             } catch (error) {
                 console.error("Failed to fetch schedules:", error);
                 onScheduleChange([]);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock } from "lucide-react";
 
-const SectionHeader = ({ title, icon, link, time }) => {
+const SectionHeader = ({ title, icon, link, time, filter }) => {
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
@@ -24,6 +24,9 @@ const SectionHeader = ({ title, icon, link, time }) => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* Custom filter slot (e.g. dropdown) */}
+                {filter && filter}
+
                 {icon && link && (
                     <Link
                         to={link}

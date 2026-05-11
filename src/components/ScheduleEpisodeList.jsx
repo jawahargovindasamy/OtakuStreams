@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
+import { slugify } from '@/lib/utils';
 import { Play, CalendarX, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,8 +37,8 @@ const ScheduleEpisodeList = ({ animes = [] }) => {
                 <div className="space-y-2 pr-2">
                     {displayedAnimes.map((anime, index) => (
                         <div
-                            key={anime.id}
-                            onClick={() => navigate(`/${anime.id}`)}
+                            key={`${anime.id}-${index}`}
+                            onClick={() => navigate(`/${slugify(anime.name)}/${anime.id}`)}
                             className="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl 
                                      bg-card border border-border/50 
                                      hover:border-primary/30 hover:bg-accent/50
@@ -64,9 +65,17 @@ const ScheduleEpisodeList = ({ animes = [] }) => {
                                             transition-colors line-clamp-1">
                                     {language === "EN" ? anime.name  : anime.jname}
                                 </h3>
-                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                                    Episode {anime.episode} • {anime.type || 'TV'}
-                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                        Episode {anime.episode}
+                                    </p>
+                                    <span className="px-1.5 py-0.5 rounded-sm bg-primary/20 text-[10px] font-bold text-primary tracking-wide">
+                                        SUB
+                                    </span>
+                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                        • {anime.type || 'TV'}
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Episode Badge */}

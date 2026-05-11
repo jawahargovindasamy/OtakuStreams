@@ -9,6 +9,7 @@ import {
 } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { slugify } from "@/lib/utils";
 
 const AuthContext = createContext(null);
 
@@ -398,7 +399,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.get("/random");
 
       if (data?.success && data?.data?.id) {
-        navigate(`/${data.data.id}`);
+        navigate(`/${slugify(data.data.name)}/${data.data.id}`);
       }
     } catch (err) {
       console.error(err);

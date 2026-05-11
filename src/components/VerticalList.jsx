@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { ArrowRight, ClosedCaption, Mic } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -13,6 +13,7 @@ import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
 import MediaCardPopover from "@/components/MediaCardPopover";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { slugify } from "@/lib/utils";
 
 
 const VerticalListSkeletonItem = () => {
@@ -122,7 +123,7 @@ const VerticalListItem = ({ anime }) => {
     const data = item || await handlefetch();
     if (!data) return;
 
-    navigate(`/${anime.id}`, {
+    navigate(`/${slugify(anime.name)}/${anime.id}`, {
       state: { animeInfo: data },
     });
   };
@@ -262,30 +263,29 @@ const VerticalListItem = ({ anime }) => {
         </h3>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {anime.episodes?.sub > 0 && (
-            <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 
-                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                                       font-semibold text-emerald-600 dark:text-emerald-400 
-                                       ring-1 ring-emerald-500/20">
-              <ClosedCaption className="h-3 w-3" />
-              {anime.episodes.sub}
-            </span>
-          )}
-
-          {anime.episodes?.dub > 0 && (
-            <span className="flex items-center gap-1 rounded-md bg-blue-500/10 
-                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
-                                       font-semibold text-blue-600 dark:text-blue-400 
-                                       ring-1 ring-blue-500/20">
-              <Mic className="h-3 w-3" />
-              {anime.episodes.dub}
-            </span>
-          )}
-
           {anime.type && (
             <span className="rounded-md bg-secondary px-1.5 py-0.5 sm:px-2 sm:py-1 
                                        text-[10px] sm:text-xs font-semibold text-secondary-foreground">
               {anime.type}
+            </span>
+          )}
+          
+          {anime.year && (
+            <span className="flex items-center gap-1 rounded-md bg-muted/50 
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-muted-foreground 
+                                       ring-1 ring-border/50">
+              {anime.year}
+            </span>
+          )}
+
+          {anime.rating && (
+            <span className="flex items-center gap-1 rounded-md bg-amber-500/10 
+                                       px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs 
+                                       font-semibold text-amber-600 dark:text-amber-400 
+                                       ring-1 ring-amber-500/20">
+              <Star className="h-3 w-3 fill-current" />
+              {anime.rating}
             </span>
           )}
         </div>
@@ -345,8 +345,8 @@ const VerticalList = ({ anime = null, list = 5, title = null, link }) => {
       )}
 
       <div className="flex flex-col gap-2 sm:gap-3">
-        {anime.slice(0, list).map((item) => (
-          <VerticalListItem key={item.id} anime={item} />
+        {anime.slice(0, list).map((item, index) => (
+          <VerticalListItem key={`${item.id}-${index}`} anime={item} />
         ))}
       </div>
 
