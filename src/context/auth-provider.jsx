@@ -292,6 +292,7 @@ export function AuthProvider({ children }) {
 
   const updateProgress = useCallback(
     async (progressData) => {
+      if (!user) return; // Don't try if not logged in
       try {
         const res = await api.post("/continue-watching", progressData);
         const updated = res.data.data;

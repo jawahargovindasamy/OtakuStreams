@@ -103,6 +103,16 @@ const Watch = () => {
             try {
                 const malId = item?.anime?.info?.malId || "";
                 const response = await fetch(`/api/check-episode/${id}/${episodeNumber}?malId=${malId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new TypeError("Oops, we haven't got JSON!");
+                }
+
                 const data = await response.json();
                 
                 if (data.success) {
