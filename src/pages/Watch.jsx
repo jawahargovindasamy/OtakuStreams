@@ -102,7 +102,7 @@ const Watch = () => {
             setIsChecking(true);
             try {
                 const malId = item?.anime?.info?.malId || "";
-                const response = await fetch(`/api/check-episode/${id}/${episodeNumber}?malId=${malId}`);
+                const response = await fetch(`/api/check-episode?animeId=${id}&episode=${episodeNumber}&malId=${malId}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
