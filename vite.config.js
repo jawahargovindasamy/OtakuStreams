@@ -50,10 +50,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/animeschedule-api/, '')
       },
-      '/api/check-episode': {
+      '/.netlify/functions/check-episode': {
         target: 'https://megaplay.buzz/api/anime/episode/ani',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/check-episode/, '')
+        rewrite: (path) => path.replace(/^\/\.netlify\/functions\/check-episode/, '')
       }
     }
   }
