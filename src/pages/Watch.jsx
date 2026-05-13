@@ -2,7 +2,7 @@ import EpisodesList from '@/components/EpisodesList';
 import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
 import { slugify } from '@/lib/utils';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Users, ThumbsUp, Flame, ChevronDown, ChevronUp, Play, AlertCircle } from 'lucide-react';
 import SeasonsSection from '@/components/SeasonsSection';
@@ -64,6 +64,8 @@ const Watch = () => {
     const [isAvailable, setIsAvailable] = useState(false);
     const [hasDub, setHasDub] = useState(true);
     const [debugInfo, setDebugInfo] = useState([]);
+    const [playerColumnHeight, setPlayerColumnHeight] = useState(null);
+    const playerColumnRef = useRef(null);
 
     const navigate = useNavigate();
 
@@ -139,7 +141,7 @@ const Watch = () => {
         if (id && episodeNumber) {
             checkEpisode();
         }
-    }, [id, episodeNumber]);
+    }, [id, episodeNumber, item]);
 
 
 
@@ -195,27 +197,52 @@ const Watch = () => {
         };
     }, [id, episodeList, fetchepisodeinfo])
 
-    // Removed episode server fetch effect
+    // Measure the height of iframe + EpisodeServer column
+    useEffect(() => {
+        const el = playerColumnRef.current;
+        if (!el) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setPlayerColumnHeight(entry.contentRect.height);
+            }
+        });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [isChecking, isAvailable]);
+
 
     useEffect(() => {
-        if (!item || !currentEpisodeData) return;
+        if (!item || !currentEpisodeData || !user) {
+            console.log("Heartbeat skipped:", { hasItem: !!item, hasEpData: !!currentEpisodeData, hasUser: !!user });
+            return;
+        }
 
-        updateProgress({
-            animeId: id,
-            episodeId: episodeNumber,
-            animeTitle: item?.anime?.info?.name,
-            animeImage: item?.anime?.info?.poster,
+        const updateHeartbeat = () => {
+            console.log("Sending heartbeat progress update...");
+            updateProgress({
+                animeId: id,
+                episodeId: episodeNumber,
+                animeTitle: item?.anime?.info?.name,
+                animeImage: item?.anime?.info?.poster,
+                currentEpisode: currentEpisodeData.number,
+                currentTime: 0,
+                duration: 0,
+                episodeTitle: currentEpisodeData.title || `Episode ${currentEpisodeData.number}`,
+            });
+        };
 
-            currentEpisode: currentEpisodeData.number,
-            currentTime: 0,
-            duration: 0,
+        // Initial update
+        updateHeartbeat();
 
-            episodeTitle:
-                currentEpisodeData.title ||
-                `Episode ${currentEpisodeData.number}`,
-        });
+        // Heartbeat every 60 seconds
+        const interval = setInterval(updateHeartbeat, 60000);
 
-    }, [id, episodeNumber, item, currentEpisodeData, updateProgress]);
+        return () => {
+            console.log("Cleaning up heartbeat interval");
+            clearInterval(interval);
+        };
+    }, [id, episodeNumber, item, currentEpisodeData, updateProgress, user]);
 
     const activeServerId = activeSub?.serverId || activeDub?.serverId || "hd-1";
     
@@ -258,14 +285,15 @@ const Watch = () => {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
                 <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[340px_1fr] gap-6 lg:gap-8">
-                    <div className="order-3 lg:order-1">
+                    <div className="order-3 lg:order-1" style={playerColumnHeight ? { maxHeight: playerColumnHeight, height: playerColumnHeight } : undefined}>
                         <EpisodesList
                             episodeList={episode?.episodes}
                             totalepisodes={episode?.totalEpisodes}
                             activeEpisode={episodeNumber}
-                            onEpisodeChange={(num) => navigate(`/watch/${id}/${num}`, { state: location.state })} />
+                            onEpisodeChange={(num) => navigate(`/watch/${id}/${num}`, { state: location.state })}
+                            maxHeight={playerColumnHeight} />
                     </div>
-                    <div className="space-y-4 order-1 lg:order-2">
+                    <div className="space-y-4 order-1 lg:order-2" ref={playerColumnRef}>
                         <div className="rounded-2xl overflow-hidden border border-border/50 shadow-lg shadow-primary/5 bg-card min-h-[300px] flex items-center justify-center">
                             {isChecking ? (
                                 <div className="flex flex-col items-center gap-3">

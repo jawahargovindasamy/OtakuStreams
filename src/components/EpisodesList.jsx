@@ -8,6 +8,7 @@ const EpisodesList = ({
   totalepisodes = 0,
   activeEpisode,
   onEpisodeChange,
+  maxHeight,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedRange, setSelectedRange] = useState(null);
@@ -82,9 +83,12 @@ const EpisodesList = ({
   }, [episodeList, search, isGridMode, currentRange]);
 
   return (
-    <div className="w-full rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 space-y-4 h-full shadow-lg shadow-primary/5">
+    <div
+      className="w-full rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 flex flex-col shadow-lg shadow-primary/5"
+      style={maxHeight ? { height: maxHeight, maxHeight: maxHeight } : undefined}
+    >
       {/* HEADER */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
         <h2 className="text-lg font-semibold tracking-tight">List of episodes:</h2>
 
         <div className="relative w-40">
@@ -100,7 +104,8 @@ const EpisodesList = ({
 
       {/* ================= SMALL LIST ================= */}
       {!isGridMode && (
-        <div className="space-y-1 max-h-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1">
+        <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1">
+          <div className="space-y-1">
           {filteredEpisodes.map((ep) => {
             const epId = getEpId(ep.episodeId);
             const isActive = Number(epId) === Number(activeEpisode);
@@ -141,12 +146,13 @@ const EpisodesList = ({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
       {/* ================= GRID ================= */}
       {isGridMode && (
-        <div className="space-y-4">
+        <div className="flex-1 min-h-0 flex flex-col gap-4">
           {/* RANGE DROPDOWN */}
           <div className="relative">
             <button
@@ -184,7 +190,7 @@ const EpisodesList = ({
           </div>
 
           {/* GRID */}
-          <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1">
+          <div className="grid grid-cols-5 gap-2 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-1 content-start">
             {filteredEpisodes.map((ep) => {
               const epId = getEpId(ep.episodeId);
               const isActive = Number(epId) === Number(activeEpisode);
