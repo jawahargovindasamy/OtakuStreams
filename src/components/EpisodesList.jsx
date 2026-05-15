@@ -56,26 +56,39 @@ const EpisodesList = ({
     if (!activeEp) return;
 
     const epNum = activeEp.number;
+    const correctRange = ranges.find((r) => epNum >= r.start && epNum <= r.end);
 
-    const correctRange = ranges.find(
-      (r) => epNum >= r.start && epNum <= r.end
-    );
-
-    if (!correctRange) return;
-
-    // prevent unnecessary rerenders
-    if (selectedRange?.label !== correctRange.label) {
+    if (correctRange && selectedRange?.label !== correctRange.label) {
       setSelectedRange(correctRange);
     }
   }, [activeEpisode, episodeList, isGridMode, ranges]);
+
+  // ================= SEARCH RANGE SWITCH =================
+  useEffect(() => {
+    if (!isGridMode || !search) return;
+
+    // If search matches an episode number exactly, switch to its range
+    const matchedEp = episodeList.find((ep) => ep.number.toString() === search);
+    if (matchedEp) {
+      const correctRange = ranges.find(
+        (r) => matchedEp.number >= r.start && matchedEp.number <= r.end
+      );
+      if (correctRange && selectedRange?.label !== correctRange.label) {
+        setSelectedRange(correctRange);
+      }
+    }
+  }, [search, episodeList, isGridMode, ranges]);
 
   // ================= FILTER =================
   const filteredEpisodes = useMemo(() => {
     return episodeList.filter((ep) => {
       const matchesSearch = ep.number.toString().includes(search);
-
+      
+      // If searching, show all matches regardless of range.
+      // Otherwise, only show episodes within the selected range.
       const inRange =
-        !isGridMode ||
+        !isGridMode || 
+        search.length > 0 || 
         (ep.number >= currentRange.start && ep.number <= currentRange.end);
 
       return matchesSearch && inRange;
@@ -84,8 +97,8 @@ const EpisodesList = ({
 
   return (
     <div
-      className="w-full rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 flex flex-col shadow-lg shadow-primary/5"
-      style={maxHeight ? { height: maxHeight, maxHeight: maxHeight } : undefined}
+      className="w-full rounded-2xl bg-card/50 backdrop-blur-md border border-border/50 p-4 flex flex-col shadow-lg shadow-primary/5 overflow-hidden"
+      style={maxHeight ? { height: maxHeight } : undefined}
     >
       {/* HEADER */}
       <div className="flex items-center justify-between gap-3 mb-4 shrink-0">

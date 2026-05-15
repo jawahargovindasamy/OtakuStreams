@@ -10,16 +10,8 @@ const ContinueWatchingCard = ({ item }) => {
     const { api, setContinueWatching } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const progress = item?.duration > 0 ? Math.min((item.currentTime / item.duration) * 100, 100) : 0;
-
     const handleContinue = () => {
-        const episodeNum = item.episodeId.replace('ep=', '');
-        navigate(`/watch/${item.animeId}/${episodeNum}`, {
-            state: {
-                animeId: item.animeId,
-                resumeTime: item.currentTime,
-            },
-        });
+        navigate(`/watch/${item.animeId}/${item.currentEpisode}`);
     };
 
     const handleRemove = async (e) => {
@@ -88,13 +80,7 @@ const ContinueWatchingCard = ({ item }) => {
                     </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/40">
-                    <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
+
             </div>
 
             {/* Title */}

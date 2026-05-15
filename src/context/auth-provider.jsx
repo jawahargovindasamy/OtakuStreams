@@ -292,36 +292,32 @@ export function AuthProvider({ children }) {
 
   const updateProgress = useCallback(
     async (progressData) => {
-      if (!user) return; // Don't try if not logged in
+      if (!user) return;
       try {
         const res = await api.post("/continue-watching", progressData);
         const updated = res.data.data;
 
         setContinueWatching((prev) => {
-          const index = prev.findIndex(
-            (i) =>
-              i.animeId === updated.animeId
-          );
-
+          const index = prev.findIndex((i) => i.animeId === updated.animeId);
           if (index !== -1) {
             const copy = [...prev];
             copy[index] = updated;
-
             const [item] = copy.splice(index, 1);
             return [item, ...copy];
           }
-
           return [updated, ...prev];
         });
 
         cacheRef.current.delete("continue-watching");
-
       } catch (error) {
         console.error("Failed to update progress:", error);
       }
     },
-    [api]
+    [api, user]
   );
+
+
+
 
   const updateProfile = useCallback(
     async (profileData) => {
@@ -432,11 +428,12 @@ export function AuthProvider({ children }) {
         updateWatchlist,
         addWatchlist,
         removeWatchlist,
-        updateProgress,
+
         updateProfile,
         updateSettings,
         markRead,
         clearNotifications,
+        updateProgress,
         handleRandom,
       }}
     >

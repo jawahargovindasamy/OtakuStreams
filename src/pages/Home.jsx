@@ -96,7 +96,7 @@ const Home = () => {
                   <SectionHeader
                     title="Continue Watching"
                     icon
-                    link="/continue-watching"
+                    link={continueWatching.length > 5 ? "/continue-watching" : undefined}
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
                     {continueWatching.slice(0,5).map((item, index) => (

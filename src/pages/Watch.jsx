@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/auth-provider';
 
+
 const Watch = () => {
     const { id, episodeNumber: rawEpisodeNumber } = useParams();
     const episodeNumber = rawEpisodeNumber?.replace('ep=', '');
@@ -23,7 +24,8 @@ const Watch = () => {
     const animeInfo = location.state?.animeInfo;
 
     const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver, fetchnextepisodeschedule } = useData();
-    const { updateProgress } = useAuth();
+    const { updateProgress, user } = useAuth();
+
 
     const [item, setItem] = useState(animeInfo ?? null);
     const [nextEpisode, setNextEpisode] = useState(null);
@@ -39,7 +41,7 @@ const Watch = () => {
     );
 
     const [audioType, setAudioType] = useState("sub");
-    
+
     const subServers = [
         { serverId: "hd-1", serverName: "HD-1" },
         { serverId: "hd-2", serverName: "HD-2" }
@@ -48,7 +50,7 @@ const Watch = () => {
         { serverId: "hd-1", serverName: "HD-1" },
         { serverId: "hd-2", serverName: "HD-2" }
     ];
-    
+
     const [activeSub, setActiveSub] = useState(subServers[0]);
     const [activeDub, setActiveDub] = useState(null);
     const [activeRaw, setActiveRaw] = useState(null);
@@ -105,7 +107,7 @@ const Watch = () => {
             try {
                 const malId = item?.anime?.info?.malId || "";
                 const response = await fetch(`/.netlify/functions/check-episode?animeId=${id}&episode=${episodeNumber}&malId=${malId}`);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -116,13 +118,13 @@ const Watch = () => {
                 }
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     console.log("Episode Check Result:", data); // For debugging
                     setIsAvailable(data.isAvailable);
                     setHasDub(data.hasDub);
                     setDebugInfo(data.debug || []);
-                    
+
                     if (!data.hasDub && audioType === "dub") {
                         setActiveDub(null);
                         setActiveSub(subServers[0]);
@@ -211,52 +213,56 @@ const Watch = () => {
         return () => observer.disconnect();
     }, [isChecking, isAvailable]);
 
+    const lastSentRef = useRef(null);
 
     useEffect(() => {
-        if (!item || !currentEpisodeData || !user) {
-            console.log("Heartbeat skipped:", { hasItem: !!item, hasEpData: !!currentEpisodeData, hasUser: !!user });
-            return;
-        }
+        // Trigger progress update only when checking is done and episode is available
+        if (isChecking || !isAvailable || !item || !currentEpisodeData || !user) return;
 
-        const updateHeartbeat = () => {
-            console.log("Sending heartbeat progress update...");
-            updateProgress({
-                animeId: id,
-                episodeId: episodeNumber,
-                animeTitle: item?.anime?.info?.name,
-                animeImage: item?.anime?.info?.poster,
-                currentEpisode: currentEpisodeData.number,
-                currentTime: 0,
-                duration: 0,
-                episodeTitle: currentEpisodeData.title || `Episode ${currentEpisodeData.number}`,
-            });
+        const epTitle = currentEpisodeData.title 
+            ? `${currentEpisodeData.title} (Episode ${episodeNumber})`
+            : `Episode ${episodeNumber}`;
+        
+        const server = activeSub?.serverId || activeDub?.serverId || "hd-1";
+        const dub = audioType === "dub" ? "yes" : "no";
+
+        const payload = {
+            animeId: id,
+            currentEpisode: Number(episodeNumber),
+            episodeTitle: epTitle,
+            server,
+            dub
         };
 
-        // Initial update
-        updateHeartbeat();
+        // Deep check to prevent double calls with same data
+        const payloadString = JSON.stringify(payload);
+        if (lastSentRef.current === payloadString) return;
 
-        // Heartbeat every 60 seconds
-        const interval = setInterval(updateHeartbeat, 60000);
+        lastSentRef.current = payloadString;
+        updateProgress({
+            ...payload,
+            animeTitle: item.anime.info.name,
+            animeImage: item.anime.info.poster,
+        });
+    }, [id, episodeNumber, isChecking, isAvailable, item, currentEpisodeData, user, updateProgress, audioType, activeSub, activeDub]);
 
-        return () => {
-            console.log("Cleaning up heartbeat interval");
-            clearInterval(interval);
-        };
-    }, [id, episodeNumber, item, currentEpisodeData, updateProgress, user]);
+
+
+
 
     const activeServerId = activeSub?.serverId || activeDub?.serverId || "hd-1";
-    
+
     // Check if current server is actually working based on debug info
     const isCurrentServerWorking = () => {
         if (!debugInfo || debugInfo.length === 0) return true; // Default to showing if no debug info
-        
+
         const typePath = activeServerId === "hd-2" ? "/mal/" : "/ani/";
         const serverStatus = debugInfo.find(d => d.url.includes(typePath) && d.url.includes(`/${audioType}`));
-        
+
         return !serverStatus || serverStatus.status === "Success";
     };
 
-    const iframeSrc = activeServerId === "hd-2" 
+    const iframeSrc = activeServerId === "hd-2"
         ? `https://megaplay.buzz/stream/mal/${item?.anime?.info?.malId || id}/${episodeNumber}/${audioType}`
         : `https://megaplay.buzz/stream/ani/${id}/${episodeNumber}/${audioType}`;
 
@@ -279,13 +285,13 @@ const Watch = () => {
                         <span className="group-hover:underline underline-offset-4">{item?.anime.info.stats.type === "TV" ? "Tv" : "Movie"}</span>
                     </Link>
                     <span className="text-muted-foreground/40 font-light">/</span>
-                    <span className="text-foreground font-medium cursor-pointer" onClick={()=> navigate(`/${slugify(item?.anime.info.name)}/${item?.anime.info.id}`)}>{item?.anime.info.name}</span>
+                    <span className="text-foreground font-medium cursor-pointer" onClick={() => navigate(`/${slugify(item?.anime.info.name)}/${item?.anime.info.id}`)}>{item?.anime.info.name}</span>
                 </nav>
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
                 <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[340px_1fr] gap-6 lg:gap-8">
-                    <div className="order-3 lg:order-1" style={playerColumnHeight ? { maxHeight: playerColumnHeight, height: playerColumnHeight } : undefined}>
+                    <div className="order-3 lg:order-1 min-h-0" style={playerColumnHeight ? { maxHeight: playerColumnHeight, height: playerColumnHeight } : undefined}>
                         <EpisodesList
                             episodeList={episode?.episodes}
                             totalepisodes={episode?.totalEpisodes}
@@ -293,8 +299,8 @@ const Watch = () => {
                             onEpisodeChange={(num) => navigate(`/watch/${id}/${num}`, { state: location.state })}
                             maxHeight={playerColumnHeight} />
                     </div>
-                    <div className="space-y-4 order-1 lg:order-2" ref={playerColumnRef}>
-                        <div className="rounded-2xl overflow-hidden border border-border/50 shadow-lg shadow-primary/5 bg-card min-h-[300px] flex items-center justify-center">
+                    <div className="space-y-4 order-1 lg:order-2 h-fit" ref={playerColumnRef}>
+                        <div className="rounded-2xl overflow-hidden border border-border/50 shadow-lg shadow-primary/5 bg-card h-[300px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
                             {isChecking ? (
                                 <div className="flex flex-col items-center gap-3">
                                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -312,7 +318,7 @@ const Watch = () => {
                                 ) : (
                                     <div className="flex flex-col items-center justify-center gap-4 p-8 text-center w-full h-[300px] sm:h-[400px] lg:h-[500px] bg-card/50">
                                         <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                            <Play className="w-8 h-8" /> 
+                                            <Play className="w-8 h-8" />
                                         </div>
                                         <div className="space-y-2">
                                             <h3 className="text-xl font-bold text-foreground">Server Not Available</h3>
@@ -321,8 +327,8 @@ const Watch = () => {
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button 
-                                                variant="default" 
+                                            <Button
+                                                variant="default"
                                                 onClick={() => {
                                                     const nextServer = activeServerId === "hd-1" ? subServers[1] : subServers[0];
                                                     setActiveSub(nextServer);
@@ -337,7 +343,7 @@ const Watch = () => {
                             ) : (
                                 <div className="flex flex-col items-center gap-4 p-8 text-center max-w-md">
                                     <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-                                        <AlertCircle className="w-8 h-8" /> 
+                                        <AlertCircle className="w-8 h-8" />
                                     </div>
                                     <div className="space-y-2">
                                         <h3 className="text-xl font-bold text-foreground">Episode Not Available</h3>
@@ -345,8 +351,8 @@ const Watch = () => {
                                             This episode is not available right now. Please try again later.
                                         </p>
                                     </div>
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         onClick={() => window.location.reload()}
                                         className="mt-2"
                                     >
