@@ -616,18 +616,53 @@ export function DataProvider({ children }) {
 
         // Use Anify to fetch episode list if possible
         if (media && media.idMal) {
-          const anifyData = await fetchAnifyInfo(media.idMal);
-          if (anifyData && anifyData.episodes && anifyData.episodes.data && anifyData.episodes.data.length > 0) {
-            // Find a provider with episodes, preferably gogoanime or default
-            const provider = anifyData.episodes.data.find(p => p.providerId === 'gogoanime') || anifyData.episodes.data[0];
-            if (provider && provider.episodes) {
-              allEpisodes = provider.episodes.map(ep => ({
-                episodeId: ep.id || ep.number.toString(),
-                number: ep.number,
-                title: ep.title || `Episode ${ep.number}`,
-                isFiller: ep.isFiller || false
+          try {
+            const anifyData = await fetchAnifyInfo(media.idMal);
+            if (anifyData && anifyData.episodes && anifyData.episodes.data && anifyData.episodes.data.length > 0) {
+              const provider = anifyData.episodes.data.find(p => p.providerId === 'gogoanime') || anifyData.episodes.data[0];
+              if (provider && provider.episodes) {
+                allEpisodes = provider.episodes.map(ep => ({
+                  episodeId: ep.id || ep.number.toString(),
+                  number: ep.number,
+                  title: ep.title || `Episode ${ep.number}`,
+                  isFiller: ep.isFiller || false
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn("Anify failed, trying Jikan...");
+          }
+        }
+
+        // Secondary Fallback: Use Jikan if Anify failed
+        if (allEpisodes.length === 0 && media && media.idMal) {
+          try {
+            let page = 1;
+            let hasNextPage = true;
+            let jikanEpisodes = [];
+
+            // Fetch up to 5 pages (500 episodes) to avoid hitting rate limits too hard
+            while (hasNextPage && page <= 5) {
+              const jikanEpRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime/${media.idMal}/episodes?page=${page}`), 1);
+              if (jikanEpRes.data && jikanEpRes.data.data) {
+                jikanEpisodes = [...jikanEpisodes, ...jikanEpRes.data.data];
+                hasNextPage = jikanEpRes.data.pagination.has_next_page;
+                page++;
+              } else {
+                hasNextPage = false;
+              }
+            }
+
+            if (jikanEpisodes.length > 0) {
+              allEpisodes = jikanEpisodes.map(ep => ({
+                episodeId: ep.mal_id.toString(),
+                number: ep.mal_id,
+                title: ep.title || `Episode ${ep.mal_id}`,
+                isFiller: ep.filler || false
               }));
             }
+          } catch (e) {
+            console.warn("Jikan episode fetch failed:", e.message);
           }
         }
 

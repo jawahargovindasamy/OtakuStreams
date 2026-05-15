@@ -149,7 +149,9 @@ const VerticalListItem = ({ anime }) => {
         const data = await fetchepisodeinfo(id);
         if (data?.data?.episodes?.length > 0) {
           const progress = continueWatching.find((item) => item.animeId === id);
-          const episodeToPlay = progress ? `/watch/${progress.animeId}?${progress.episodeId}` : `/watch/${data.data.episodes[0].episodeId}`;
+          const episodeToPlay = progress 
+            ? `/watch/${id}/${progress.currentEpisode}` 
+            : `/watch/${id}/${data.data.episodes[0].number}`;
           navigate(episodeToPlay, {
             state: {
               animeId: id,
@@ -166,6 +168,10 @@ const VerticalListItem = ({ anime }) => {
     },
     [continueWatching, fetchepisodeinfo, navigate, handlefetch]
   );
+
+  const currentProgress = useMemo(() => {
+    return continueWatching.find((item) => item.animeId === anime.id);
+  }, [continueWatching, anime.id]);
 
   const handlePlaylistChange = useCallback(
     async (selected) => {
@@ -310,6 +316,7 @@ const VerticalListItem = ({ anime }) => {
       handlePlaylistChange={handlePlaylistChange}
       isUpdating={isUpdating}
       isPlaying={isPlaying}
+      progress={currentProgress}
     >
       {CardContent}
     </MediaCardPopover>

@@ -33,6 +33,16 @@ const Watch = () => {
 
     const [loading, setLoading] = useState(!animeInfo);
 
+    // Synchronize state with location.state when navigating between anime on the same component
+    useEffect(() => {
+        if (location.state?.animeInfo) {
+            setItem(location.state.animeInfo);
+        }
+        if (location.state?.episodeList) {
+            setEpisode(location.state.episodeList);
+        }
+    }, [location.state]);
+
     const [searchParams, setSearchParams] = useSearchParams();
     const epFromUrl = searchParams.get("ep");
 
