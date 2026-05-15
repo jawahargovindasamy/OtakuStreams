@@ -67,6 +67,7 @@ const MediaCardPopover = ({
     handlePlaylistChange,
     isPlaying,
     isUpdating,
+    progress,
     sideOffset = -20,
     children
 }) => {
@@ -186,7 +187,7 @@ const MediaCardPopover = ({
                                 ) : (
                                     <>
                                         <Play className="h-4 w-4 fill-current" />
-                                        <span>Watch Now</span>
+                                        <span>{progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}</span>
                                     </>
                                 )}
                             </Button>

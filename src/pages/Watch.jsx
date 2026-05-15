@@ -279,10 +279,10 @@ const Watch = () => {
                     </Link>
                     <span className="text-muted-foreground/40 font-light">/</span>
                     <Link
-                        to={`/${item?.anime.info.stats.type === "TV" ? "tv" : "movie"}`}
-                        className="hover:text-primary transition-colors duration-200 flex items-center gap-1 group"
+                        to={`/${item?.anime.info.stats.type?.toLowerCase() === "tv" ? "tv" : item?.anime.info.stats.type?.toLowerCase() === "movie" ? "movie" : item?.anime.info.stats.type?.toLowerCase() === "ona" ? "ona" : item?.anime.info.stats.type?.toLowerCase() === "ova" ? "ova" : item?.anime.info.stats.type?.toLowerCase() === "special" ? "special" : "movie"}`}
+                        className="hover:text-primary transition-colors duration-200 flex items-center gap-1 group uppercase"
                     >
-                        <span className="group-hover:underline underline-offset-4">{item?.anime.info.stats.type === "TV" ? "Tv" : "Movie"}</span>
+                        <span className="group-hover:underline underline-offset-4">{item?.anime.info.stats.type || "Movie"}</span>
                     </Link>
                     <span className="text-muted-foreground/40 font-light">/</span>
                     <span className="text-foreground font-medium cursor-pointer" onClick={() => navigate(`/${slugify(item?.anime.info.name)}/${item?.anime.info.id}`)}>{item?.anime.info.name}</span>

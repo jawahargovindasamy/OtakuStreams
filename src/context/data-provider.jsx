@@ -235,26 +235,43 @@ export function DataProvider({ children }) {
           }
 
         } else {
-          const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?letter=${azlist}&page=${page}&limit=24`));
-          const malIds = jikanRes.data.data.map(a => a.mal_id);
-          hasNextPage = jikanRes.data.pagination.has_next_page;
-          totalPages = jikanRes.data.pagination.last_visible_page;
+          try {
+            const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?letter=${azlist}&page=${page}&limit=24`), 1);
+            const malIds = jikanRes.data.data.map(a => a.mal_id);
+            hasNextPage = jikanRes.data.pagination.has_next_page;
+            totalPages = jikanRes.data.pagination.last_visible_page;
 
-          if (malIds.length > 0) {
-            const aniQuery = `
-               query($idMals: [Int]) {
-                 Page(page: 1, perPage: 24) {
-                   media(idMal_in: $idMals) {
-                     id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
+            if (malIds.length > 0) {
+              const aniQuery = `
+                 query($idMals: [Int]) {
+                   Page(page: 1, perPage: 24) {
+                     media(idMal_in: $idMals) {
+                       id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
+                     }
                    }
                  }
-               }
-             `;
-            const aniRes = await anilistQuery(aniQuery, { idMals: malIds });
-            const aniMap = {};
-            aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
-            const sortedMedia = malIds.map(malId => aniMap[malId]).filter(Boolean);
-            mappedAnimes = sortedMedia.map(mapAniListToAnime);
+               `;
+              const aniRes = await anilistQuery(aniQuery, { idMals: malIds });
+              const aniMap = {};
+              aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
+              const sortedMedia = malIds.map(malId => aniMap[malId]).filter(Boolean);
+              mappedAnimes = sortedMedia.map(mapAniListToAnime);
+            }
+          } catch (error) {
+            const query = `
+              query ($page: Int, $search: String) {
+                Page(page: $page, perPage: 24) {
+                  pageInfo { hasNextPage lastPage }
+                  media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], search: $search, sort: [TITLE_ROMAJI]) {
+                    id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
+                  }
+                }
+              }
+            `;
+            const res = await anilistQuery(query, { page, search: azlist });
+            mappedAnimes = res.data.Page.media.map(mapAniListToAnime);
+            hasNextPage = res.data.Page.pageInfo.hasNextPage;
+            totalPages = res.data.Page.pageInfo.lastPage;
           }
         }
 
@@ -415,13 +432,13 @@ export function DataProvider({ children }) {
     return fetchWithCache(key, async () => {
       try {
         // 1. Fetch search results directly from Jikan
-        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(keyword)}&page=${page}&limit=24&order_by=popularity&sort=desc`));
+        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(keyword)}&page=${page}&limit=24&order_by=popularity&sort=desc`), 1);
         const hasNextPage = jikanRes.data.pagination.has_next_page;
         const totalPages = jikanRes.data.pagination.last_visible_page;
         const mappedAnimes = jikanRes.data.data.map(mapJikanToAnime);
 
         // 2. Fetch popular items for sidebar from Jikan
-        const popularRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?order_by=popularity&sort=desc&limit=10`));
+        const popularRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?order_by=popularity&sort=desc&limit=10`), 1);
         const popularAnimes = popularRes.data.data.map(mapJikanToAnime);
 
         return {
@@ -433,8 +450,37 @@ export function DataProvider({ children }) {
           totalPages
         };
       } catch (error) {
-        console.error("Search fetch failed:", error);
-        return null;
+        try {
+          // Fallback to AniList
+          const query = `
+            query($q: String, $page: Int) {
+              Page(page: $page, perPage: 24) {
+                pageInfo { hasNextPage lastPage }
+                media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                  id idMal title { english romaji native } coverImage { extraLarge large } format episodes averageScore seasonYear startDate { year } popularity
+                }
+              }
+              popular: Page(page: 1, perPage: 10) {
+                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } format episodes averageScore seasonYear startDate { year } popularity }
+              }
+            }
+          `;
+          const result = await anilistQuery(query, { q: keyword, page });
+          const searchData = result.data.Page;
+          const popularData = result.data.popular;
+
+          return {
+            animes: searchData.media.map(mapAniListToAnime),
+            mostPopularAnimes: popularData.media.map(mapAniListToAnime),
+            searchQuery: keyword,
+            currentPage: page,
+            hasNextPage: searchData.pageInfo.hasNextPage,
+            totalPages: searchData.pageInfo.lastPage
+          };
+        } catch (aniError) {
+          console.error("AniList fallback search failed:", aniError);
+          return { animes: [], mostPopularAnimes: [], searchQuery: keyword, currentPage: page, hasNextPage: false, totalPages: 0 };
+        }
       }
     }, FIVE_HOURS);
   };
@@ -499,7 +545,7 @@ export function DataProvider({ children }) {
     const key = `search-suggestions-${q.toLowerCase()}`;
     return fetchWithCache(key, async () => {
       try {
-        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=5`));
+        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=5`), 1);
         return {
           data: {
             suggestions: jikanRes.data.data.map(anime => ({
@@ -515,8 +561,35 @@ export function DataProvider({ children }) {
           }
         };
       } catch (error) {
-        console.error("Search suggestions failed:", error);
-        return null;
+        try {
+          const query = `
+            query($q: String) {
+              Page(page: 1, perPage: 5) {
+                media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                  id title { english romaji native } coverImage { large } format averageScore
+                }
+              }
+            }
+          `;
+          const result = await anilistQuery(query, { q });
+          return {
+            data: {
+              suggestions: result.data.Page.media.map(media => ({
+                id: media.id.toString(),
+                name: media.title.english || media.title.romaji,
+                jname: media.title.romaji,
+                poster: media.coverImage.large,
+                moreInfo: [
+                  media.format || "TV",
+                  media.averageScore ? `★ ${media.averageScore / 10}` : null
+                ].filter(Boolean)
+              }))
+            }
+          };
+        } catch (aniError) {
+          console.error("AniList fallback suggestions failed:", aniError);
+          return { data: { suggestions: [] } };
+        }
       }
     }, FIVE_HOURS);
   };
@@ -687,27 +760,66 @@ export function DataProvider({ children }) {
 
         const queryParams = jikanMap[category] || "order_by=popularity&sort=desc";
 
-        // 1. Fetch from Jikan (No 5000-item limit like AniList)
-        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?${queryParams}&page=${page}&limit=24`));
-        const malIds = jikanRes.data.data.map(a => a.mal_id);
-        const hasNextPage = jikanRes.data.pagination.has_next_page;
-        const totalPages = jikanRes.data.pagination.last_visible_page;
-
         let mappedAnimes = [];
-        if (malIds.length > 0) {
+        let hasNextPage = false;
+        let totalPages = 1;
+
+        try {
+          const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?${queryParams}&page=${page}&limit=24`), 1);
+          const malIds = jikanRes.data.data.map(a => a.mal_id);
+          hasNextPage = jikanRes.data.pagination.has_next_page;
+          totalPages = jikanRes.data.pagination.last_visible_page;
+
+          if (malIds.length > 0) {
+            const query = `
+                  query($idMals: [Int]) {
+                      Page(page: 1, perPage: 24) {
+                          media(idMal_in: $idMals) {
+                              id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
+                          }
+                      }
+                  }
+              `;
+            const aniRes = await anilistQuery(query, { idMals: malIds });
+            const aniMap = {};
+            aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
+            mappedAnimes = malIds.map(malId => aniMap[malId]).filter(Boolean).map(mapAniListToAnime);
+          }
+        } catch (error) {
+          // Map category to AniList logic
+          let variables = { page, perPage: 24 };
+          const aniCategoryMap = {
+            "most-popular": { sort: ["POPULARITY_DESC"] },
+            "top-airing": { status: "RELEASING", sort: ["SCORE_DESC"] },
+            "most-favorite": { sort: ["FAVOURITES_DESC"] },
+            "top-upcoming": { status: "NOT_YET_RELEASED", sort: ["POPULARITY_DESC"] },
+            "completed": { status: "FINISHED", sort: ["SCORE_DESC"] },
+            "tv": { format: "TV", sort: ["POPULARITY_DESC"] },
+            "movie": { format: "MOVIE", sort: ["POPULARITY_DESC"] },
+            "ova": { format: "OVA", sort: ["POPULARITY_DESC"] },
+            "special": { format: "SPECIAL", sort: ["POPULARITY_DESC"] },
+            "ona": { format: "ONA", sort: ["POPULARITY_DESC"] },
+            "recently-updated": { sort: ["UPDATED_AT_DESC"] }
+          };
+
+          const config = aniCategoryMap[category] || { sort: ["POPULARITY_DESC"] };
+          variables = { ...variables, ...config };
+
           const query = `
-                query($idMals: [Int]) {
-                    Page(page: 1, perPage: 24) {
-                        media(idMal_in: $idMals) {
-                            id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
-                        }
-                    }
+            query($page: Int, $perPage: Int, $sort: [MediaSort], $status: MediaStatus, $format: MediaFormat) {
+              Page(page: $page, perPage: $perPage) {
+                pageInfo { hasNextPage lastPage }
+                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: $sort, status: $status, format: $format) {
+                  id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
                 }
-            `;
-          const aniRes = await anilistQuery(query, { idMals: malIds });
-          const aniMap = {};
-          aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
-          mappedAnimes = malIds.map(malId => aniMap[malId]).filter(Boolean).map(mapAniListToAnime);
+              }
+            }
+          `;
+
+          const aniRes = await anilistQuery(query, variables);
+          mappedAnimes = aniRes.data.Page.media.map(mapAniListToAnime);
+          hasNextPage = aniRes.data.Page.pageInfo.hasNextPage;
+          totalPages = aniRes.data.Page.pageInfo.lastPage;
         }
 
         // 2. Fetch sidebar and extra data from AniList
@@ -762,34 +874,57 @@ export function DataProvider({ children }) {
         let hasNextPage = false;
         let totalPages = 1;
 
-        // 1. Get List from Jikan (consistent with A-Z list)
-        if (genreId) {
-          let url = `https://api.jikan.moe/v4/anime?genres=${genreId}&page=${page}&limit=24`;
-          if (type) url += `&type=${type.toLowerCase()}`;
+        try {
+          // 1. Get List from Jikan (consistent with A-Z list)
+          if (genreId) {
+            let url = `https://api.jikan.moe/v4/anime?genres=${genreId}&page=${page}&limit=24`;
+            if (type) url += `&type=${type.toLowerCase()}`;
 
-          const jikanRes = await fetchWithRetry(() => axios.get(url));
-          const malIds = jikanRes.data.data.map(a => a.mal_id);
-          hasNextPage = jikanRes.data.pagination.has_next_page;
-          totalPages = jikanRes.data.pagination.last_visible_page;
+            const jikanRes = await fetchWithRetry(() => axios.get(url), 1);
+            const malIds = jikanRes.data.data.map(a => a.mal_id);
+            hasNextPage = jikanRes.data.pagination.has_next_page;
+            totalPages = jikanRes.data.pagination.last_visible_page;
 
-          if (malIds.length > 0) {
-            const aniQuery = `
-              query($idMals: [Int]) {
-                Page(page: 1, perPage: 24) {
-                  media(idMal_in: $idMals, type: ANIME) {
-                    id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } averageScore popularity
+            if (malIds.length > 0) {
+              const aniQuery = `
+                query($idMals: [Int]) {
+                  Page(page: 1, perPage: 24) {
+                    media(idMal_in: $idMals, type: ANIME) {
+                      id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } averageScore popularity
+                    }
                   }
                 }
-              }
-            `;
-            const aniRes = await anilistQuery(aniQuery, { idMals: malIds });
-            const aniMap = {};
-            aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
-            const sortedMedia = malIds.map(malId => aniMap[malId]).filter(Boolean);
-            mappedAnimes = sortedMedia.map(mapAniListToAnime);
+              `;
+              const aniRes = await anilistQuery(aniQuery, { idMals: malIds });
+              const aniMap = {};
+              aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
+              const sortedMedia = malIds.map(malId => aniMap[malId]).filter(Boolean);
+              mappedAnimes = sortedMedia.map(mapAniListToAnime);
+            }
           }
-        } else {
-          // Fallback to original AniList logic if genre is not in our Jikan map
+        } catch (error) {
+          // Fallback to AniList query logic
+          const formattedGenre = name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          const query = `
+            query ($genre: String, $page: Int, $format: MediaFormat) {
+              Page(page: $page, perPage: 24) {
+                pageInfo { hasNextPage lastPage }
+                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], sort: POPULARITY_DESC, format: $format) { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore }
+              }
+            }
+          `;
+          const result = await anilistQuery(query, { 
+            genre: formattedGenre, 
+            page,
+            format: type ? type.toUpperCase() : undefined
+          });
+          mappedAnimes = result.data.Page.media.map(mapAniListToAnime);
+          hasNextPage = result.data.Page.pageInfo.hasNextPage;
+          totalPages = result.data.Page.pageInfo.lastPage;
+        }
+
+        if (!mappedAnimes.length && !genreId) {
+          // Extra fallback for cases where genreId is not found in map but might exist in AniList
           const formattedGenre = name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
           const query = `
             query ($genre: String, $page: Int) {

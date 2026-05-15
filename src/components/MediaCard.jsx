@@ -115,7 +115,7 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
                 if (data?.data?.episodes?.length > 0) {
                     const progress = continueWatching.find((item) => item.animeId === id);
                     const episodeToPlay = progress 
-                        ? `/watch/${id}/${progress.episodeId}` 
+                        ? `/watch/${id}/${progress.currentEpisode}` 
                         : `/watch/${id}/${data.data.episodes[0].number}`;
                     navigate(episodeToPlay, {
                         state: {
@@ -133,6 +133,10 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
         },
         [continueWatching, fetchepisodeinfo, navigate, handlefetch]
     );
+
+    const currentProgress = useMemo(() => {
+        return continueWatching.find((item) => item.animeId === id);
+    }, [continueWatching, id]);
 
 
     const handlePlaylistChange = useCallback(
@@ -352,6 +356,7 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
             handlePlaylistChange={handlePlaylistChange}
             isUpdating={isUpdating}
             isPlaying={isPlaying}
+            progress={currentProgress}
         >
             {CardContent}
         </MediaCardPopover>

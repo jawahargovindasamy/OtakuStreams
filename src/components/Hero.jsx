@@ -133,7 +133,9 @@ const HeroSlide = memo(({ item, index, language, handlePlay, isPlaying, navigate
                 ) : (
                   <>
                     <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current transition-transform duration-300 group-hover:scale-110" />
-                    <span>Watch Now</span>
+                    <span>
+                      {item.progress ? `Continue Ep ${item.progress.currentEpisode}` : 'Watch Now'}
+                    </span>
                   </>
                 )}
               </Button>
@@ -208,10 +210,14 @@ const Hero = () => {
         });
         const json = await response.json();
         if (json.data && json.data.Page && json.data.Page.media) {
-          setTrendingAnimes(json.data.Page.media);
+          const mediaWithProgress = json.data.Page.media.map(media => {
+            const progress = continueWatching.find(pw => pw.animeId === media.id.toString());
+            return { ...media, progress };
+          });
+          setTrendingAnimes(mediaWithProgress);
           try {
              sessionStorage.setItem("hero_trending_animes", JSON.stringify({
-                data: json.data.Page.media,
+                data: mediaWithProgress,
                 timestamp: Date.now()
              }));
           } catch(e) {}
@@ -234,7 +240,7 @@ const Hero = () => {
       if (data?.data?.episodes?.length > 0) {
         const progress = continueWatching.find((item) => item.animeId === id);
         const episodeToPlay = progress
-          ? `/watch/${id}/${progress.episodeId}`
+          ? `/watch/${id}/${progress.currentEpisode}`
           : `/watch/${id}/${data.data.episodes[0].number}`;
 
         navigate(episodeToPlay, {
@@ -273,17 +279,20 @@ const Hero = () => {
       }}
     >
       <CarouselContent className="h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[calc(100vh-80px)] ml-0">
-        {trendingAnimes.map((item, index) => (
-          <HeroSlide 
-            key={item.id} 
-            item={item} 
-            index={index}
-            language={language}
-            handlePlay={handlePlay}
-            isPlaying={isPlaying}
-            navigate={navigate}
-          />
-        ))}
+        {trendingAnimes.map((item, index) => {
+          const progress = continueWatching.find(pw => pw.animeId === item.id.toString());
+          return (
+            <HeroSlide 
+              key={item.id} 
+              item={{ ...item, progress }} 
+              index={index}
+              language={language}
+              handlePlay={handlePlay}
+              isPlaying={isPlaying}
+              navigate={navigate}
+            />
+          );
+        })}
       </CarouselContent>
 
       {/* Navigation Buttons */}

@@ -154,7 +154,7 @@ function useSafeAsync() {
 }
 
 const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => {
-    const { user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist } = useAuth();
+    const { user, watchlistMap, removeWatchlist, updateWatchlist, addWatchlist, continueWatching } = useAuth();
     const [playlist1, setPlaylist1] = useState(null);
     const [showmore, setShowmore] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -169,6 +169,10 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
         });
         return map;
     }, []);
+
+    const progress = useMemo(() => {
+        return continueWatching.find((item) => item.animeId === id);
+    }, [continueWatching, id]);
 
     // Safer backdrop image construction
     const backdropImage = useMemo(() => {
@@ -289,10 +293,10 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                 </Link>
                                 <span className="text-border">/</span>
                                 <Link
-                                    to={`/${info.stats.type === "TV" ? "tv" : "movie"}`}
-                                    className="hover:text-primary transition-colors"
+                                    to={`/${info.stats.type?.toLowerCase() === "tv" ? "tv" : info.stats.type?.toLowerCase() === "movie" ? "movie" : info.stats.type?.toLowerCase() === "ona" ? "ona" : info.stats.type?.toLowerCase() === "ova" ? "ova" : info.stats.type?.toLowerCase() === "special" ? "special" : "movie"}`}
+                                    className="hover:text-primary transition-colors uppercase"
                                 >
-                                    {info.stats.type === "TV" ? "Tv" : "Movie"}
+                                    {info.stats.type || "Movie"}
                                 </Link>
                                 <span className="text-border">/</span>
                                 <span className="text-foreground font-medium truncate max-w-40">
@@ -381,7 +385,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     ) : (
                                         <Play className="h-5 w-5 fill-current mr-2" />
                                     )}
-                                    Watch Now
+                                    {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
                                 </Button>
                                 <Popover
                                     modal={false}
@@ -454,8 +458,8 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     Home
                                 </Link>
                                 <span className="text-border">/</span>
-                                <Link to={`/${info.stats.type === "TV" ? "tv" : "movie"}`} className="hover:text-primary transition-colors">
-                                    {info.stats.type === "TV" ? "Tv" : "Movie"}
+                                <Link to={`/${info.stats.type?.toLowerCase() === "tv" ? "tv" : info.stats.type?.toLowerCase() === "movie" ? "movie" : info.stats.type?.toLowerCase() === "ona" ? "ona" : info.stats.type?.toLowerCase() === "ova" ? "ova" : info.stats.type?.toLowerCase() === "special" ? "special" : "movie"}`} className="hover:text-primary transition-colors uppercase">
+                                    {info.stats.type || "Movie"}
                                 </Link>
                                 <span className="text-border">/</span>
                                 <span className="text-foreground font-medium truncate max-w-50 sm:max-w-md">
@@ -529,7 +533,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     ) : (
                                         <>
                                             <Play className="h-5 w-5 fill-current mr-2" />
-                                            Watch Now
+                                            {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
                                         </>
                                     )}
                                 </Button>

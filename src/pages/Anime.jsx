@@ -91,7 +91,7 @@ const Anime = () => {
                     const progress = continueWatching.find((item) => item.animeId === id);
 
                     const episodeToPlay = progress
-                        ? `/watch/${id}/${progress.episodeId}`
+                        ? `/watch/${id}/${progress.currentEpisode}`
                         : `/watch/${id}/${data.data.episodes[0].number}`;
 
                     navigate(episodeToPlay, {
