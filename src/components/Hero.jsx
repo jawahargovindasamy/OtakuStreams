@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-provider";
 import { slugify } from "@/lib/utils";
 import HeroSkelton from "./HeroSkelton";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const ANILIST_QUERY = `
 query ($page: Int, $perPage: Int) {
@@ -51,7 +52,8 @@ const HeroSlide = memo(({ item, index, language, handlePlay, isPlaying, navigate
 
   const mediaId = item.id;
   const animeTitle = language === "EN" ? (item.title.english || item.title.romaji) : (item.title.romaji || item.title.english);
-  const bannerImage = item.bannerImage || item.coverImage?.extraLarge;
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+  const bannerImage = isDesktop ? (item.bannerImage || item.coverImage?.extraLarge) : (item.coverImage?.extraLarge || item.bannerImage);
   const accentColor = item.coverImage?.color || "hsl(var(--primary))";
   const displayEpisodes = item.nextAiringEpisode ? item.nextAiringEpisode.episode - 1 : item.episodes;
 
