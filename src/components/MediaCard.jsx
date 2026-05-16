@@ -113,7 +113,7 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
                 const animeInfo = await handlefetch();
                 const data = await fetchepisodeinfo(id);
                 if (data?.data?.episodes?.length > 0) {
-                    const progress = continueWatching.find((item) => item.animeId === id);
+                    const progress = continueWatching.find((item) => item.animeId === id.toString());
                     const episodeToPlay = progress 
                         ? `/watch/${id}/${progress.currentEpisode}` 
                         : `/watch/${id}/${data.data.episodes[0].number}`;
@@ -121,7 +121,9 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
                         state: {
                             animeId: id,
                             episodeList: data.data,
-                            animeInfo
+                            animeInfo,
+                            server: progress?.server,
+                            dub: progress?.dub
                         }
                     });
                 }

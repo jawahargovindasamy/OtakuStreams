@@ -50,7 +50,7 @@ const Watch = () => {
         (ep) => ep.number.toString() === episodeNumber
     );
 
-    const [audioType, setAudioType] = useState("sub");
+    const [audioType, setAudioType] = useState(location.state?.dub === "yes" ? "dub" : "sub");
 
     const subServers = [
         { serverId: "hd-1", serverName: "HD-1" },
@@ -61,8 +61,19 @@ const Watch = () => {
         { serverId: "hd-2", serverName: "HD-2" }
     ];
 
-    const [activeSub, setActiveSub] = useState(subServers[0]);
-    const [activeDub, setActiveDub] = useState(null);
+    const [activeSub, setActiveSub] = useState(() => {
+        if (location.state?.dub === "no" && location.state?.server) {
+            return subServers.find(s => s.serverId === location.state.server) || subServers[0];
+        }
+        if (location.state?.dub === "yes") return null; // If dub is active, sub should be null
+        return subServers[0];
+    });
+    const [activeDub, setActiveDub] = useState(() => {
+        if (location.state?.dub === "yes" && location.state?.server) {
+            return dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
+        }
+        return null;
+    });
     const [activeRaw, setActiveRaw] = useState(null);
 
     useEffect(() => {

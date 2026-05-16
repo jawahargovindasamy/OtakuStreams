@@ -11,7 +11,12 @@ const ContinueWatchingCard = ({ item }) => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleContinue = () => {
-        navigate(`/watch/${item.animeId}/${item.currentEpisode}`);
+        navigate(`/watch/${item.animeId}/${item.currentEpisode}`, {
+            state: {
+                server: item.server,
+                dub: item.dub
+            }
+        });
     };
 
     const handleRemove = async (e) => {

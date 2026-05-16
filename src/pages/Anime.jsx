@@ -88,7 +88,7 @@ const Anime = () => {
                 const data = await fetchepisodeinfo(id);
                 if (data?.data?.episodes?.length > 0) {
 
-                    const progress = continueWatching.find((item) => item.animeId === id);
+                    const progress = continueWatching.find((item) => item.animeId === id.toString());
 
                     const episodeToPlay = progress
                         ? `/watch/${id}/${progress.currentEpisode}`
@@ -98,7 +98,9 @@ const Anime = () => {
                         state: {
                             animeId: id,
                             episodeList: data.data,
-                            animeInfo: item
+                            animeInfo: item,
+                            server: progress?.server,
+                            dub: progress?.dub
                         }
                     });
                 }
