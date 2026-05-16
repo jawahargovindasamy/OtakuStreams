@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [continueWatching, setContinueWatching] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [notification, setNotification] = useState([]);
+  const [preferences, setPreferences] = useState({ audio: "sub", server: "hd-1" });
   const navigate = useNavigate();
 
   const [ignoredFolders, setIgnoredFolders] = useState({
@@ -162,6 +163,52 @@ export function AuthProvider({ children }) {
     }
   }, [api, fetchWithCache]);
 
+  const fetchPreferences = useCallback(async () => {
+    // If not logged in, load from localStorage
+    const token = localStorage.getItem("token");
+    if (!token) {
+      const stored = localStorage.getItem("preferences");
+      if (stored) {
+        setPreferences(JSON.parse(stored));
+      }
+      return;
+    }
+
+    try {
+      const res = await api.get("/users/preferences");
+      if (res.data.success) {
+        setPreferences(res.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch preferences:", error);
+    }
+  }, [api]);
+
+  const updatePreferences = useCallback(async (newPrefs) => {
+    // Optimistic update
+    setPreferences(prev => {
+      const updated = { ...prev, ...newPrefs };
+      
+      // If not logged in, save to localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.setItem("preferences", JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+
+    // If logged in, save to API
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        await api.put("/users/preferences", newPrefs);
+      } catch (error) {
+        console.error("Failed to update preferences:", error);
+      }
+    }
+  }, [api]);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get("/notification");
@@ -172,6 +219,10 @@ export function AuthProvider({ children }) {
       setNotification([]);
     }
   }, [api])
+
+  useEffect(() => {
+    fetchPreferences();
+  }, [fetchPreferences]);
 
   const watchlistMap = useMemo(() => {
     const map = new Map();
@@ -269,7 +320,8 @@ export function AuthProvider({ children }) {
     await fetchContinueWatching();
     await fetchWatchlist();
     await fetchNotifications();
-  }, [fetchContinueWatching, fetchWatchlist, fetchNotifications]);
+    await fetchPreferences();
+  }, [fetchContinueWatching, fetchWatchlist, fetchNotifications, fetchPreferences]);
 
 
   const markRead = useCallback(async (notificationId) => {
@@ -364,6 +416,7 @@ export function AuthProvider({ children }) {
         await fetchContinueWatching();
         await fetchWatchlist();
         await fetchNotifications();
+        await fetchPreferences();
         return;
       }
 
@@ -381,6 +434,7 @@ export function AuthProvider({ children }) {
         await fetchContinueWatching();
         await fetchWatchlist();
         await fetchNotifications();
+        await fetchPreferences();
       } catch {
         // token invalid / expired
         logout();
@@ -425,10 +479,13 @@ export function AuthProvider({ children }) {
         fetchWatchlist,
         fetchNotifications,
         watchlistMap,
+        removeWatchlist,
         updateWatchlist,
         addWatchlist,
-        removeWatchlist,
-
+        preferences,
+        updatePreferences,
+        fetchPreferences,
+        setLanguage,
         updateProfile,
         updateSettings,
         markRead,

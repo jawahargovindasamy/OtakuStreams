@@ -50,7 +50,12 @@ const Watch = () => {
         (ep) => ep.number.toString() === episodeNumber
     );
 
-    const [audioType, setAudioType] = useState(location.state?.dub === "yes" ? "dub" : "sub");
+    const { preferences } = useAuth();
+
+    const [audioType, setAudioType] = useState(() => {
+        if (location.state?.dub) return location.state.dub === "yes" ? "dub" : "sub";
+        return preferences?.audio || "sub";
+    });
 
     const subServers = [
         { serverId: "hd-1", serverName: "HD-1" },
@@ -65,12 +70,20 @@ const Watch = () => {
         if (location.state?.dub === "no" && location.state?.server) {
             return subServers.find(s => s.serverId === location.state.server) || subServers[0];
         }
-        if (location.state?.dub === "yes") return null; // If dub is active, sub should be null
-        return subServers[0];
+        if (location.state?.dub === "yes") return null;
+
+        if (!location.state?.dub && preferences?.audio === "sub") {
+            return subServers.find(s => s.serverId === preferences.server) || subServers[0];
+        }
+        return preferences?.audio === "dub" ? null : subServers[0];
     });
+
     const [activeDub, setActiveDub] = useState(() => {
         if (location.state?.dub === "yes" && location.state?.server) {
             return dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
+        }
+        if (!location.state?.dub && preferences?.audio === "dub") {
+            return dubServers.find(s => s.serverId === preferences.server) || dubServers[0];
         }
         return null;
     });

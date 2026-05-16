@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, Mic, Subtitles } from "lucide-react"
+import { useAuth } from "@/context/auth-provider"
 
 const EpisodeServer = ({
     episodeNo,
@@ -15,6 +16,7 @@ const EpisodeServer = ({
     setActiveRaw,
     nextEpisodeTime
 }) => {
+    const { updatePreferences } = useAuth();
     const formatName = (name) => name.toUpperCase()
 
     return (
@@ -45,6 +47,7 @@ const EpisodeServer = ({
                                             setActiveSub(s)
                                             setActiveDub(null)
                                             setActiveRaw(null)
+                                            updatePreferences({ audio: "sub", server: s.serverId });
                                         }}
                                         className={activeSub?.serverId === s.serverId ?
                                             "shadow-md shadow-primary/25" :
@@ -75,6 +78,7 @@ const EpisodeServer = ({
                                             setActiveDub(s)
                                             setActiveSub(null)
                                             setActiveRaw(null)
+                                            updatePreferences({ audio: "dub", server: s.serverId });
                                         }}
                                         className={activeDub?.serverId === s.serverId ?
                                             "shadow-md shadow-primary/25" :
@@ -105,6 +109,7 @@ const EpisodeServer = ({
                                             setActiveRaw(s)
                                             setActiveSub(null)
                                             setActiveDub(null)
+                                            updatePreferences({ audio: "raw", server: s.serverId });
                                         }}
                                         className={activeRaw?.serverId === s.serverId ?
                                             "shadow-md shadow-primary/25" :
