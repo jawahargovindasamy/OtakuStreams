@@ -311,8 +311,12 @@ export function DataProvider({ children }) {
               bannerImage
               description
               episodes
-              nextAiringEpisode { episode }
-              duration
+              nextAiringEpisode {
+                episode
+              }
+              streamingEpisodes {
+                title
+              }
               status
               averageScore
               genres
@@ -608,7 +612,7 @@ export function DataProvider({ children }) {
     return fetchWithCache(`episodes-${id}`, async () => {
       try {
         // First try to fetch AniList details to get total episodes & malId for Anify
-        const query = `query($id: Int) { Media(id: $id, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT]) { idMal episodes nextAiringEpisode { episode } } }`;
+        const query = `query($id: Int) { Media(id: $id, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT]) { idMal episodes nextAiringEpisode { episode } streamingEpisodes { title } } }`;
         const anilistRes = await anilistQuery(query, { id: parseInt(id) });
         const media = anilistRes.data.Media;
 
@@ -641,13 +645,18 @@ export function DataProvider({ children }) {
             let hasNextPage = true;
             let jikanEpisodes = [];
 
-            // Fetch up to 5 pages (500 episodes) to avoid hitting rate limits too hard
-            while (hasNextPage && page <= 5) {
+            // Fetch up to 15 pages (1500 episodes) to handle very long series like One Piece
+            while (hasNextPage && page <= 15) {
               const jikanEpRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime/${media.idMal}/episodes?page=${page}`), 1);
               if (jikanEpRes.data && jikanEpRes.data.data) {
                 jikanEpisodes = [...jikanEpisodes, ...jikanEpRes.data.data];
                 hasNextPage = jikanEpRes.data.pagination.has_next_page;
                 page++;
+                
+                // Add a small delay if there are more pages to respect Jikan rate limits
+                if (hasNextPage && page <= 15) {
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
               } else {
                 hasNextPage = false;
               }
@@ -666,17 +675,36 @@ export function DataProvider({ children }) {
           }
         }
 
-        // Fallback: Generate dummy episodes if Anify failed
-        if (allEpisodes.length === 0 && media) {
-          const count = media.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : (media.episodes || 12);
-          for (let i = 1; i <= count; i++) {
-            allEpisodes.push({
-              episodeId: i.toString(),
-              number: i,
-              title: `Episode ${i}`,
-              isFiller: false
-            });
+        // Fallback: Generate dummy episodes if Anify/Jikan failed or if they are behind AniList
+        if (media) {
+          const airingCount = media.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : 0;
+          const totalCount = media.episodes || 0;
+          const streamingCount = media.streamingEpisodes?.length || 0;
+          const aniListCount = Math.max(airingCount, totalCount, streamingCount);
+          const currentCount = allEpisodes.length;
+
+          if (currentCount < aniListCount) {
+            // If we have some episodes but are missing the latest ones
+            const lastNumber = currentCount > 0 ? allEpisodes[allEpisodes.length - 1].number : 0;
+            for (let i = lastNumber + 1; i <= aniListCount; i++) {
+              allEpisodes.push({
+                episodeId: i.toString(),
+                number: i,
+                title: `Episode ${i}`,
+                isFiller: false
+              });
+            }
           }
+        }
+
+        // Final Fallback: If still empty, ensure at least one episode
+        if (allEpisodes.length === 0 && media) {
+          allEpisodes.push({
+            episodeId: "1",
+            number: 1,
+            title: "Episode 1",
+            isFiller: false
+          });
         }
 
         return {
