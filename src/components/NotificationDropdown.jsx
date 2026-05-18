@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/context/auth-provider';
 
 const NotificationDropdown = ({ notifications = [] }) => {
-    const { fetchNotifications, markRead } = useAuth();
+    const { fetchNotifications, markRead, continueWatching } = useAuth();
     const unreadCount = notifications?.filter((n) => n.read === false).length || 0;
     const [open, setOpen] = useState(false);
 
@@ -82,10 +82,15 @@ const NotificationDropdown = ({ notifications = [] }) => {
                     ) : (
                         notifications.map((item) => {
                             const isUnread = item.read === false;
+                            const progress = continueWatching?.find((cw) => cw.animeId === item.animeId?.toString());
                             return (
                                 <Link
                                     key={item._id}
-                                    to={`/watch/${item.episodeId}`}
+                                    to={`/watch/${item.animeId}/${item.episode}`}
+                                    state={{
+                                        server: progress?.server,
+                                        dub: progress?.dub
+                                    }}
                                     onClick={() => handleNotificationClick(item._id)}
                                     className={`flex gap-3 px-4 py-3 transition-all duration-200 hover:bg-accent group ${isUnread ? "bg-primary/5" : "bg-transparent"}`}
                                 >

@@ -15,6 +15,16 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/context/auth-provider';
 
 
+const subServers = [
+    { serverId: "hd-1", serverName: "HD-1" },
+    { serverId: "hd-2", serverName: "HD-2" }
+];
+const dubServers = [
+    { serverId: "hd-1", serverName: "HD-1" },
+    { serverId: "hd-2", serverName: "HD-2" }
+];
+
+
 const Watch = () => {
     const { id, episodeNumber: rawEpisodeNumber } = useParams();
     const episodeNumber = rawEpisodeNumber?.replace('ep=', '');
@@ -33,38 +43,12 @@ const Watch = () => {
 
     const [loading, setLoading] = useState(!animeInfo);
 
-    // Synchronize state with location.state when navigating between anime on the same component
-    useEffect(() => {
-        if (location.state?.animeInfo) {
-            setItem(location.state.animeInfo);
-        }
-        if (location.state?.episodeList) {
-            setEpisode(location.state.episodeList);
-        }
-    }, [location.state]);
-
-    const [searchParams, setSearchParams] = useSearchParams();
-    const epFromUrl = searchParams.get("ep");
-
-    const currentEpisodeData = episode?.episodes?.find(
-        (ep) => ep.number.toString() === episodeNumber
-    );
-
     const { preferences } = useAuth();
 
     const [audioType, setAudioType] = useState(() => {
         if (location.state?.dub) return location.state.dub === "yes" ? "dub" : "sub";
         return preferences?.audio || "sub";
     });
-
-    const subServers = [
-        { serverId: "hd-1", serverName: "HD-1" },
-        { serverId: "hd-2", serverName: "HD-2" }
-    ];
-    const dubServers = [
-        { serverId: "hd-1", serverName: "HD-1" },
-        { serverId: "hd-2", serverName: "HD-2" }
-    ];
 
     const [activeSub, setActiveSub] = useState(() => {
         if (location.state?.dub === "no" && location.state?.server) {
@@ -87,7 +71,82 @@ const Watch = () => {
         }
         return null;
     });
+
+    // Reset all states immediately during render when transitioning to a new anime ID
+    const [prevId, setPrevId] = useState(id);
+    if (id !== prevId) {
+        setPrevId(id);
+        setItem(null);
+        setEpisode(null);
+        setNextEpisode(null);
+        setLoading(true);
+        
+        const stateAnimeId = location.state?.animeInfo?.id?.toString() || location.state?.animeInfo?.malId?.toString();
+        if (stateAnimeId && stateAnimeId === id) {
+            setItem(location.state.animeInfo);
+            setEpisode(location.state.episodeList || null);
+            setLoading(false);
+            
+            const newAudioType = location.state?.dub ? (location.state.dub === "yes" ? "dub" : "sub") : (preferences?.audio || "sub");
+            setAudioType(newAudioType);
+            
+            let newActiveSub = null;
+            let newActiveDub = null;
+            if (location.state?.dub === "no" && location.state?.server) {
+                newActiveSub = subServers.find(s => s.serverId === location.state.server) || subServers[0];
+            } else if (location.state?.dub === "yes") {
+                newActiveSub = null;
+            } else if (!location.state?.dub && preferences?.audio === "sub") {
+                newActiveSub = subServers.find(s => s.serverId === preferences.server) || subServers[0];
+            } else {
+                newActiveSub = preferences?.audio === "dub" ? null : subServers[0];
+            }
+            
+            if (location.state?.dub === "yes" && location.state?.server) {
+                newActiveDub = dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
+            } else if (!location.state?.dub && preferences?.audio === "dub") {
+                newActiveDub = dubServers.find(s => s.serverId === preferences.server) || dubServers[0];
+            } else {
+                newActiveDub = null;
+            }
+            setActiveSub(newActiveSub);
+            setActiveDub(newActiveDub);
+        } else {
+            const newAudioType = location.state?.dub ? (location.state.dub === "yes" ? "dub" : "sub") : (preferences?.audio || "sub");
+            setAudioType(newAudioType);
+            
+            let newActiveSub = null;
+            let newActiveDub = null;
+            
+            if (location.state?.dub === "no" && location.state?.server) {
+                newActiveSub = subServers.find(s => s.serverId === location.state.server) || subServers[0];
+            } else if (location.state?.dub === "yes") {
+                newActiveSub = null;
+            } else if (!location.state?.dub && preferences?.audio === "sub") {
+                newActiveSub = subServers.find(s => s.serverId === (location.state?.server || preferences.server)) || subServers[0];
+            } else {
+                newActiveSub = preferences?.audio === "dub" ? null : subServers[0];
+            }
+            
+            if (location.state?.dub === "yes" && location.state?.server) {
+                newActiveDub = dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
+            } else if (!location.state?.dub && preferences?.audio === "dub") {
+                newActiveDub = dubServers.find(s => s.serverId === (location.state?.server || preferences.server)) || dubServers[0];
+            } else {
+                newActiveDub = null;
+            }
+            
+            setActiveSub(newActiveSub);
+            setActiveDub(newActiveDub);
+        }
+    }
     const [activeRaw, setActiveRaw] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const epFromUrl = searchParams.get("ep");
+
+    const currentEpisodeData = episode?.episodes?.find(
+        (ep) => ep.number.toString() === episodeNumber
+    );
 
     useEffect(() => {
         if (activeSub) setAudioType("sub");

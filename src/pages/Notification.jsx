@@ -32,7 +32,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 const Notification = () => {
-    const { notification, clearNotifications, markRead } = useAuth();
+    const { notification, clearNotifications, markRead, continueWatching } = useAuth();
     const [filter, setFilter] = useState('all');
     const [localNotifications, setLocalNotifications] = useState([]);
 
@@ -74,6 +74,7 @@ const Notification = () => {
 
     const handleNavigate = (id) => {
         // Mark as read when navigating
+        markRead?.(id);
         setLocalNotifications(prev =>
             prev.map(n => n._id === id ? { ...n, read: true } : n)
         );
@@ -223,6 +224,7 @@ const Notification = () => {
                             <div className="divide-y divide-border/50">
                                 {filteredNotifications.map((item) => {
                                     const isUnread = !item.read;
+                                    const progress = continueWatching?.find((cw) => cw.animeId === item.animeId?.toString());
                                     return (
                                         <div
                                             key={item._id}
@@ -231,7 +233,11 @@ const Notification = () => {
                                         >
                                             {/* Image */}
                                             <Link
-                                                to={`/${slugify(item.animeTitle)}/${item.animeId}`}
+                                                to={`/watch/${item.animeId}/${item.episode}`}
+                                                state={{
+                                                    server: progress?.server,
+                                                    dub: progress?.dub
+                                                }}
                                                 onClick={() => handleNavigate(item._id)}
                                                 className="relative shrink-0"
                                             >
@@ -251,7 +257,11 @@ const Notification = () => {
                                                 <div className="flex items-start justify-between gap-2 sm:gap-4">
                                                     <div className="flex-1 min-w-0">
                                                         <Link
-                                                            to={`/watch/${item.episodeId}`}
+                                                            to={`/watch/${item.animeId}/${item.episode}`}
+                                                            state={{
+                                                                server: progress?.server,
+                                                                dub: progress?.dub
+                                                            }}
                                                             onClick={() => handleNavigate(item._id)}
                                                             className="inline-block"
                                                         >
@@ -270,7 +280,11 @@ const Notification = () => {
                                                         </Link>
 
                                                         <Link
-                                                            to={`/${slugify(item.animeTitle)}/${item.animeId}`}
+                                                            to={`/watch/${item.animeId}/${item.episode}`}
+                                                            state={{
+                                                                server: progress?.server,
+                                                                dub: progress?.dub
+                                                            }}
                                                             onClick={() => handleNavigate(item._id)}
                                                         >
                                                             <h3 className={`text-sm sm:text-lg font-semibold leading-tight mb-1 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors ${isUnread ? 'text-foreground' : 'text-muted-foreground'
@@ -303,7 +317,11 @@ const Notification = () => {
                                                             </Button>
                                                         )}
                                                         <Link
-                                                            to={`/${slugify(item.animeTitle)}/${item.animeId}`}
+                                                            to={`/watch/${item.animeId}/${item.episode}`}
+                                                            state={{
+                                                                server: progress?.server,
+                                                                dub: progress?.dub
+                                                            }}
                                                             onClick={() => handleNavigate(item._id)}
                                                             className="p-1.5 sm:p-2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                                                         >
