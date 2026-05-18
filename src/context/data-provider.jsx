@@ -612,7 +612,7 @@ export function DataProvider({ children }) {
     return fetchWithCache(`episodes-${id}`, async () => {
       try {
         // First try to fetch AniList details to get total episodes & malId for Anify
-        const query = `query($id: Int) { Media(id: $id, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT]) { idMal episodes nextAiringEpisode { episode } streamingEpisodes { title } } }`;
+        const query = `query($id: Int) { Media(id: $id, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT]) { idMal status episodes nextAiringEpisode { episode } streamingEpisodes { title } } }`;
         const anilistRes = await anilistQuery(query, { id: parseInt(id) });
         const media = anilistRes.data.Media;
 
@@ -677,10 +677,24 @@ export function DataProvider({ children }) {
 
         // Fallback: Generate dummy episodes if Anify/Jikan failed or if they are behind AniList
         if (media) {
-          const airingCount = media.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : 0;
-          const totalCount = media.episodes || 0;
-          const streamingCount = media.streamingEpisodes?.length || 0;
-          const aniListCount = Math.max(airingCount, totalCount, streamingCount);
+          const status = media.status;
+          const nextAiring = media.nextAiringEpisode;
+          
+          let aniListCount = 0;
+          if (status === "NOT_YET_RELEASED") {
+            aniListCount = 0;
+          } else if (status === "RELEASING" && nextAiring) {
+            // Currently releasing with an upcoming next episode: count is exactly the last aired episode
+            aniListCount = nextAiring.episode - 1;
+          } else {
+            // Finished releasing, or releasing but no next airing schedule found:
+            // total episodes, airing count, or streaming episodes count (whichever is valid)
+            const airingCount = nextAiring ? nextAiring.episode - 1 : 0;
+            const totalCount = media.episodes || 0;
+            const streamingCount = media.streamingEpisodes?.length || 0;
+            aniListCount = Math.max(airingCount, totalCount, streamingCount);
+          }
+
           const currentCount = allEpisodes.length;
 
           if (currentCount < aniListCount) {
