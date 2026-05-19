@@ -660,7 +660,7 @@ export function DataProvider({ children }) {
                 jikanEpisodes = [...jikanEpisodes, ...jikanEpRes.data.data];
                 hasNextPage = jikanEpRes.data.pagination.has_next_page;
                 page++;
-                
+
                 // Add a small delay if there are more pages to respect Jikan rate limits
                 if (hasNextPage && page <= 15) {
                   await new Promise(resolve => setTimeout(resolve, 300));
@@ -687,7 +687,7 @@ export function DataProvider({ children }) {
         if (media) {
           const status = media.status;
           const nextAiring = media.nextAiringEpisode;
-          
+
           let aniListCount = 0;
           if (status === "NOT_YET_RELEASED") {
             aniListCount = 0;
@@ -999,7 +999,7 @@ export function DataProvider({ children }) {
     return fetchWithCache(key, async () => {
       try {
         const cleanName = name.replace(/-/g, ' ');
-        
+
         // 1. Get Studio ID by name (check cache first)
         let studio = studioCache.get(name);
         if (!studio) {
@@ -1159,6 +1159,52 @@ export function DataProvider({ children }) {
     return { sub: [], dub: [] };
   };
 
+  const fetchmediarelations = async (id) => {
+    const cleanId = parseInt(id);
+    if (isNaN(cleanId)) return null;
+
+    const query = `
+      query ($id: Int) {
+        Media(id: $id, type: ANIME) {
+          id
+          idMal
+          title {
+            romaji
+            english
+            native
+          }
+          format
+          startDate {
+            year
+          }
+          seasonYear
+          relations {
+            edges {
+              relationType
+              node {
+                id
+                idMal
+                type
+                format
+                title {
+                  romaji
+                  english
+                  native
+                }
+                startDate {
+                  year
+                }
+                seasonYear
+              }
+            }
+          }
+        }
+      }
+    `;
+    const result = await anilistQuery(query, { id: cleanId });
+    return result?.data?.Media;
+  };
+
   /* -------------------- INITIAL LOAD -------------------- */
   useEffect(() => {
     const cached = cacheRef.current.get("home");
@@ -1186,6 +1232,7 @@ export function DataProvider({ children }) {
         fetchgenres,
         fetchproducers,
         fetchepisodeserver,
+        fetchmediarelations,
       }}
     >
       {children}

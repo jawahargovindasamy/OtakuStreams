@@ -80,16 +80,16 @@ const Watch = () => {
         setEpisode(null);
         setNextEpisode(null);
         setLoading(true);
-        
+
         const stateAnimeId = location.state?.animeInfo?.id?.toString() || location.state?.animeInfo?.malId?.toString();
         if (stateAnimeId && stateAnimeId === id) {
             setItem(location.state.animeInfo);
             setEpisode(location.state.episodeList || null);
             setLoading(false);
-            
+
             const newAudioType = location.state?.dub ? (location.state.dub === "yes" ? "dub" : "sub") : (preferences?.audio || "sub");
             setAudioType(newAudioType);
-            
+
             let newActiveSub = null;
             let newActiveDub = null;
             if (location.state?.dub === "no" && location.state?.server) {
@@ -101,7 +101,7 @@ const Watch = () => {
             } else {
                 newActiveSub = preferences?.audio === "dub" ? null : subServers[0];
             }
-            
+
             if (location.state?.dub === "yes" && location.state?.server) {
                 newActiveDub = dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
             } else if (!location.state?.dub && preferences?.audio === "dub") {
@@ -114,10 +114,10 @@ const Watch = () => {
         } else {
             const newAudioType = location.state?.dub ? (location.state.dub === "yes" ? "dub" : "sub") : (preferences?.audio || "sub");
             setAudioType(newAudioType);
-            
+
             let newActiveSub = null;
             let newActiveDub = null;
-            
+
             if (location.state?.dub === "no" && location.state?.server) {
                 newActiveSub = subServers.find(s => s.serverId === location.state.server) || subServers[0];
             } else if (location.state?.dub === "yes") {
@@ -127,7 +127,7 @@ const Watch = () => {
             } else {
                 newActiveSub = preferences?.audio === "dub" ? null : subServers[0];
             }
-            
+
             if (location.state?.dub === "yes" && location.state?.server) {
                 newActiveDub = dubServers.find(s => s.serverId === location.state.server) || dubServers[0];
             } else if (!location.state?.dub && preferences?.audio === "dub") {
@@ -135,7 +135,7 @@ const Watch = () => {
             } else {
                 newActiveDub = null;
             }
-            
+
             setActiveSub(newActiveSub);
             setActiveDub(newActiveDub);
         }
@@ -240,7 +240,6 @@ const Watch = () => {
 
 
 
-    const hasSeasons = item?.seasons && item?.seasons.length > 0;
 
     useEffect(() => {
         if (animeInfo) return;
@@ -311,10 +310,10 @@ const Watch = () => {
         // Trigger progress update only when checking is done and episode is available
         if (isChecking || !isAvailable || !item || !currentEpisodeData || !user) return;
 
-        const epTitle = currentEpisodeData.title 
+        const epTitle = currentEpisodeData.title
             ? `${currentEpisodeData.title} (Episode ${episodeNumber})`
             : `Episode ${episodeNumber}`;
-        
+
         const server = activeSub?.serverId || activeDub?.serverId || "hd-1";
         const dub = audioType === "dub" ? "yes" : "no";
 
@@ -470,8 +469,8 @@ const Watch = () => {
                         )}
 
                         <div className='mt-2'>
-                            {hasSeasons && (
-                                <SeasonsSection seasons={item?.seasons} id={id} />
+                            {item?.anime?.info?.id && (
+                                <SeasonsSection animeId={item.anime.info.id} />
                             )}
                         </div>
                     </div>

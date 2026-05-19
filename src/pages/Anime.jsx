@@ -58,7 +58,7 @@ const Anime = () => {
                 const data = await fetchanimeinfo(id);
                 if (mounted) {
                     setItem(data);
-                    
+
                     // Replace URL with actual MAL ID and Name if it was accessed via route string
                     if (data?.anime?.info?.id && isNaN(id)) {
                         const actualId = data.anime.info.id;
@@ -145,7 +145,6 @@ const Anime = () => {
         );
     }
 
-    const hasSeasons = item?.seasons && item?.seasons.length > 0;
     const hasCharacters = item?.anime?.info?.charactersVoiceActors && item?.anime?.info?.charactersVoiceActors.length > 0;
     const hasRecommended = item?.recommendedAnimes && item?.recommendedAnimes.length > 0;
     const filteredRelated = item?.relatedAnimes?.filter(a => a.type.toUpperCase() !== 'MANGA') || [];
@@ -171,8 +170,8 @@ const Anime = () => {
                         {/* Main Column */}
                         <div className="space-y-8 sm:space-y-10 min-w-0">
                             {/* Seasons Section */}
-                            {hasSeasons && (
-                                <SeasonsSection seasons={item?.seasons} id={id} />
+                            {item?.anime?.info?.id && (
+                                <SeasonsSection animeId={item.anime.info.id} />
                             )}
 
                             {/* Characters Section */}
