@@ -23,7 +23,7 @@ const Anime = () => {
     const [item, setItem] = useState(null);
     const [nextEpisode, setNextEpisode] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [showAllRelated, setShowAllRelated] = useState(false);
+
     const [showAllPopular, setShowAllPopular] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -147,10 +147,7 @@ const Anime = () => {
 
     const hasCharacters = item?.anime?.info?.charactersVoiceActors && item?.anime?.info?.charactersVoiceActors.length > 0;
     const hasRecommended = item?.recommendedAnimes && item?.recommendedAnimes.length > 0;
-    const filteredRelated = item?.relatedAnimes?.filter(a => a.type.toUpperCase() !== 'MANGA') || [];
-    const hasRelated = filteredRelated.length > 0;
     const hasPopular = item?.mostPopularAnimes && item?.mostPopularAnimes.length > 0;
-    const relatedCount = filteredRelated.length;
     const popularCount = item?.mostPopularAnimes?.length || 0;
 
     return (
@@ -166,7 +163,7 @@ const Anime = () => {
                 />
 
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">
-                    <div className={`grid grid-cols-1 ${hasRelated || hasPopular ? 'lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px]' : ''} gap-6 sm:gap-8 lg:gap-10 w-full`}>
+                    <div className={`grid grid-cols-1 ${hasPopular ? 'lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px]' : ''} gap-6 sm:gap-8 lg:gap-10 w-full`}>
                         {/* Main Column */}
                         <div className="space-y-8 sm:space-y-10 min-w-0">
                             {/* Seasons Section */}
@@ -183,7 +180,7 @@ const Anime = () => {
                             {hasRecommended && (
                                 <section className="space-y-4 sm:space-y-5 w-full">
                                     <SectionHeader title="Recommended For You" icon={ThumbsUp} />
-                                    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${hasRelated || hasPopular ? 'xl:grid-cols-5' : 'lg:grid-cols-5 xl:grid-cols-6'} gap-3 sm:gap-4 w-full`}>
+                                    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${hasPopular ? 'xl:grid-cols-5' : 'lg:grid-cols-5 xl:grid-cols-6'} gap-3 sm:gap-4 w-full`}>
                                         {item?.recommendedAnimes.map((a) => (
                                             <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
                                         ))}
@@ -193,75 +190,39 @@ const Anime = () => {
                         </div>
 
                         {/* Sidebar Column */}
-                        {(hasRelated || hasPopular) && (
+                        {hasPopular && (
                             <aside className="space-y-6 sm:space-y-8 min-w-0">
-                                {/* Related Anime */}
-                                {hasRelated && (
-                                    <section className="space-y-3 sm:space-y-4">
-                                        <SectionHeader title="Related Anime" icon={Users} />
-                                        <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                            <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
-                                                <VerticalList
-                                                    anime={filteredRelated}
-                                                    list={showAllRelated ? relatedCount : 5}
-                                                />
-                                            </div>
-                                            {relatedCount > 5 && (
-                                                <div className="p-2 border-t border-border/50 bg-card/50">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setShowAllRelated(!showAllRelated)}
-                                                        className="w-full text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 group"
-                                                    >
-                                                        <span className="text-xs font-medium">
-                                                            {showAllRelated ? 'Show Less' : `Show More (${relatedCount - 5})`}
-                                                        </span>
-                                                        {showAllRelated ? (
-                                                            <ChevronUp className="w-3 h-3 ml-1 group-hover:-translate-y-0.5 transition-transform" />
-                                                        ) : (
-                                                            <ChevronDown className="w-3 h-3 ml-1 group-hover:translate-y-0.5 transition-transform" />
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </section>
-                                )}
-
                                 {/* Most Popular */}
-                                {hasPopular && (
-                                    <section className="space-y-3 sm:space-y-4">
-                                        <SectionHeader title="Most Popular" icon={Flame} />
-                                        <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                            <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
-                                                <VerticalList
-                                                    anime={item?.mostPopularAnimes}
-                                                    list={showAllPopular ? popularCount : 5}
-                                                />
-                                            </div>
-                                            {popularCount > 5 && (
-                                                <div className="p-2 border-t border-border/50 bg-card/50">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setShowAllPopular(!showAllPopular)}
-                                                        className="w-full text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 group"
-                                                    >
-                                                        <span className="text-xs font-medium">
-                                                            {showAllPopular ? 'Show Less' : `Show More (${popularCount - 5})`}
-                                                        </span>
-                                                        {showAllPopular ? (
-                                                            <ChevronUp className="w-3 h-3 ml-1 group-hover:-translate-y-0.5 transition-transform" />
-                                                        ) : (
-                                                            <ChevronDown className="w-3 h-3 ml-1 group-hover:translate-y-0.5 transition-transform" />
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            )}
+                                <section className="space-y-3 sm:space-y-4">
+                                    <SectionHeader title="Most Popular" icon={Flame} />
+                                    <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
+                                        <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
+                                            <VerticalList
+                                                anime={item?.mostPopularAnimes}
+                                                list={showAllPopular ? popularCount : 5}
+                                            />
                                         </div>
-                                    </section>
-                                )}
+                                        {popularCount > 5 && (
+                                            <div className="p-2 border-t border-border/50 bg-card/50">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setShowAllPopular(!showAllPopular)}
+                                                    className="w-full text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 group"
+                                                >
+                                                    <span className="text-xs font-medium">
+                                                        {showAllPopular ? 'Show Less' : `Show More (${popularCount - 5})`}
+                                                    </span>
+                                                    {showAllPopular ? (
+                                                        <ChevronUp className="w-3 h-3 ml-1 group-hover:-translate-y-0.5 transition-transform" />
+                                                    ) : (
+                                                        <ChevronDown className="w-3 h-3 ml-1 group-hover:translate-y-0.5 transition-transform" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
                             </aside>
                         )}
                     </div>
