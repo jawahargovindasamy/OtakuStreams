@@ -26,35 +26,14 @@ const Genre = () => {
 
     const { name } = useParams();
     const [item, setItem] = useState(null);
-    const [page, setPage] = useState(() => {
+    const page = (() => {
         const pageParam = searchParams.get('page');
         const parsed = parseInt(pageParam, 10);
         return parsed > 0 ? parsed : 1;
-    });
-    const [types, setTypes] = useState(() => {
-        return searchParams.get('type') || "";
-    });
+    })();
+    const types = searchParams.get('type') || "";
     const [showAll, setShowAll] = useState(false);
     const [loading, setLoading] = useState(false);
-
-    // Sync page & types state with URL when anime category changes
-    useEffect(() => {
-        const pageParam = searchParams.get('page');
-        const parsed = parseInt(pageParam, 10);
-        const newPage = parsed > 0 ? parsed : 1;
-        setPage(newPage);
-
-        const t = searchParams.get('type');
-        setTypes(t || "");
-    }, [name, searchParams]);
-
-    // Update URL when page or types changes
-    useEffect(() => {
-        const params = {};
-        if (page > 1) params.page = page.toString();
-        if (types) params.type = types;
-        setSearchParams(params, { replace: true });
-    }, [page, types, setSearchParams]);
 
     useEffect(() => {
         const getAnimeInfo = async () => {
@@ -78,7 +57,10 @@ const Genre = () => {
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
-            setPage(newPage);
+            const params = {};
+            if (newPage > 1) params.page = newPage.toString();
+            if (types) params.type = types;
+            setSearchParams(params, { replace: false });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
@@ -148,7 +130,7 @@ const Genre = () => {
                                             Media Type
                                             {types && (
                                                 <button
-                                                    onClick={() => { setTypes(""); setPage(1); }}
+                                                    onClick={() => { setSearchParams({}, { replace: false }); }}
                                                     className="text-[10px] text-primary hover:underline font-medium"
                                                 >
                                                     Clear
@@ -161,8 +143,10 @@ const Genre = () => {
                                                 key={t}
                                                 checked={types === t}
                                                 onCheckedChange={(checked) => {
-                                                    setTypes(checked ? t : "");
-                                                    setPage(1);
+                                                    const newType = checked ? t : "";
+                                                    const params = {};
+                                                    if (newType) params.type = newType;
+                                                    setSearchParams(params, { replace: false });
                                                 }}
                                                 className="capitalize cursor-pointer"
                                             >
@@ -189,8 +173,8 @@ const Genre = () => {
                             ) : (
                                     displayedAnimes.length > 0 ? (
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                                            {displayedAnimes.map((a) => (
-                                                <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
+                                            {displayedAnimes.map((a, index) => (
+                                                <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
                                             ))}
                                         </div>
                                     ) : (

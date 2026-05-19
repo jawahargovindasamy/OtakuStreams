@@ -17,32 +17,13 @@ const Producer = () => {
 
     const { name } = useParams();
     const [item, setItem] = useState(null);
-    const [page, setPage] = useState(() => {
+    const page = (() => {
         const pageParam = searchParams.get('page');
         const parsed = parseInt(pageParam, 10);
         return parsed > 0 ? parsed : 1;
-    });
+    })();
     const [top10Animes, setTop10Animes] = useState("today");
     const [loading, setLoading] = useState(false);
-
-    // Sync page state with URL when anime category changes or when URL is manually edited
-    useEffect(() => {
-        const pageParam = searchParams.get('page');
-        const parsed = parseInt(pageParam, 10);
-        const newPage = parsed > 0 ? parsed : 1;
-        setPage(newPage);
-    }, [name, searchParams]);
-
-
-    // Update URL when page changes (only for page > 1)
-    useEffect(() => {
-        if (page > 1) {
-            setSearchParams({ page: page.toString() }, { replace: true });
-        } else {
-            // Remove page param when on page 1 for cleaner URL
-            setSearchParams({}, { replace: true });
-        }
-    }, [page, setSearchParams]);
 
     useEffect(() => {
         const getAnimeInfo = async () => {
@@ -63,7 +44,11 @@ const Producer = () => {
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
-            setPage(newPage);
+            if (newPage > 1) {
+                setSearchParams({ page: newPage.toString() }, { replace: false });
+            } else {
+                setSearchParams({}, { replace: false });
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
@@ -120,8 +105,8 @@ const Producer = () => {
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                                    {item?.animes?.map((a) => (
-                                        <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
+                                    {item?.animes?.map((a, index) => (
+                                        <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
                                     ))}
                                 </div>
                             )}

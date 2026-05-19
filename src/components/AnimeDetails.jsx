@@ -659,9 +659,9 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
 
                                     <Meta
                                         label="Studios"
-                                        value={moreInfo?.studios}
+                                        value={moreInfo?.studios ? moreInfo.studios.split(', ') : null}
                                         icon={Building2}
-                                        href={moreInfo?.studios ? `/producer/${slugify(moreInfo.studios)}` : null}
+                                        isArray={true}
                                     />
 
                                     {moreInfo?.producers && moreInfo.producers.length > 0 && (

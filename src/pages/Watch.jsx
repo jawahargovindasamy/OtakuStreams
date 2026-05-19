@@ -213,7 +213,6 @@ const Watch = () => {
                 const data = await response.json();
 
                 if (data.success) {
-                    console.log("Episode Check Result:", data); // For debugging
                     setIsAvailable(data.isAvailable);
                     setHasDub(data.hasDub);
                     setDebugInfo(data.debug || []);

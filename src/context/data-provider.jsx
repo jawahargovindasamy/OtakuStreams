@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, useRef } from "react";
 
 /* -------------------- Constants -------------------- */
 const ANILIST_API = "https://graphql.anilist.co";
+const studioCache = new Map();
 
 /* -------------------- Retry Helper -------------------- */
 const fetchWithRetry = async (fn, retries = 3, delay = 1000) => {
@@ -417,59 +418,87 @@ export function DataProvider({ children }) {
 
   /* -------------------- SEARCH -------------------- */
   const fetchsearch = async (keyword, page = 1) => {
-    const key = `search-v3-${keyword}-page-${page}`;
+    const key = `search-v4-${keyword}-page-${page}`;
     return fetchWithCache(key, async () => {
       try {
-        // 1. Fetch search results directly from Jikan
-        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(keyword)}&page=${page}&limit=24&order_by=popularity&sort=desc`), 1);
-        const hasNextPage = jikanRes.data.pagination.has_next_page;
-        const totalPages = jikanRes.data.pagination.last_visible_page;
-        const mappedAnimes = jikanRes.data.data.map(mapJikanToAnime);
-
-        // 2. Fetch popular items for sidebar from Jikan
-        const popularRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?order_by=popularity&sort=desc&limit=10`), 1);
-        const popularAnimes = popularRes.data.data.map(mapJikanToAnime);
-
-        return {
-          animes: mappedAnimes,
-          mostPopularAnimes: popularAnimes,
-          searchQuery: keyword,
-          currentPage: page,
-          hasNextPage,
-          totalPages
-        };
-      } catch (error) {
-        try {
-          // Fallback to AniList
-          const query = `
-            query($q: String, $page: Int) {
-              Page(page: $page, perPage: 24) {
-                pageInfo { hasNextPage lastPage }
-                media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
-                  id idMal title { english romaji native } coverImage { extraLarge large } format episodes averageScore seasonYear startDate { year } popularity
-                }
+        const query = `
+          query($q: String, $page: Int) {
+            Page(page: $page, perPage: 24) {
+              pageInfo {
+                hasNextPage
+                lastPage
               }
-              popular: Page(page: 1, perPage: 10) {
-                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } format episodes averageScore seasonYear startDate { year } popularity }
+              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                averageScore
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
               }
             }
-          `;
-          const result = await anilistQuery(query, { q: keyword, page });
-          const searchData = result.data.Page;
-          const popularData = result.data.popular;
+            popular: Page(page: 1, perPage: 10) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                averageScore
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
+              }
+            }
+          }
+        `;
+        const result = await anilistQuery(query, { q: keyword, page });
+        const searchData = result?.data?.Page;
+        const popularData = result?.data?.popular;
 
-          return {
-            animes: searchData.media.map(mapAniListToAnime),
-            mostPopularAnimes: popularData.media.map(mapAniListToAnime),
-            searchQuery: keyword,
-            currentPage: page,
-            hasNextPage: searchData.pageInfo.hasNextPage,
-            totalPages: searchData.pageInfo.lastPage
-          };
-        } catch (aniError) {
-          console.error("AniList fallback search failed:", aniError);
-          return { animes: [], mostPopularAnimes: [], searchQuery: keyword, currentPage: page, hasNextPage: false, totalPages: 0 };
+        if (!searchData) {
+          throw new Error("No search results found");
         }
+
+        return {
+          animes: searchData.media.map(mapAniListToAnime),
+          mostPopularAnimes: popularData?.media?.map(mapAniListToAnime) || [],
+          searchQuery: keyword,
+          currentPage: page,
+          hasNextPage: searchData.pageInfo.hasNextPage,
+          totalPages: searchData.pageInfo.lastPage || 1
+        };
+      } catch (error) {
+        console.error("AniList search failed:", error);
+        return {
+          animes: [],
+          mostPopularAnimes: [],
+          searchQuery: keyword,
+          currentPage: page,
+          hasNextPage: false,
+          totalPages: 0
+        };
       }
     }, FIVE_HOURS);
   };
@@ -487,7 +516,33 @@ export function DataProvider({ children }) {
           variables.status = statusMap[status] || status.toUpperCase();
         }
         if (genres && genres.length > 0) {
-          variables.genre_in = genres.map(g => g.charAt(0).toUpperCase() + g.slice(1).replace('-', ' ')); // e.g. sci-fi -> Sci fi
+          const genreMap = {
+            "action": "Action",
+            "adventure": "Adventure",
+            "comedy": "Comedy",
+            "drama": "Drama",
+            "ecchi": "Ecchi",
+            "fantasy": "Fantasy",
+            "hentai": "Hentai",
+            "horror": "Horror",
+            "mahou-shoujo": "Mahou Shoujo",
+            "mecha": "Mecha",
+            "music": "Music",
+            "mystery": "Mystery",
+            "psychological": "Psychological",
+            "romance": "Romance",
+            "sci-fi": "Sci-Fi",
+            "slice-of-life": "Slice of Life",
+            "sports": "Sports",
+            "supernatural": "Supernatural",
+            "thriller": "Thriller",
+            "martial-arts": "Martial Arts",
+            "martial arts": "Martial Arts",
+            "slice of life": "Slice of Life",
+            "super-power": "Super Power",
+            "super power": "Super Power"
+          };
+          variables.genre_in = genres.map(g => genreMap[g.toLowerCase()] || g);
         }
         if (sort) {
           const sortMap = { "name_az": "TITLE_ROMAJI", "recently-added": "START_DATE_DESC", "released-date": "START_DATE_DESC", "most-watched": "POPULARITY_DESC" };
@@ -520,7 +575,7 @@ export function DataProvider({ children }) {
           searchQuery: q,
           currentPage: page,
           hasNextPage: searchData.pageInfo.hasNextPage,
-          totalPages: searchData.pageInfo.lastPage
+          totalPages: searchData.pageInfo.lastPage || 1
         };
       } catch (error) {
         console.error("Advanced search failed:", error);
@@ -534,51 +589,48 @@ export function DataProvider({ children }) {
     const key = `search-suggestions-${q.toLowerCase()}`;
     return fetchWithCache(key, async () => {
       try {
-        const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=5`), 1);
+        const query = `
+          query($q: String) {
+            Page(page: 1, perPage: 5) {
+              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                id
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                averageScore
+              }
+            }
+          }
+        `;
+        const result = await anilistQuery(query, { q });
+        const mediaPage = result?.data?.Page;
+        if (!mediaPage) {
+          return { data: { suggestions: [] } };
+        }
+
         return {
           data: {
-            suggestions: jikanRes.data.data.map(anime => ({
-              id: `mal-${anime.mal_id}`,
-              name: anime.title_english || anime.title,
-              jname: anime.title_japanese || anime.title,
-              poster: anime.images?.webp?.small_image_url || anime.images?.jpg?.small_image_url,
+            suggestions: mediaPage.media.map(media => ({
+              id: media.id.toString(),
+              name: media.title.english || media.title.romaji || media.title.native,
+              jname: media.title.romaji || media.title.native,
+              poster: media.coverImage?.large,
               moreInfo: [
-                anime.type || "TV",
-                anime.score ? `★ ${anime.score}` : null
+                media.format || "TV",
+                media.averageScore ? `★ ${(media.averageScore / 10).toFixed(1)}` : null
               ].filter(Boolean)
             }))
           }
         };
       } catch (error) {
-        try {
-          const query = `
-            query($q: String) {
-              Page(page: 1, perPage: 5) {
-                media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
-                  id title { english romaji native } coverImage { large } format averageScore
-                }
-              }
-            }
-          `;
-          const result = await anilistQuery(query, { q });
-          return {
-            data: {
-              suggestions: result.data.Page.media.map(media => ({
-                id: media.id.toString(),
-                name: media.title.english || media.title.romaji,
-                jname: media.title.romaji,
-                poster: media.coverImage.large,
-                moreInfo: [
-                  media.format || "TV",
-                  media.averageScore ? `★ ${media.averageScore / 10}` : null
-                ].filter(Boolean)
-              }))
-            }
-          };
-        } catch (aniError) {
-          console.error("AniList fallback suggestions failed:", aniError);
-          return { data: { suggestions: [] } };
-        }
+        console.error("AniList suggestions failed:", error);
+        return { data: { suggestions: [] } };
       }
     }, FIVE_HOURS);
   };
@@ -774,101 +826,48 @@ export function DataProvider({ children }) {
   };
 
   const fetchcategories = async (category, page = 1) => {
-    const key = `category-${category}-page-${page}`;
+    const key = `category-v4-${category}-page-${page}`;
     return fetchWithCache(key, async () => {
       try {
-        const jikanMap = {
-          "most-popular": "order_by=members&sort=desc",
-          "top-airing": "status=airing&order_by=score&sort=desc",
-          "most-favorite": "order_by=favorites&sort=desc",
-          "top-upcoming": "status=upcoming&order_by=popularity&sort=desc",
-          "completed": "status=complete&order_by=score&sort=desc",
-          "tv": "type=tv&order_by=popularity&sort=desc",
-          "movie": "type=movie&order_by=popularity&sort=desc",
-          "ova": "type=ova&order_by=popularity&sort=desc",
-          "special": "type=special&order_by=popularity&sort=desc",
-          "ona": "type=ona&order_by=popularity&sort=desc",
-          "recently-updated": "order_by=start_date&sort=desc"
+        let variables = { page, perPage: 24 };
+        const aniCategoryMap = {
+          "most-popular": { sort: ["POPULARITY_DESC"] },
+          "top-airing": { status: "RELEASING", sort: ["SCORE_DESC"] },
+          "most-favorite": { sort: ["FAVOURITES_DESC"] },
+          "top-upcoming": { status: "NOT_YET_RELEASED", sort: ["POPULARITY_DESC"] },
+          "completed": { status: "FINISHED", sort: ["END_DATE_DESC"] },
+          "tv": { format: "TV", sort: ["POPULARITY_DESC"] },
+          "movie": { format: "MOVIE", sort: ["POPULARITY_DESC"] },
+          "ova": { format: "OVA", sort: ["POPULARITY_DESC"] },
+          "special": { format: "SPECIAL", sort: ["POPULARITY_DESC"] },
+          "ona": { format: "ONA", sort: ["POPULARITY_DESC"] },
+          "recently-updated": { sort: ["UPDATED_AT_DESC"] }
         };
 
-        const queryParams = jikanMap[category] || "order_by=popularity&sort=desc";
+        const config = aniCategoryMap[category] || { sort: ["POPULARITY_DESC"] };
+        variables = { ...variables, ...config };
 
-        let mappedAnimes = [];
-        let hasNextPage = false;
-        let totalPages = 1;
-
-        try {
-          const jikanRes = await fetchWithRetry(() => axios.get(`https://api.jikan.moe/v4/anime?${queryParams}&page=${page}&limit=24`), 1);
-          const malIds = jikanRes.data.data.map(a => a.mal_id);
-          hasNextPage = jikanRes.data.pagination.has_next_page;
-          totalPages = jikanRes.data.pagination.last_visible_page;
-
-          if (malIds.length > 0) {
-            const query = `
-                  query($idMals: [Int]) {
-                      Page(page: 1, perPage: 24) {
-                          media(idMal_in: $idMals) {
-                              id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
-                          }
-                      }
-                  }
-              `;
-            const aniRes = await anilistQuery(query, { idMals: malIds });
-            const aniMap = {};
-            aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
-            mappedAnimes = malIds.map(malId => aniMap[malId]).filter(Boolean).map(mapAniListToAnime);
-          }
-        } catch (error) {
-          // Map category to AniList logic
-          let variables = { page, perPage: 24 };
-          const aniCategoryMap = {
-            "most-popular": { sort: ["POPULARITY_DESC"] },
-            "top-airing": { status: "RELEASING", sort: ["SCORE_DESC"] },
-            "most-favorite": { sort: ["FAVOURITES_DESC"] },
-            "top-upcoming": { status: "NOT_YET_RELEASED", sort: ["POPULARITY_DESC"] },
-            "completed": { status: "FINISHED", sort: ["SCORE_DESC"] },
-            "tv": { format: "TV", sort: ["POPULARITY_DESC"] },
-            "movie": { format: "MOVIE", sort: ["POPULARITY_DESC"] },
-            "ova": { format: "OVA", sort: ["POPULARITY_DESC"] },
-            "special": { format: "SPECIAL", sort: ["POPULARITY_DESC"] },
-            "ona": { format: "ONA", sort: ["POPULARITY_DESC"] },
-            "recently-updated": { sort: ["UPDATED_AT_DESC"] }
-          };
-
-          const config = aniCategoryMap[category] || { sort: ["POPULARITY_DESC"] };
-          variables = { ...variables, ...config };
-
-          const query = `
-            query($page: Int, $perPage: Int, $sort: [MediaSort], $status: MediaStatus, $format: MediaFormat) {
-              Page(page: $page, perPage: $perPage) {
-                pageInfo { hasNextPage lastPage }
-                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: $sort, status: $status, format: $format) {
-                  id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
-                }
+        const query = `
+          query($page: Int, $perPage: Int, $sort: [MediaSort], $status: MediaStatus, $format: MediaFormat) {
+            Page(page: $page, perPage: $perPage) {
+              pageInfo { hasNextPage lastPage }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: $sort, status: $status, format: $format) {
+                id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
               }
             }
-          `;
-
-          const aniRes = await anilistQuery(query, variables);
-          mappedAnimes = aniRes.data.Page.media.map(mapAniListToAnime);
-          hasNextPage = aniRes.data.Page.pageInfo.hasNextPage;
-          totalPages = aniRes.data.Page.pageInfo.lastPage;
-        }
-
-        // 2. Fetch sidebar and extra data from AniList
-        const sidebarQuery = `
-          query {
-            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
-            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
-            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
+            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
+            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
+            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
             GenreCollection
           }
         `;
-        const sidebarRes = await anilistQuery(sidebarQuery);
-        const { topToday, topWeek, topMonth, GenreCollection } = sidebarRes.data;
+
+        const result = await anilistQuery(query, variables);
+        const searchData = result.data.Page;
+        const { topToday, topWeek, topMonth, GenreCollection } = result.data;
 
         return {
-          animes: mappedAnimes,
+          animes: searchData.media.map(mapAniListToAnime),
           top10Animes: {
             today: topToday.media.map(mapAniListToAnime),
             week: topWeek.media.map(mapAniListToAnime),
@@ -877,8 +876,8 @@ export function DataProvider({ children }) {
           genres: GenreCollection.filter(g => g),
           category: category.replace(/-/g, ' ').toUpperCase(),
           currentPage: page,
-          hasNextPage,
-          totalPages
+          hasNextPage: searchData.pageInfo.hasNextPage,
+          totalPages: searchData.pageInfo.lastPage || 1
         };
       } catch (error) {
         console.error("Category fetch failed:", error);
@@ -892,107 +891,101 @@ export function DataProvider({ children }) {
     return fetchWithCache(key, async () => {
       try {
         const genreMap = {
-          "action": 1, "adventure": 2, "cars": 3, "comedy": 4, "avant-garde": 5, "demons": 6, "mystery": 7, "drama": 8, "ecchi": 9,
-          "fantasy": 10, "game": 11, "hentai": 12, "historical": 13, "horror": 14, "kids": 15, "magic": 16, "martial-arts": 17,
-          "mecha": 18, "music": 19, "parody": 20, "samurai": 21, "romance": 22, "school": 23, "sci-fi": 24, "shoujo": 25,
-          "girls-love": 26, "shounen": 27, "boys-love": 28, "space": 29, "sports": 30, "super-power": 31, "vampire": 32,
-          "harem": 35, "slice-of-life": 36, "slice of life": 36, "supernatural": 37, "military": 38, "police": 39, "psychological": 40,
-          "suspense": 41, "seinen": 42, "josei": 43, "workplace": 48
+          "action": "Action",
+          "adventure": "Adventure",
+          "comedy": "Comedy",
+          "drama": "Drama",
+          "ecchi": "Ecchi",
+          "fantasy": "Fantasy",
+          "hentai": "Hentai",
+          "horror": "Horror",
+          "mahou-shoujo": "Mahou Shoujo",
+          "mecha": "Mecha",
+          "music": "Music",
+          "mystery": "Mystery",
+          "psychological": "Psychological",
+          "romance": "Romance",
+          "sci-fi": "Sci-Fi",
+          "slice-of-life": "Slice of Life",
+          "sports": "Sports",
+          "supernatural": "Supernatural",
+          "thriller": "Thriller"
         };
 
-        const cleanName = name.toLowerCase().replace(/-/g, ' ');
-        const genreId = genreMap[cleanName] || genreMap[name.toLowerCase()];
+        const cleanName = name.toLowerCase();
+        const formattedGenre = genreMap[cleanName] || name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-        let mappedAnimes = [];
-        let hasNextPage = false;
-        let totalPages = 1;
-
-        try {
-          // 1. Get List from Jikan (consistent with A-Z list)
-          if (genreId) {
-            let url = `https://api.jikan.moe/v4/anime?genres=${genreId}&page=${page}&limit=24`;
-            if (type) url += `&type=${type.toLowerCase()}`;
-
-            const jikanRes = await fetchWithRetry(() => axios.get(url), 1);
-            const malIds = jikanRes.data.data.map(a => a.mal_id);
-            hasNextPage = jikanRes.data.pagination.has_next_page;
-            totalPages = jikanRes.data.pagination.last_visible_page;
-
-            if (malIds.length > 0) {
-              const aniQuery = `
-                query($idMals: [Int]) {
-                  Page(page: 1, perPage: 24) {
-                    media(idMal_in: $idMals, type: ANIME) {
-                      id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } averageScore popularity
-                    }
-                  }
+        const query = `
+          query ($genre: String, $page: Int, $format: MediaFormat) {
+            Page(page: $page, perPage: 24) {
+              pageInfo {
+                hasNextPage
+                lastPage
+              }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], sort: POPULARITY_DESC, format: $format) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
                 }
-              `;
-              const aniRes = await anilistQuery(aniQuery, { idMals: malIds });
-              const aniMap = {};
-              aniRes.data.Page.media.forEach(m => { if (m.idMal) aniMap[m.idMal] = m; });
-              const sortedMedia = malIds.map(malId => aniMap[malId]).filter(Boolean);
-              mappedAnimes = sortedMedia.map(mapAniListToAnime);
-            }
-          }
-        } catch (error) {
-          // Fallback to AniList query logic
-          const formattedGenre = name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-          const query = `
-            query ($genre: String, $page: Int, $format: MediaFormat) {
-              Page(page: $page, perPage: 24) {
-                pageInfo { hasNextPage lastPage }
-                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], sort: POPULARITY_DESC, format: $format) { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
+                averageScore
               }
             }
-          `;
-          const result = await anilistQuery(query, { 
-            genre: formattedGenre, 
-            page,
-            format: type ? type.toUpperCase() : undefined
-          });
-          mappedAnimes = result.data.Page.media.map(mapAniListToAnime);
-          hasNextPage = result.data.Page.pageInfo.hasNextPage;
-          totalPages = result.data.Page.pageInfo.lastPage;
-        }
-
-        if (!mappedAnimes.length && !genreId) {
-          // Extra fallback for cases where genreId is not found in map but might exist in AniList
-          const formattedGenre = name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-          const query = `
-            query ($genre: String, $page: Int) {
-              Page(page: $page, perPage: 24) {
-                pageInfo { hasNextPage lastPage }
-                media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity }
-              }
-            }
-          `;
-          const result = await anilistQuery(query, { genre: formattedGenre, page });
-          mappedAnimes = result.data.Page.media.map(mapAniListToAnime);
-          hasNextPage = result.data.Page.pageInfo.hasNextPage;
-          totalPages = result.data.Page.pageInfo.lastPage;
-        }
-
-        // 2. Always get Sidebar info from AniList
-        const sidebarQuery = `
-          query {
             topAiring: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, sort: SCORE_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                popularity
+              }
             }
             GenreCollection
           }
         `;
-        const sidebarRes = await anilistQuery(sidebarQuery);
-        const { topAiring, GenreCollection } = sidebarRes.data;
+
+        const result = await anilistQuery(query, {
+          genre: formattedGenre,
+          page,
+          format: type ? type.toUpperCase() : undefined
+        });
+
+        const mediaPage = result?.data?.Page;
+        const topAiring = result?.data?.topAiring;
+        const GenreCollection = result?.data?.GenreCollection;
+
+        if (!mediaPage) {
+          throw new Error("No media found for genre");
+        }
 
         return {
-          animes: mappedAnimes,
-          topAiringAnimes: topAiring.media.map(mapAniListToAnime),
-          genreName: name.toUpperCase(),
+          animes: mediaPage.media.map(mapAniListToAnime),
+          topAiringAnimes: topAiring?.media?.map(mapAniListToAnime) || [],
+          genreName: formattedGenre,
           currentPage: page,
-          hasNextPage,
-          totalPages,
-          genres: GenreCollection.filter(g => g)
+          hasNextPage: mediaPage.pageInfo.hasNextPage,
+          totalPages: mediaPage.pageInfo.lastPage || 1,
+          genres: GenreCollection ? GenreCollection.filter(g => g) : []
         };
       } catch (error) {
         console.error("Genre fetch failed:", error);
@@ -1002,7 +995,163 @@ export function DataProvider({ children }) {
   };
 
   const fetchproducers = async (name, page = 1) => {
-    return fetchsearch(name, page);
+    const key = `producer-${name}-page-${page}`;
+    return fetchWithCache(key, async () => {
+      try {
+        const cleanName = name.replace(/-/g, ' ');
+        
+        // 1. Get Studio ID by name (check cache first)
+        let studio = studioCache.get(name);
+        if (!studio) {
+          const studioResult = await anilistQuery(`
+            query ($search: String) {
+              Studio(search: $search) {
+                id
+                name
+              }
+            }
+          `, { search: cleanName });
+
+          studio = studioResult?.data?.Studio;
+          if (studio) {
+            studioCache.set(name, studio);
+          }
+        }
+
+        if (!studio) {
+          throw new Error("Studio not found");
+        }
+
+        // 2. Fetch anime list for the studio and sidebar top 10
+        const query = `
+          query ($studioId: Int, $page: Int) {
+            Studio(id: $studioId) {
+              id
+              name
+              media(page: $page, perPage: 24, sort: POPULARITY_DESC) {
+                pageInfo {
+                  hasNextPage
+                  lastPage
+                }
+                nodes {
+                  id
+                  idMal
+                  title {
+                    english
+                    romaji
+                    native
+                  }
+                  coverImage {
+                    large
+                  }
+                  format
+                  episodes
+                  seasonYear
+                  startDate {
+                    year
+                  }
+                  popularity
+                  averageScore
+                }
+              }
+            }
+            topToday: Page(page: 1, perPage: 10) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
+                averageScore
+              }
+            }
+            topWeek: Page(page: 1, perPage: 10) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
+                averageScore
+              }
+            }
+            topMonth: Page(page: 1, perPage: 10) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) {
+                id
+                idMal
+                title {
+                  english
+                  romaji
+                  native
+                }
+                coverImage {
+                  large
+                }
+                format
+                episodes
+                seasonYear
+                startDate {
+                  year
+                }
+                popularity
+                averageScore
+              }
+            }
+          }
+        `;
+
+        const result = await anilistQuery(query, { studioId: studio.id, page });
+        const studioMedia = result?.data?.Studio?.media;
+        const topToday = result?.data?.topToday;
+        const topWeek = result?.data?.topWeek;
+        const topMonth = result?.data?.topMonth;
+
+        if (!studioMedia) {
+          throw new Error("No media found for studio");
+        }
+
+        return {
+          animes: studioMedia.nodes.map(mapAniListToAnime),
+          producerName: studio.name,
+          top10Animes: {
+            today: topToday?.media?.map(mapAniListToAnime) || [],
+            week: topWeek?.media?.map(mapAniListToAnime) || [],
+            month: topMonth?.media?.map(mapAniListToAnime) || []
+          },
+          currentPage: page,
+          hasNextPage: studioMedia.pageInfo.hasNextPage,
+          totalPages: studioMedia.pageInfo.lastPage || 1
+        };
+      } catch (error) {
+        console.warn("Producer fetch failed from AniList, falling back to Jikan search:", error.message);
+        // Fallback to simple Jikan/AniList search
+        return fetchsearch(name, page);
+      }
+    }, FIVE_HOURS);
   };
 
   const fetchepisodeserver = async (id) => {

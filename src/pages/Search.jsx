@@ -36,13 +36,13 @@ const Search = () => {
   const [item, setItem] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  const [page, setPage] = useState(() => {
+  const page = (() => {
     const pageParam = searchParams.get('page');
     const parsed = parseInt(pageParam, 10);
     return parsed > 0 ? parsed : 1;
-  });
+  })();
 
-  const [filters, setFilters] = useState(() => ({
+  const filters = React.useMemo(() => ({
     type: searchParams.get('type') || 'all',
     status: searchParams.get('status') || 'all',
     rated: searchParams.get('rated') || 'all',
@@ -53,69 +53,19 @@ const Search = () => {
     startDate: searchParams.get('startDate') || '',
     endDate: searchParams.get('endDate') || '',
     genres: searchParams.get('genres')?.split(',').filter(Boolean) || []
-  }));
+  }), [searchParams]);
 
   const isAdvancedSearch = hasActiveFilters(filters);
 
   useEffect(() => {
-    const resetFilters = {
-      type: 'all',
-      status: 'all',
-      rated: 'all',
-      score: 'all',
-      season: 'all',
-      language: 'all',
-      sort: 'default',
-      startDate: '',
-      endDate: '',
-      genres: []
-    };
-    setFilters(resetFilters);
-    setPage(1);
-    
-    const params = new URLSearchParams();
-    if (keyword) params.set('keyword', keyword);
-    setSearchParams(params, { replace: true });
-  }, [keyword]);
-
-  useEffect(() => {
-    const parsed = Number(searchParams.get("page"));
-    if (parsed > 0 && parsed !== page) {
-      setPage(parsed);
-    }
-  }, [searchParams.get("page")]);
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    
-    if (keyword) params.set('keyword', keyword);
-    if (page > 1) params.set('page', page.toString());
-    
-    if (filters.type !== 'all') params.set('type', filters.type);
-    if (filters.status !== 'all') params.set('status', filters.status);
-    if (filters.rated !== 'all') params.set('rated', filters.rated);
-    if (filters.score !== 'all') params.set('score', filters.score);
-    if (filters.season !== 'all') params.set('season', filters.season);
-    if (filters.language !== 'all') params.set('language', filters.language);
-    if (filters.sort !== 'default') params.set('sort', filters.sort);
-    if (filters.startDate) params.set('startDate', filters.startDate);
-    if (filters.endDate) params.set('endDate', filters.endDate);
-    if (filters.genres.length > 0) params.set('genres', filters.genres.join(','));
-
-    setSearchParams(params, { replace: true });
-  }, [page, filters, keyword]);
-
-  useEffect(() => {
     const getAnimeInfo = async () => {
-      if (!keyword) return;
-      
       setLoading(true);
       try {
         let data;
         
-        if (isAdvancedSearch) {
+        if (isAdvancedSearch || !keyword) {
           data = await fetchadvancedsearch({
-            q: keyword,
+            q: keyword || undefined,
             page,
             type: filters.type === 'all' ? undefined : filters.type,
             status: filters.status === 'all' ? undefined : filters.status,
@@ -144,32 +94,49 @@ const Search = () => {
   }, [keyword, page, filters, fetchsearch, fetchadvancedsearch, isAdvancedSearch]);
 
   const handleFilterChange = useCallback((newFilters) => {
-    setFilters(newFilters);
-    setPage(1);
-  }, []);
+    const params = new URLSearchParams();
+    if (keyword) params.set('keyword', keyword);
+    
+    if (newFilters.type !== 'all') params.set('type', newFilters.type);
+    if (newFilters.status !== 'all') params.set('status', newFilters.status);
+    if (newFilters.rated !== 'all') params.set('rated', newFilters.rated);
+    if (newFilters.score !== 'all') params.set('score', newFilters.score);
+    if (newFilters.season !== 'all') params.set('season', newFilters.season);
+    if (newFilters.language !== 'all') params.set('language', newFilters.language);
+    if (newFilters.sort !== 'default') params.set('sort', newFilters.sort);
+    if (newFilters.startDate) params.set('startDate', newFilters.startDate);
+    if (newFilters.endDate) params.set('endDate', newFilters.endDate);
+    if (newFilters.genres.length > 0) params.set('genres', newFilters.genres.join(','));
+
+    setSearchParams(params, { replace: false });
+  }, [keyword, setSearchParams]);
 
   const handleResetFilters = useCallback(() => {
-    const resetFilters = {
-      type: 'all',
-      status: 'all',
-      rated: 'all',
-      score: 'all',
-      season: 'all',
-      language: 'all',
-      sort: 'default',
-      startDate: '',
-      endDate: '',
-      genres: []
-    };
-    setFilters(resetFilters);
-    setPage(1);
-  }, []);
+    const params = new URLSearchParams();
+    if (keyword) params.set('keyword', keyword);
+    setSearchParams(params, { replace: false });
+  }, [keyword, setSearchParams]);
 
   const totalPages = item?.totalPages || 1;
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
-      setPage(newPage);
+      const params = new URLSearchParams();
+      if (keyword) params.set('keyword', keyword);
+      if (newPage > 1) params.set('page', newPage.toString());
+      
+      if (filters.type !== 'all') params.set('type', filters.type);
+      if (filters.status !== 'all') params.set('status', filters.status);
+      if (filters.rated !== 'all') params.set('rated', filters.rated);
+      if (filters.score !== 'all') params.set('score', filters.score);
+      if (filters.season !== 'all') params.set('season', filters.season);
+      if (filters.language !== 'all') params.set('language', filters.language);
+      if (filters.sort !== 'default') params.set('sort', filters.sort);
+      if (filters.startDate) params.set('startDate', filters.startDate);
+      if (filters.endDate) params.set('endDate', filters.endDate);
+      if (filters.genres.length > 0) params.set('genres', filters.genres.join(','));
+
+      setSearchParams(params, { replace: false });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -258,8 +225,8 @@ const Search = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5 w-full">
-                  {item?.animes?.map((a) => (
-                    <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
+                  {item?.animes?.map((a, index) => (
+                    <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
                   ))}
                 </div>
               )}
