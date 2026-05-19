@@ -188,13 +188,13 @@ export function AuthProvider({ children }) {
     // Optimistic update
     setPreferences(prev => {
       const updated = { ...prev, ...newPrefs };
-      
+
       // If not logged in, save to localStorage
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.setItem("preferences", JSON.stringify(updated));
       }
-      
+
       return updated;
     });
 
@@ -485,7 +485,6 @@ export function AuthProvider({ children }) {
         preferences,
         updatePreferences,
         fetchPreferences,
-        setLanguage,
         updateProfile,
         updateSettings,
         markRead,

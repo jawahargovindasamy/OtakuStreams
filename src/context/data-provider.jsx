@@ -345,22 +345,7 @@ export function DataProvider({ children }) {
         const result = await anilistQuery(query, isMal ? { idMal: cleanId } : { id: cleanId });
         const node = result.data.Media;
 
-        let finalEpCount = "?";
-        try {
-          const anifyData = await fetchAnifyInfo(id);
-          if (anifyData && anifyData.episodes && anifyData.episodes.data && anifyData.episodes.data.length > 0) {
-            const provider = anifyData.episodes.data.find(p => p.providerId === 'gogoanime') || anifyData.episodes.data[0];
-            if (provider && provider.episodes) {
-              finalEpCount = provider.episodes.length;
-            }
-          }
-        } catch (e) {
-          console.warn("Anify episode count fetch failed for info");
-        }
-
-        if (finalEpCount === "?" || finalEpCount === 0) {
-          finalEpCount = node.nextAiringEpisode ? node.nextAiringEpisode.episode - 1 : (node.episodes || "?");
-        }
+        const finalEpCount = node.nextAiringEpisode ? node.nextAiringEpisode.episode - 1 : (node.episodes || "?");
 
         const characters = node.characters.edges.map(c => ({
           character: {
@@ -598,47 +583,18 @@ export function DataProvider({ children }) {
     }, FIVE_HOURS);
   };
 
-  const fetchAnifyInfo = async (id) => {
-    try {
-      const res = await axios.get(`https://api.anify.tv/info/${id}`, { timeout: 5000 });
-      return res.data;
-    } catch (err) {
-      return null;
-    }
-  };
-
-  /* -------------------- EPISODES (ANIFY + DUMMY FALLBACK) -------------------- */
+  /* -------------------- EPISODES (JIKAN + DUMMY FALLBACK) -------------------- */
   const fetchepisodeinfo = async (id) => {
     return fetchWithCache(`episodes-${id}`, async () => {
       try {
-        // First try to fetch AniList details to get total episodes & malId for Anify
+        // First try to fetch AniList details to get total episodes & malId for Jikan
         const query = `query($id: Int) { Media(id: $id, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT]) { idMal status episodes nextAiringEpisode { episode } streamingEpisodes { title } } }`;
         const anilistRes = await anilistQuery(query, { id: parseInt(id) });
         const media = anilistRes.data.Media;
 
         let allEpisodes = [];
 
-        // Use Anify to fetch episode list if possible
-        if (media && media.idMal) {
-          try {
-            const anifyData = await fetchAnifyInfo(media.idMal);
-            if (anifyData && anifyData.episodes && anifyData.episodes.data && anifyData.episodes.data.length > 0) {
-              const provider = anifyData.episodes.data.find(p => p.providerId === 'gogoanime') || anifyData.episodes.data[0];
-              if (provider && provider.episodes) {
-                allEpisodes = provider.episodes.map(ep => ({
-                  episodeId: ep.id || ep.number.toString(),
-                  number: ep.number,
-                  title: ep.title || `Episode ${ep.number}`,
-                  isFiller: ep.isFiller || false
-                }));
-              }
-            }
-          } catch (e) {
-            console.warn("Anify failed, trying Jikan...");
-          }
-        }
-
-        // Secondary Fallback: Use Jikan if Anify failed
+        // Use Jikan to fetch episode list if possible
         if (allEpisodes.length === 0 && media && media.idMal) {
           try {
             let page = 1;
@@ -675,7 +631,7 @@ export function DataProvider({ children }) {
           }
         }
 
-        // Fallback: Generate dummy episodes if Anify/Jikan failed or if they are behind AniList
+        // Fallback: Generate dummy episodes if Jikan failed or is behind AniList
         if (media) {
           const status = media.status;
           const nextAiring = media.nextAiringEpisode;
