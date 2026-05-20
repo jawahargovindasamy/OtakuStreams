@@ -200,13 +200,13 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
     );
 
     /* ── Three-dot watchlist button (mobile / tablet only) ── */
-    const MobileWatchlistButton = user && (
+    const MobileWatchlistButton = (
         <Popover open={mobilePlaylistOpen} onOpenChange={setMobilePlaylistOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
-                    disabled={isUpdating}
+                    disabled={isUpdating || !user}
                     className="absolute top-1 right-1 z-20 h-7 w-7 rounded-full
                                bg-black/50 backdrop-blur-sm border border-white/10
                                text-white hover:bg-black/70 hover:text-white
@@ -235,7 +235,7 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
                             key={i.key}
                             variant="ghost"
                             size="sm"
-                            disabled={isUpdating}
+                            disabled={isUpdating || !user}
                             className={`w-full justify-between text-xs font-medium transition-colors
                                 ${playlist1 === i.key
                                     ? "bg-primary/10 text-primary hover:bg-primary/20"
@@ -359,6 +359,7 @@ const MediaCard1 = ({ id, name, jname = "", poster, type = "", rating, year, ran
             isUpdating={isUpdating}
             isPlaying={isPlaying}
             progress={currentProgress}
+            user={user}
         >
             {CardContent}
         </MediaCardPopover>

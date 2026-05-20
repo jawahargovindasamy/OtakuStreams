@@ -319,6 +319,7 @@ const VerticalListItem = ({ anime }) => {
       isUpdating={isUpdating}
       isPlaying={isPlaying}
       progress={currentProgress}
+      user={user}
     >
       {CardContent}
     </MediaCardPopover>

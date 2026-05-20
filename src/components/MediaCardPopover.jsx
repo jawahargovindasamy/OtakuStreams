@@ -69,6 +69,7 @@ const MediaCardPopover = ({
     isUpdating,
     progress,
     sideOffset = -20,
+    user,
     children
 }) => {
 
@@ -197,7 +198,7 @@ const MediaCardPopover = ({
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        disabled={isUpdating}
+                                        disabled={isUpdating || !user}
                                         className="rounded-full h-9 w-9 border-border hover:bg-accent hover:text-accent-foreground transition-colors"
                                         onClick={(e) => e.stopPropagation()}
                                     >
@@ -223,7 +224,7 @@ const MediaCardPopover = ({
                                                 key={i.key}
                                                 variant="ghost"
                                                 size="sm"
-                                                disabled={isUpdating}
+                                                disabled={isUpdating || !user}
                                                 className={`w-full justify-between text-xs font-medium transition-colors
                                                     ${playlist1 === i.key
                                                         ? "bg-primary/10 text-primary hover:bg-primary/20"

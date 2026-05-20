@@ -393,7 +393,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
-                                            disabled={isUpdating}
+                                            disabled={isUpdating || !user}
                                             className="h-12 px-6 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
                                                      transition-all duration-200 hover:border-primary/30"
                                         >
@@ -542,7 +542,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
-                                            disabled={isUpdating}
+                                            disabled={isUpdating || !user}
                                             className="h-12 px-6 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
                                                      transition-all duration-200 hover:border-primary/30"
                                         >
