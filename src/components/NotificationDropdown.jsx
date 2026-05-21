@@ -22,11 +22,6 @@ const NotificationDropdown = ({ notifications = [] }) => {
     const unreadCount = notifications?.filter((n) => n.read === false).length || 0;
     const [open, setOpen] = useState(false);
 
-    useEffect(() => {
-        if (open) {
-            fetchNotifications(true);
-        }
-    }, [open]);
 
     const handleNotificationClick = async (notificationId) => {
         await markRead(notificationId);

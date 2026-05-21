@@ -9,6 +9,7 @@ import {
 } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import { slugify } from "@/lib/utils";
 
 const AuthContext = createContext(null);
@@ -23,6 +24,7 @@ export function AuthProvider({ children }) {
   const [watchlist, setWatchlist] = useState([]);
   const [notification, setNotification] = useState([]);
   const [preferences, setPreferences] = useState({ audio: "sub", server: "hd-1" });
+  const [socket, setSocket] = useState(null);
   const navigate = useNavigate();
 
   const [ignoredFolders, setIgnoredFolders] = useState({
@@ -219,6 +221,45 @@ export function AuthProvider({ children }) {
       setNotification([]);
     }
   }, [api])
+
+  useEffect(() => {
+    if (!user) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    // Use backend URL, stripping /api if it exists so socket.io connects to root
+    const baseUrl = import.meta.env.VITE_OTAKUSTREAMS_BACKEND_URL?.replace(/\/api\/?$/, '');
+    
+    const newSocket = io(baseUrl || "http://localhost:5000", {
+      auth: {
+        token: token,
+      },
+    });
+
+    newSocket.on("connect", () => {
+      console.log("WebSocket connected:", newSocket.id);
+    });
+
+    newSocket.on("newNotification", (notif) => {
+      console.log("New real-time notification received:", notif);
+      setNotification((prev) => {
+        // Prevent duplicate notifications in case of reconnects or dual-events
+        if (prev.some((n) => n._id === notif._id)) return prev;
+        return [notif, ...prev];
+      });
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("WebSocket disconnected");
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [user]);
 
   useEffect(() => {
     fetchPreferences();
