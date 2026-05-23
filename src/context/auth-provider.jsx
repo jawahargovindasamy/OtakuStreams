@@ -243,6 +243,17 @@ export function AuthProvider({ children }) {
 
     newSocket.on("newNotification", (notif) => {
       console.log("New real-time notification received:", notif);
+      
+      // Play notification sound
+      try {
+        const audio = new Audio("/notification.mp3");
+        audio.play().catch((err) => {
+          console.warn("Browser blocked notification sound autoplay:", err);
+        });
+      } catch (err) {
+        console.error("Failed to play notification sound:", err);
+      }
+
       setNotification((prev) => {
         // Prevent duplicate notifications in case of reconnects or dual-events
         if (prev.some((n) => n._id === notif._id)) return prev;
