@@ -384,7 +384,7 @@ const Watch = () => {
                             episodeList={episode?.episodes}
                             totalepisodes={episode?.totalEpisodes}
                             activeEpisode={episodeNumber}
-                            onEpisodeChange={(num) => navigate(`/watch/${id}/${num}`, { state: location.state })}
+                            onEpisodeChange={(num) => navigate(`/watch/${id}/${num}`, { state: location.state, replace: true })}
                             maxHeight={playerColumnHeight} />
                     </div>
                     <div className="space-y-4 order-1 lg:order-2 h-fit" ref={playerColumnRef}>
