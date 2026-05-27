@@ -418,8 +418,16 @@ const Watch = () => {
                                             <Button
                                                 variant="default"
                                                 onClick={() => {
-                                                    const nextServer = activeServerId === "hd-1" ? subServers[1] : subServers[0];
-                                                    setActiveSub(nextServer);
+                                                    const nextServerId = activeServerId === "hd-1" ? "hd-2" : "hd-1";
+                                                    if (audioType === "dub") {
+                                                        const nextServer = dubServers.find(s => s.serverId === nextServerId) || dubServers[0];
+                                                        setActiveDub(nextServer);
+                                                        setActiveSub(null);
+                                                    } else {
+                                                        const nextServer = subServers.find(s => s.serverId === nextServerId) || subServers[0];
+                                                        setActiveSub(nextServer);
+                                                        setActiveDub(null);
+                                                    }
                                                 }}
                                                 className="mt-2"
                                             >
