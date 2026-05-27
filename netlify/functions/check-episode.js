@@ -74,10 +74,13 @@ exports.handler = async function (event, context) {
 
                     if (response.status === 200 && !bodyStr.includes("Oops! Something went wrong")) {
                         hasDub = true;
+                        debugInfo.push({ url, status: 'Success' });
                         break;
+                    } else {
+                        debugInfo.push({ url, status: 'Failed (Oops page)' });
                     }
                 } catch (error) {
-                    // Silently fail
+                    debugInfo.push({ url, status: `Failed (${error.message})` });
                 }
             }
         }
