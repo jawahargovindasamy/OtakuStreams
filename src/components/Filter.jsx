@@ -234,7 +234,6 @@ const Filter = ({ filters, onFilterChange, onReset, keyword }) => {
                                     { label: "PG-13 - Teens", value: "pg-13" },
                                     { label: "R - 17+", value: "r" },
                                     { label: "R+ - Mild Nudity", value: "r+" },
-                                    { label: "Rx - Hentai", value: "rx" },
                                 ]}
                                 value={localFilters.rated}
                                 onChange={(val) => handleFilterChange('rated', val)}

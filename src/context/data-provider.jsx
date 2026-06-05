@@ -145,22 +145,22 @@ export function DataProvider({ children }) {
         const query = `
           query {
             trending: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } status popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } status popularity }
             }
             popular: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
             }
             topAiring: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, genre_not_in: ["Hentai"], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
             }
             favorite: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: FAVOURITES_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: FAVOURITES_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
             }
             latestCompleted: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: FINISHED, sort: END_DATE_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: FINISHED, genre_not_in: ["Hentai"], sort: END_DATE_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
             }
             topUpcoming: Page(page: 1, perPage: 15) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: NOT_YET_RELEASED, sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: NOT_YET_RELEASED, genre_not_in: ["Hentai"], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { extraLarge large } bannerImage description format episodes averageScore seasonYear startDate { year } popularity }
             }
             GenreCollection
           }
@@ -177,7 +177,7 @@ export function DataProvider({ children }) {
           latestEpisodeAnimes: resData.topAiring.media.map(mapAniListToAnime), // Proxy
           topUpcomingAnimes: resData.topUpcoming.media.map(mapAniListToAnime),
           spotlightAnimes: resData.trending.media.map(mapAniListToAnime).slice(0, 10),
-          genres: resData.GenreCollection.filter(g => g),
+          genres: resData.GenreCollection.filter(g => g && g !== "Hentai"),
           top10Animes: {
             today: resData.trending.media.map(mapAniListToAnime).slice(0, 10),
             week: resData.popular.media.map(mapAniListToAnime).slice(0, 10),
@@ -201,9 +201,9 @@ export function DataProvider({ children }) {
       try {
         const sideQuery = `
           query {
-            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
-            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
-            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
+            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
+            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
+            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity } }
           }
         `;
         const sideResult = await anilistQuery(sideQuery);
@@ -218,7 +218,7 @@ export function DataProvider({ children }) {
              query ($page: Int) {
                Page(page: $page, perPage: 24) {
                  pageInfo { hasNextPage lastPage }
-                 media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: [TITLE_ROMAJI]) {
+                 media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: [TITLE_ROMAJI]) {
                    id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
                  }
                }
@@ -246,7 +246,7 @@ export function DataProvider({ children }) {
               const aniQuery = `
                  query($idMals: [Int]) {
                    Page(page: 1, perPage: 24) {
-                     media(idMal_in: $idMals) {
+                     media(idMal_in: $idMals, genre_not_in: ["Hentai"]) {
                        id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
                      }
                    }
@@ -260,15 +260,15 @@ export function DataProvider({ children }) {
             }
           } catch (error) {
             const query = `
-              query ($page: Int, $search: String) {
-                Page(page: $page, perPage: 24) {
-                  pageInfo { hasNextPage lastPage }
-                  media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], search: $search, sort: [TITLE_ROMAJI]) {
-                    id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
-                  }
-                }
-              }
-            `;
+               query ($page: Int, $search: String) {
+                 Page(page: $page, perPage: 24) {
+                   pageInfo { hasNextPage lastPage }
+                   media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], search: $search, sort: [TITLE_ROMAJI]) {
+                     id idMal title { english romaji native } coverImage { extraLarge large } format episodes seasonYear startDate { year } averageScore popularity
+                   }
+                 }
+               }
+             `;
             const res = await anilistQuery(query, { page, search: azlist });
             mappedAnimes = res.data.Page.media.map(mapAniListToAnime);
             hasNextPage = res.data.Page.pageInfo.hasNextPage;
@@ -335,16 +335,20 @@ export function DataProvider({ children }) {
                 }
               }
               recommendations(sort: RATING_DESC, page: 1, perPage: 15) {
-                nodes { mediaRecommendation { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity } }
+                nodes { mediaRecommendation { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity genres } }
               }
               relations {
-                edges { relationType node { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity } }
+                edges { relationType node { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity genres } }
               }
             }
           }
         `;
         const result = await anilistQuery(query, isMal ? { idMal: cleanId } : { id: cleanId });
         const node = result.data.Media;
+
+        if (node && node.genres && node.genres.includes("Hentai")) {
+          return null;
+        }
 
         const finalEpCount = node.nextAiringEpisode ? node.nextAiringEpisode.episode - 1 : (node.episodes || "?");
 
@@ -365,11 +369,13 @@ export function DataProvider({ children }) {
         const mappedRecommendations = node.recommendations.nodes
           .map(r => r.mediaRecommendation)
           .filter(Boolean)
+          .filter(media => !media.genres?.includes("Hentai"))
           .map(mapAniListToAnime);
 
         const mappedRelations = node.relations.edges
           .map(r => r.node)
           .filter(Boolean)
+          .filter(media => !media.genres?.includes("Hentai"))
           .map(mapAniListToAnime);
 
         return {
@@ -428,7 +434,7 @@ export function DataProvider({ children }) {
                 hasNextPage
                 lastPage
               }
-              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) {
                 id
                 idMal
                 title {
@@ -450,7 +456,7 @@ export function DataProvider({ children }) {
               }
             }
             popular: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) {
                 id
                 idMal
                 title {
@@ -555,12 +561,12 @@ export function DataProvider({ children }) {
           query ($page: Int, $perPage: Int, $search: String, $format: MediaFormat, $status: MediaStatus, $genre_in: [String], $sort: [MediaSort]) {
             Page(page: $page, perPage: $perPage) {
               pageInfo { hasNextPage lastPage }
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], search: $search, format: $format, status: $status, genre_in: $genre_in, sort: $sort) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], search: $search, format: $format, status: $status, genre_in: $genre_in, sort: $sort) {
                 id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity
               }
             }
             popular: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity }
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity }
             }
           }
         `;
@@ -592,7 +598,7 @@ export function DataProvider({ children }) {
         const query = `
           query($q: String) {
             Page(page: 1, perPage: 5) {
-              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+              media(search: $q, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) {
                 id
                 title {
                   english
@@ -757,7 +763,7 @@ export function DataProvider({ children }) {
             Page(page: $page, perPage: 50) {
               pageInfo { hasNextPage }
               airingSchedules(airingAt_greater: $start, airingAt_lesser: $end, sort: TIME) {
-                id airingAt episode media { id idMal title { english romaji native } coverImage { large } format episodes popularity }
+                id airingAt episode media { id idMal title { english romaji native } coverImage { large } format episodes popularity genres }
               }
             }
           }
@@ -774,10 +780,11 @@ export function DataProvider({ children }) {
           page++;
         }
 
-        // Exclude unwanted media formats
+        // Exclude unwanted media formats and Hentai genre
         allSchedules = allSchedules.filter(item => {
           const format = item.media?.format;
-          return format !== 'TV_SHORT' && format !== 'MANGA' && format !== 'NOVEL' && format !== 'ONE_SHOT' && format !== 'MUSIC';
+          const genres = item.media?.genres || [];
+          return format !== 'TV_SHORT' && format !== 'MANGA' && format !== 'NOVEL' && format !== 'ONE_SHOT' && format !== 'MUSIC' && !genres.includes("Hentai");
         });
 
         const scheduledAnimes = allSchedules.map(item => {
@@ -851,13 +858,13 @@ export function DataProvider({ children }) {
           query($page: Int, $perPage: Int, $sort: [MediaSort], $status: MediaStatus, $format: MediaFormat) {
             Page(page: $page, perPage: $perPage) {
               pageInfo { hasNextPage lastPage }
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: $sort, status: $status, format: $format) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: $sort, status: $status, format: $format) {
                 id idMal title { english romaji native } coverImage { large } format episodes seasonYear startDate { year } popularity averageScore
               }
             }
-            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
-            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
-            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
+            topToday: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: TRENDING_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
+            topWeek: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
+            topMonth: Page(page: 1, perPage: 10) { media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: SCORE_DESC) { id idMal title { english romaji native } coverImage { large } format episodes popularity averageScore seasonYear startDate { year } } }
             GenreCollection
           }
         `;
@@ -873,7 +880,7 @@ export function DataProvider({ children }) {
             week: topWeek.media.map(mapAniListToAnime),
             month: topMonth.media.map(mapAniListToAnime)
           },
-          genres: GenreCollection.filter(g => g),
+          genres: GenreCollection.filter(g => g && g !== "Hentai"),
           category: category.replace(/-/g, ' ').toUpperCase(),
           currentPage: page,
           hasNextPage: searchData.pageInfo.hasNextPage,
@@ -913,6 +920,17 @@ export function DataProvider({ children }) {
         };
 
         const cleanName = name.toLowerCase();
+        if (cleanName === "hentai") {
+          return {
+            animes: [],
+            topAiringAnimes: [],
+            genreName: "Hentai",
+            currentPage: 1,
+            hasNextPage: false,
+            totalPages: 0,
+            genres: []
+          };
+        }
         const formattedGenre = genreMap[cleanName] || name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
         const query = `
@@ -922,7 +940,7 @@ export function DataProvider({ children }) {
                 hasNextPage
                 lastPage
               }
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], sort: POPULARITY_DESC, format: $format) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_in: [$genre], genre_not_in: ["Hentai"], sort: POPULARITY_DESC, format: $format) {
                 id
                 idMal
                 title {
@@ -944,7 +962,7 @@ export function DataProvider({ children }) {
               }
             }
             topAiring: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, sort: SCORE_DESC) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], status: RELEASING, genre_not_in: ["Hentai"], sort: SCORE_DESC) {
                 id
                 idMal
                 title {
@@ -985,7 +1003,7 @@ export function DataProvider({ children }) {
           currentPage: page,
           hasNextPage: mediaPage.pageInfo.hasNextPage,
           totalPages: mediaPage.pageInfo.lastPage || 1,
-          genres: GenreCollection ? GenreCollection.filter(g => g) : []
+          genres: GenreCollection ? GenreCollection.filter(g => g && g !== "Hentai") : []
         };
       } catch (error) {
         console.error("Genre fetch failed:", error);
@@ -1028,7 +1046,7 @@ export function DataProvider({ children }) {
             Studio(id: $studioId) {
               id
               name
-              media(page: $page, perPage: 24, sort: POPULARITY_DESC) {
+              media(page: $page, perPage: 24, genre_not_in: ["Hentai"], sort: POPULARITY_DESC) {
                 pageInfo {
                   hasNextPage
                   lastPage
@@ -1056,7 +1074,7 @@ export function DataProvider({ children }) {
               }
             }
             topToday: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: TRENDING_DESC) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: TRENDING_DESC) {
                 id
                 idMal
                 title {
@@ -1078,7 +1096,7 @@ export function DataProvider({ children }) {
               }
             }
             topWeek: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: POPULARITY_DESC) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: POPULARITY_DESC) {
                 id
                 idMal
                 title {
@@ -1100,7 +1118,7 @@ export function DataProvider({ children }) {
               }
             }
             topMonth: Page(page: 1, perPage: 10) {
-              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], sort: SCORE_DESC) {
+              media(type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], sort: SCORE_DESC) {
                 id
                 idMal
                 title {

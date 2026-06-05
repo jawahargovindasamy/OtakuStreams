@@ -20,7 +20,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 const ANILIST_QUERY = `
 query ($page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
-    media(sort: TRENDING_DESC, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], isAdult: false) {
+    media(sort: TRENDING_DESC, type: ANIME, format_not_in: [TV_SHORT, MANGA, NOVEL, ONE_SHOT], genre_not_in: ["Hentai"], isAdult: false) {
       id
       idMal
       title {

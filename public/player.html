@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OtakuStreams Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #000;
+        }
+        html, body, #player-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="player-container"></div>
+    <script>
+        // Parse URL query parameters
+        const params = new URLSearchParams(window.location.search);
+        const animeId = params.get('id');
+        const episode = params.get('ep') || '1';
+        const audio = params.get('audio') || 'sub';
+        const server = params.get('server') || 'hd-1';
+        const malId = params.get('malId');
+
+        const container = document.getElementById('player-container');
+
+        if (animeId) {
+            // Determine if using mal (hd-2) or ani (hd-1)
+            const isMal = animeId.startsWith('mal-') || (malId && malId !== 'null' && malId !== 'undefined' && server === 'hd-2');
+            const cleanId = isMal ? (animeId.startsWith('mal-') ? animeId.replace('mal-', '') : malId) : animeId;
+            const typePath = isMal ? 'mal' : 'ani';
+
+            const streamUrl = `https://megaplay.buzz/stream/${typePath}/${cleanId}/${episode}/${audio}`;
+
+            const iframe = document.createElement('iframe');
+            iframe.src = streamUrl;
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
+            iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.className = 'player-iframe';
+
+            container.appendChild(iframe);
+        } else {
+            container.innerHTML = '<div style="color: #ef4444; font-family: sans-serif; font-size: 14px; text-align: center; padding: 20px;">Invalid or missing stream parameters.</div>';
+        }
+
+        // Anti-clickjacking ad redirection shield
+        window.open = function() { return null; };
+        
+        document.addEventListener('click', function(e) {
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'a' && !e.target.href.includes('megaplay.buzz')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        // Periodically sanitize target blank links
+        setInterval(function() {
+            const anchors = document.getElementsByTagName('a');
+            for (let i = 0; i < anchors.length; i++) {
+                if (anchors[i].getAttribute('target') === '_blank') {
+                    anchors[i].removeAttribute('target');
+                    anchors[i].href = 'javascript:void(0);';
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

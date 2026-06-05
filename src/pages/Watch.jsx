@@ -249,7 +249,13 @@ const Watch = () => {
             setLoading(true);
             try {
                 const data = await fetchanimeinfo(id);
-                if (mounted) setItem(data);
+                if (mounted) {
+                    if (!data) {
+                        navigate("/home");
+                        return;
+                    }
+                    setItem(data);
+                }
             } catch (error) {
                 console.error("Failed to fetch anime:", error);
             } finally {

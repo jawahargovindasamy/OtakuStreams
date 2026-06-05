@@ -57,6 +57,10 @@ const Anime = () => {
             try {
                 const data = await fetchanimeinfo(id);
                 if (mounted) {
+                    if (!data) {
+                        navigate("/home");
+                        return;
+                    }
                     setItem(data);
 
                     // Replace URL with actual MAL ID and Name if it was accessed via route string
