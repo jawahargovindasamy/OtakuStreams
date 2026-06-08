@@ -372,21 +372,23 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                             </div>
 
                             {/* Mobile-only action buttons */}
-                            <div className="lg:hidden flex gap-3 max-w-75 mx-auto">
-                                <Button
-                                    disabled={isPlaying}
-                                    onClick={handlePlayClick}
-                                    className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
-                                             font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
-                                             hover:scale-[1.02] active:scale-95"
-                                >
-                                    {isPlaying ? (
-                                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                                    ) : (
-                                        <Play className="h-5 w-5 fill-current mr-2" />
-                                    )}
-                                    {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
-                                </Button>
+                            <div className="lg:hidden flex gap-3 max-w-75 mx-auto w-full">
+                                {moreInfo?.status !== "NOT_YET_RELEASED" && (
+                                    <Button
+                                        disabled={isPlaying}
+                                        onClick={handlePlayClick}
+                                        className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
+                                                 font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
+                                                 hover:scale-[1.02] active:scale-95"
+                                    >
+                                        {isPlaying ? (
+                                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                        ) : (
+                                            <Play className="h-5 w-5 fill-current mr-2" />
+                                        )}
+                                        {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
+                                    </Button>
+                                )}
                                 <Popover
                                     modal={false}
                                 >
@@ -394,8 +396,8 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                         <Button
                                             variant="outline"
                                             disabled={isUpdating || !user}
-                                            className="h-12 px-6 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
-                                                     transition-all duration-200 hover:border-primary/30"
+                                            className={`h-12 rounded-xl border-border/50 hover:bg-accent hover:text-accent-foreground 
+                                                     transition-all duration-200 hover:border-primary/30 ${moreInfo?.status === "NOT_YET_RELEASED" ? "w-full" : "px-6"}`}
                                         >
                                             {playlist1 === null ? (
                                                 <div className='flex items-center gap-2'>
@@ -518,25 +520,27 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
 
                             {/* Action Buttons - Desktop */}
                             <div className="hidden lg:flex gap-3">
-                                <Button
-                                    disabled={isPlaying}
-                                    onClick={handlePlayClick}
-                                    className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
-                                             font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
-                                             hover:scale-[1.02] active:scale-95 text-base"
-                                >
-                                    {isPlaying ? (
-                                        <>
-                                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                                            Loading...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Play className="h-5 w-5 fill-current mr-2" />
-                                            {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
-                                        </>
-                                    )}
-                                </Button>
+                                {moreInfo?.status !== "NOT_YET_RELEASED" && (
+                                    <Button
+                                        disabled={isPlaying}
+                                        onClick={handlePlayClick}
+                                        className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground 
+                                                 font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 
+                                                 hover:scale-[1.02] active:scale-95 text-base"
+                                    >
+                                        {isPlaying ? (
+                                            <>
+                                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                                Loading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Play className="h-5 w-5 fill-current mr-2" />
+                                                {progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
 
                                 <Popover modal={false}>
                                     <PopoverTrigger asChild>
@@ -655,7 +659,7 @@ const AnimeDetails = ({ id, anime, handlePlay, isPlaying, nextEpisodeTime }) => 
                                     <Meta label="Synonyms" value={moreInfo?.synonyms} icon={AppWindow} />
                                     <Meta label="Aired" value={moreInfo?.aired} icon={Calendar} />
                                     <Meta label="Premiered" value={moreInfo?.premiered} icon={Calendar} />
-                                    <Meta label="Status" value={moreInfo?.status} icon={TrendingUp} />
+                                    <Meta label="Status" value={moreInfo?.status === "NOT_YET_RELEASED" ? "NOT YET RELEASED" : moreInfo?.status} icon={TrendingUp} />
 
                                     <Meta
                                         label="Studios"

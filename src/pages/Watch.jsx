@@ -356,9 +356,7 @@ const Watch = () => {
         return !serverStatus || serverStatus.status === "Success";
     };
 
-    const iframeSrc = activeServerId === "hd-2"
-        ? `https://megaplay.buzz/stream/mal/${item?.anime?.info?.malId || id}/${episodeNumber}/${audioType}`
-        : `https://megaplay.buzz/stream/ani/${id}/${episodeNumber}/${audioType}`;
+    const iframeSrc = `/player.html?id=${id}&ep=${episodeNumber}&audio=${audioType}&server=${activeServerId}&malId=${item?.anime?.info?.malId || ""}`;
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">

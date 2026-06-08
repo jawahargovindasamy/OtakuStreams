@@ -62,7 +62,11 @@ const CharacterCard = ({ item }) => {
         {/* Voice Actor Image */}
         <div className="relative shrink-0">
           <img
-            src={voiceActor?.poster || "/placeholder-avatar.png"} // Added fallback for poster
+            src={
+              (!voiceActor?.poster || voiceActor.poster.includes("default.jpg") || voiceActor.poster.includes("placeholder"))
+                ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80"
+                : voiceActor.poster
+            }
             alt={voiceActor?.name || "Unknown"}
             className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 ring-2 ring-border/50 group-hover:ring-primary/30"
           />

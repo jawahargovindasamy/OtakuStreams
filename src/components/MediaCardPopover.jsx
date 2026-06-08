@@ -157,7 +157,7 @@ const MediaCardPopover = ({
                             <p className="flex gap-1.5">
                                 <span className="text-muted-foreground/60 min-w-18">Status:</span>
                                 <span className={item?.anime.moreInfo.status === "Completed" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"}>
-                                    {item?.anime.moreInfo.status}
+                                    {item?.anime.moreInfo.status === "NOT_YET_RELEASED" ? "NOT YET RELEASED" : item?.anime.moreInfo.status}
                                 </span>
                             </p>
                             <p className="flex gap-1.5">
@@ -168,46 +168,56 @@ const MediaCardPopover = ({
 
                         {/* Action Buttons */}
                         <div className="pt-2 flex items-center gap-2">
-                            <Button
-                                disabled={isPlaying}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePlay(item?.anime.info.id);
-                                }}
-                                className="flex-1 items-center justify-center gap-2 rounded-full 
-                                           bg-primary hover:bg-primary/90 text-primary-foreground 
-                                           font-semibold transition-all duration-200 
-                                           hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02]
-                                           active:scale-95 h-9 sm:h-10 text-sm"
-                            >
-                                {isPlaying ? (
-                                    <>
-                                        <Spinner className="h-4 w-4" />
-                                        <span>Loading...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Play className="h-4 w-4 fill-current" />
-                                        <span>{progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}</span>
-                                    </>
-                                )}
-                            </Button>
+                            {item?.anime.moreInfo.status !== "NOT_YET_RELEASED" && (
+                                <Button
+                                    disabled={isPlaying}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePlay(item?.anime.info.id);
+                                    }}
+                                    className="flex-1 items-center justify-center gap-2 rounded-full 
+                                               bg-primary hover:bg-primary/90 text-primary-foreground 
+                                               font-semibold transition-all duration-200 
+                                               hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02]
+                                               active:scale-95 h-9 sm:h-10 text-sm"
+                                >
+                                    {isPlaying ? (
+                                        <>
+                                            <Spinner className="h-4 w-4" />
+                                            <span>Loading...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="h-4 w-4 fill-current" />
+                                            <span>{progress ? `Continue Ep ${progress.currentEpisode}` : 'Watch Now'}</span>
+                                        </>
+                                    )}
+                                </Button>
+                            )}
 
                             <Popover modal={false} open={playlistOpen} onOpenChange={setPlaylistOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        size="icon"
+                                        size={item?.anime.moreInfo.status === "NOT_YET_RELEASED" ? "default" : "icon"}
                                         disabled={isUpdating || !user}
-                                        className="rounded-full h-9 w-9 border-border hover:bg-accent hover:text-accent-foreground transition-colors"
+                                        className={`rounded-full h-9 border-border hover:bg-accent hover:text-accent-foreground transition-colors ${
+                                            item?.anime.moreInfo.status === "NOT_YET_RELEASED" ? "w-full gap-2 text-sm font-semibold" : "w-9"
+                                        }`}
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         {isUpdating ? (
                                             <Spinner className="h-4 w-4" />
                                         ) : playlist1 === null ? (
-                                            <Plus className="h-4 w-4" />
+                                            <>
+                                                <Plus className="h-4 w-4" />
+                                                {item?.anime.moreInfo.status === "NOT_YET_RELEASED" && <span>Add to List</span>}
+                                            </>
                                         ) : (
-                                            <Check className="h-4 w-4 text-emerald-500" />
+                                            <>
+                                                <Check className="h-4 w-4 text-emerald-500" />
+                                                {item?.anime.moreInfo.status === "NOT_YET_RELEASED" && <span className="text-emerald-500">In List</span>}
+                                            </>
                                         )}
 
                                     </Button>
