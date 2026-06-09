@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import LightLogo from "../assets/Logo Light.png";
 import DarkLogo from "../assets/Logo Dark.png";
 
@@ -27,7 +27,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 
 import { Search, Shuffle, Bell, Menu } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import ThemeTogglePill from "./ThemeTogglePill";
 import AvatarDropdown from "./AvatarDropdown";
@@ -55,6 +55,11 @@ const Navbar = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const location = useLocation();
+  const mobileSearchRef = useRef(null);
+  const mobileSearchButtonRef1 = useRef(null);
+  const mobileSearchButtonRef2 = useRef(null);
+
 
   /* ===== Debounced Search ===== */
   useEffect(() => {
@@ -78,6 +83,38 @@ const Navbar = () => {
   /* ===== Ensure only one popover is open ===== */
   useEffect(() => {
     if (isSearchOpen) setDesktopOpen(false);
+  }, [isSearchOpen]);
+
+  /* ===== Close mobile search on route changes ===== */
+  useEffect(() => {
+    setIsSearchOpen(false);
+  }, [location.pathname, location.search]);
+
+  /* ===== Close mobile search when clicking outside ===== */
+  useEffect(() => {
+    if (!isSearchOpen) return;
+
+    const handleClickOutside = (event) => {
+      // If clicking inside the Radix Popover suggestions, don't close.
+      if (event.target.closest("[data-radix-popper-content-wrapper]")) {
+        return;
+      }
+
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target) &&
+        mobileSearchButtonRef1.current &&
+        !mobileSearchButtonRef1.current.contains(event.target) &&
+        (!mobileSearchButtonRef2.current || !mobileSearchButtonRef2.current.contains(event.target))
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isSearchOpen]);
 
   return (
@@ -144,6 +181,7 @@ const Navbar = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        ref={mobileSearchButtonRef2}
                         variant="ghost"
                         size="icon"
                         className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
@@ -235,6 +273,7 @@ const Navbar = () => {
           {/* Mobile Navigation */}
           <div className="flex items-center gap-1 sm:gap-2 md:hidden">
             <Button
+              ref={mobileSearchButtonRef1}
               variant="ghost"
               size="icon"
               className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
@@ -264,7 +303,10 @@ const Navbar = () => {
 
       {/* Mobile Search Expand */}
       {isSearchOpen && (
-        <div className="absolute top-full left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur-md border-b border-border shadow-lg animate-in slide-in-from-top-2 duration-200 lg:hidden">
+        <div 
+          ref={mobileSearchRef}
+          className="absolute top-full left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur-md border-b border-border shadow-lg animate-in slide-in-from-top-2 duration-200 lg:hidden"
+        >
           <div className="container mx-auto max-w-2xl">
             <SearchPopover
               open={mobileOpen}

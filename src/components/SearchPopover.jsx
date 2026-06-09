@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,12 +37,20 @@ const SearchPopover = ({
 }) => {
     const navigate = useNavigate();
     const { language } = useAuth();
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (isMobile && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isMobile]);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <div className="relative w-full group">
                     <Input
+                        ref={inputRef}
                         placeholder="Search anime..."
                         value={searchQuery}
                         onChange={(e) => {

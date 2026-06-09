@@ -106,14 +106,16 @@ const Footer = () => {
                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-between items-start lg:items-center">
                     <nav className="flex flex-wrap gap-x-6 gap-y-2">
                         {[
-                            { label: "Terms of Service", href: "/terms" },
-                            { label: "DMCA", href: "/dmca" },
-                            { label: "Contact", href: "/contact" },
-                            { label: "OtakuStreams App", href: "/app" }
+                            { label: "Terms of Service", href: "/terms", target: "_blank", rel: "noopener noreferrer" },
+                            { label: "DMCA", href: "/dmca", target: "_blank", rel: "noopener noreferrer" },
+                            { label: "Contact", href: "/contact", target: "_blank", rel: "noopener noreferrer" },
+                            { label: "OtakuStreams App", href: "/app", target: "_blank", rel: "noopener noreferrer" }
                         ].map((link) => (
                             <Link 
                                 key={link.label}
                                 to={link.href} 
+                                target={link.target}
+                                rel={link.rel}
                                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 relative group"
                             >
                                 {link.label}

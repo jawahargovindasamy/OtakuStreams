@@ -20,6 +20,10 @@ const Login            = lazy(() => import("./pages/Login"));
 const Register         = lazy(() => import("./pages/Register"));
 const ForgotPassword   = lazy(() => import("./pages/ForgotPassword"));
 const Notification     = lazy(() => import("./pages/Notification"));
+const TermsOfService    = lazy(() => import("./pages/TermsOfService"));
+const DMCA              = lazy(() => import("./pages/DMCA"));
+const Contact           = lazy(() => import("./pages/Contact"));
+const AppLanding        = lazy(() => import("./pages/AppLanding"));
 
 function App() {
   return (
@@ -29,6 +33,10 @@ function App() {
         <Route path="/login"               element={<Login />} />
         <Route path="/register"            element={<Register />} />
         <Route path="/forgot-password"     element={<ForgotPassword />} />
+        <Route path="/terms"               element={<TermsOfService />} />
+        <Route path="/dmca"                element={<DMCA />} />
+        <Route path="/contact"             element={<Contact />} />
+        <Route path="/app"                 element={<AppLanding />} />
         <Route path="/home"                element={<Home />} />
         <Route path="/most-popular"        element={<List anime="most-popular" />} />
         <Route path="/top-airing"          element={<List anime="top-airing" />} />
