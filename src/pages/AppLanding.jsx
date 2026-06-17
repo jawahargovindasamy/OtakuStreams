@@ -87,7 +87,7 @@ const AppLanding = () => {
     if (isDownloading) return;
     setIsDownloading(true);
     try {
-      const response = await fetch("https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v4/app-release.apk");
+      const response = await fetch("https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v5/OtakuStreams.apk");
       if (!response.ok) throw new Error("Network response was not ok");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -100,7 +100,7 @@ const AppLanding = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Direct download failed, falling back to direct navigation:", err);
-      window.location.href = "https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v4/app-release.apk";
+      window.location.href = "https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v5/OtakuStreams.apk";
     } finally {
       setIsDownloading(false);
     }
