@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Smartphone, 
@@ -12,7 +12,8 @@ import {
   RefreshCw,
   QrCode,
   ArrowRight,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 import ScrollToTop from "@/components/ScrollToTop";
 
@@ -79,6 +80,32 @@ const installationSteps = [
 ];
 
 const AppLanding = () => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const response = await fetch("https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v4/app-release.apk");
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "OtakuStreams.apk";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Direct download failed, falling back to direct navigation:", err);
+      window.location.href = "https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v4/app-release.apk";
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <ScrollToTop />
@@ -128,15 +155,23 @@ const AppLanding = () => {
                   transition={{ duration: 0.5, delay: 0.3 }}
                   className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
                 >
-                  <a
-                    href="https://github.com/jawahargovindasamy/OtakuStreams/releases"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/25 cursor-pointer hover:scale-105"
+                  <button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/25 cursor-pointer hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                   >
-                    <Download className="w-5 h-5" />
-                    Download Latest APK
-                  </a>
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        Download Latest APK
+                      </>
+                    )}
+                  </button>
                   <a
                     href="#installation"
                     className="w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-xl border border-border bg-card/45 hover:bg-card transition-all font-semibold hover:border-primary/30"
