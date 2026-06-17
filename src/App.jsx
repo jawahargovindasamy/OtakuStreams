@@ -30,16 +30,25 @@ const AppLanding        = lazy(() => import("./pages/AppLanding"));
 
 function App() {
   const [showSplash, setShowSplash] = useState(() => {
+    // Prevent showing the splash screen again during the same browser session
+    if (sessionStorage.getItem("hasShownSplash") === "true") {
+      return false;
+    }
     const pathsWithoutSplash = ["/terms", "/privacy", "/dmca", "/contact", "/app"];
     const currentPath = window.location.pathname.replace(/\/$/, "");
     return !pathsWithoutSplash.includes(currentPath);
   });
 
+  const handleSplashComplete = () => {
+    sessionStorage.setItem("hasShownSplash", "true");
+    setShowSplash(false);
+  };
+
   return (
     <>
       <AnimatePresence>
         {showSplash && (
-          <SplashScreen onComplete={() => setShowSplash(false)} />
+          <SplashScreen onComplete={handleSplashComplete} />
         )}
       </AnimatePresence>
 

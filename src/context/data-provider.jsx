@@ -396,7 +396,7 @@ export function DataProvider({ children }) {
                   dub: null
                 },
                 type: node.format ? node.format.toUpperCase() : "TV",
-                duration: node.duration ? `${node.duration}m` : "?m",
+                duration: node.duration ? `${node.duration}m` : (node.format?.toUpperCase() === "MOVIE" ? "1h" : "24m"),
               }
             },
             moreInfo: {
@@ -404,7 +404,7 @@ export function DataProvider({ children }) {
               synonyms: node.synonyms?.[0] || "",
               aired: node.seasonYear ? `${node.season} ${node.seasonYear}` : "?",
               premiered: node.seasonYear ? `${node.season} ${node.seasonYear}` : "?",
-              duration: node.duration ? `${node.duration}m` : "?",
+              duration: node.duration ? `${node.duration}m` : (node.format?.toUpperCase() === "MOVIE" ? "1h" : "24m"),
               status: node.status,
               malscore: node.averageScore ? node.averageScore / 10 : "?",
               genres: node.genres,
