@@ -23,12 +23,17 @@ const Register         = lazy(() => import("./pages/Register"));
 const ForgotPassword   = lazy(() => import("./pages/ForgotPassword"));
 const Notification     = lazy(() => import("./pages/Notification"));
 const TermsOfService    = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy     = lazy(() => import("./pages/PPolicy"));
 const DMCA              = lazy(() => import("./pages/DMCA"));
 const Contact           = lazy(() => import("./pages/Contact"));
 const AppLanding        = lazy(() => import("./pages/AppLanding"));
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    const pathsWithoutSplash = ["/terms", "/privacy", "/dmca", "/contact", "/app"];
+    const currentPath = window.location.pathname.replace(/\/$/, "");
+    return !pathsWithoutSplash.includes(currentPath);
+  });
 
   return (
     <>
@@ -45,6 +50,7 @@ function App() {
         <Route path="/register"            element={<Register />} />
         <Route path="/forgot-password"     element={<ForgotPassword />} />
         <Route path="/terms"               element={<TermsOfService />} />
+        <Route path="/privacy"             element={<PrivacyPolicy />} />
         <Route path="/dmca"                element={<DMCA />} />
         <Route path="/contact"             element={<Contact />} />
         <Route path="/app"                 element={<AppLanding />} />

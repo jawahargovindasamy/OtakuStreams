@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -248,8 +248,15 @@ const Login = () => {
                                 Create account
                             </Button>
                         </div>
-                        <p className="text-xs text-zinc-600 text-center">
-                            By signing in, you agree to our Terms of Service and Privacy Policy
+                        <p className="text-xs text-zinc-500 text-center leading-relaxed">
+                            By signing in, you agree to our{" "}
+                            <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 hover:underline">
+                                Terms of Service
+                            </Link>
+                            {" "}and{" "}
+                            <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 hover:underline">
+                                Privacy Policy
+                            </Link>
                         </p>
                     </CardFooter>
                 </Card>

@@ -107,6 +107,7 @@ const Footer = () => {
                     <nav className="flex flex-wrap gap-x-6 gap-y-2">
                         {[
                             { label: "Terms of Service", href: "/terms", target: "_blank", rel: "noopener noreferrer" },
+                            { label: "Privacy Policy", href: "/privacy", target: "_blank", rel: "noopener noreferrer" },
                             { label: "DMCA", href: "/dmca", target: "_blank", rel: "noopener noreferrer" },
                             { label: "Contact", href: "/contact", target: "_blank", rel: "noopener noreferrer" },
                             { label: "OtakuStreams App", href: "/app", target: "_blank", rel: "noopener noreferrer" }
