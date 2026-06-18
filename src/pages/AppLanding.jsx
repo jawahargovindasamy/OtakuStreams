@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Smartphone, 
@@ -81,26 +81,74 @@ const installationSteps = [
 
 const AppLanding = () => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [releaseInfo, setReleaseInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLatestRelease = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_OTAKUSTREAMS_BACKEND_URL || "https://otakustreams-backend-j3h5.onrender.com/api";
+        const response = await fetch(`${baseUrl}/app/version?platform=android&versionCode=0`);
+        if (!response.ok) throw new Error("Failed to fetch release info");
+        const data = await response.json();
+        if (data && data.latest) {
+          setReleaseInfo(data.latest);
+        }
+      } catch (err) {
+        console.error("Error fetching latest release info:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLatestRelease();
+  }, []);
+
+  const fallbackRelease = {
+    versionName: "1.3.4",
+    artifact: {
+      url: "https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v1.3.4/OtakuStreams.apk",
+      name: "OtakuStreams.apk",
+      size: 47447296,
+      sha256: ""
+    },
+    releaseNotes: [
+      "Renamed installation APK to OtakuStreams.apk for absolute parity",
+      "Dynamic auto-updates synced directly with MongoDB backend",
+      "Complete code lint fixes and performance optimizations"
+    ]
+  };
+
+  const currentRelease = releaseInfo || fallbackRelease;
+
+  const formatSize = (bytes) => {
+    if (!bytes) return "N/A";
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
 
   const handleDownload = async (e) => {
     e.preventDefault();
     if (isDownloading) return;
     setIsDownloading(true);
+    
+    const downloadUrl = currentRelease.artifact.url;
+    const fileName = currentRelease.artifact.name || "OtakuStreams.apk";
+    
     try {
-      const response = await fetch("https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v5/OtakuStreams.apk");
+      const response = await fetch(downloadUrl);
       if (!response.ok) throw new Error("Network response was not ok");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "OtakuStreams.apk";
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Direct download failed, falling back to direct navigation:", err);
-      window.location.href = "https://github.com/jawahargovindasamy/OtakuStreams-Flutter/releases/download/v5/OtakuStreams.apk";
+      window.location.href = downloadUrl;
     } finally {
       setIsDownloading(false);
     }
@@ -186,10 +234,14 @@ const AppLanding = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="flex items-center justify-center lg:justify-start gap-6 text-xs text-muted-foreground pt-2"
+                  className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 text-xs text-muted-foreground pt-2"
                 >
                   <div>
-                    <span className="font-bold text-foreground">Version:</span> v1.0.0 (Flutter Stable)
+                    <span className="font-bold text-foreground">Version:</span> v{currentRelease.versionName}
+                  </div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-border" />
+                  <div>
+                    <span className="font-bold text-foreground">Size:</span> {formatSize(currentRelease.artifact.size)}
                   </div>
                   <div className="w-1.5 h-1.5 rounded-full bg-border" />
                   <div>
@@ -200,6 +252,28 @@ const AppLanding = () => {
                     <span className="font-bold text-foreground">Format:</span> APK Package
                   </div>
                 </motion.div>
+
+                {/* Release Notes */}
+                {currentRelease.releaseNotes && currentRelease.releaseNotes.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="max-w-xl p-4 rounded-xl border border-border/40 bg-card/20 text-left space-y-2"
+                  >
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      What's New in v{currentRelease.versionName}
+                    </h4>
+                    <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                      {currentRelease.releaseNotes.map((note, idx) => (
+                        <li key={idx} className="leading-relaxed">
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
               </div>
 
               {/* Right Hero: QR Mock Card */}
