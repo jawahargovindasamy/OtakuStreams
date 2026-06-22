@@ -239,6 +239,7 @@ export function AuthProvider({ children }) {
 
     newSocket.on("connect", () => {
       console.log("WebSocket connected:", newSocket.id);
+      fetchNotifications();
     });
 
     newSocket.on("newNotification", (notif) => {
@@ -270,7 +271,7 @@ export function AuthProvider({ children }) {
     return () => {
       newSocket.disconnect();
     };
-  }, [user]);
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     fetchPreferences();
