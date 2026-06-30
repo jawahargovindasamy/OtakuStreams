@@ -477,13 +477,14 @@ const Watch = () => {
                             />
                         )}
 
-                        <div className='mt-2'>
-                            {item?.anime?.info?.id && (
-                                <SeasonsSection animeId={item.anime.info.id} />
-                            )}
-                        </div>
                     </div>
                 </div>
+
+                {item?.anime?.info?.id && (
+                    <div className="mt-6 sm:mt-8">
+                        <SeasonsSection animeId={item.anime.info.id} />
+                    </div>
+                )}
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">
