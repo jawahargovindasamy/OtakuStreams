@@ -142,6 +142,7 @@ const Watch = () => {
     }
     const [activeRaw, setActiveRaw] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
+    const activeServerId = activeSub?.serverId || activeDub?.serverId || "hd-1";
 
     const currentEpisodeData = episode?.episodes?.find(
         (ep) => ep.number.toString() === episodeNumber
@@ -296,6 +297,24 @@ const Watch = () => {
         }
     }, [item, episodeNumber, language]);
 
+    // Update progress in auth-provider when user is logged in and episode is available
+    useEffect(() => {
+        if (user && updateProgress && isAvailable && !isChecking && id && episodeNumber) {
+            const title = getAnimeTitle(item?.Media || item?.anime?.info || item, language) || item?.anime?.info?.name || "Anime";
+            const poster = item?.anime?.info?.poster || item?.posterImage || item?.coverImage?.extraLarge || "";
+
+            updateProgress({
+                animeId: id,
+                animeTitle: title,
+                animeImage: poster,
+                currentEpisode: parseInt(episodeNumber, 10),
+                episodeNumber: parseInt(episodeNumber, 10),
+                dub: audioType === "dub" ? "yes" : "no",
+                server: activeServerId
+            });
+        }
+    }, [user, isAvailable, isChecking, id, episodeNumber, item, audioType, activeServerId, updateProgress, language]);
+
     useEffect(() => {
         let isMounted = true;
 
@@ -345,8 +364,6 @@ const Watch = () => {
             isMounted = false;
         };
     }, [id, fetchepisodeinfo]);
-
-    const activeServerId = activeSub?.serverId || activeDub?.serverId || "hd-1";
 
     const isCurrentServerWorking = () => {
         if (!debugInfo || debugInfo.length === 0) return true;

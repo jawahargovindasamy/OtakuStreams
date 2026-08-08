@@ -242,16 +242,33 @@ export function AuthProvider({ children }) {
     if (!token) return;
 
     // Use backend URL, stripping /api if it exists so socket.io connects to root
-    const baseUrl = import.meta.env.VITE_OTAKUSTREAMS_BACKEND_URL?.replace(/\/api\/?$/, '');
+    const rawBackendUrl = import.meta.env.VITE_OTAKUSTREAMS_BACKEND_URL || "https://otakustreams-backend-j3h5.onrender.com/api";
+    const baseUrl = rawBackendUrl.replace(/\/api\/?$/, '');
     
-    const newSocket = io(baseUrl || "http://localhost:5000", {
+    const newSocket = io(baseUrl, {
       auth: {
         token: token,
       },
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      autoConnect: true,
     });
 
     newSocket.on("connect", () => {
       console.log("WebSocket connected:", newSocket.id);
+      fetchNotifications();
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.warn("WebSocket connection warning/error:", err.message);
+    });
+
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log("WebSocket reconnected after attempt:", attemptNumber);
       fetchNotifications();
     });
 
@@ -275,13 +292,18 @@ export function AuthProvider({ children }) {
       });
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("WebSocket disconnected");
+    newSocket.on("disconnect", (reason) => {
+      console.log("WebSocket disconnected:", reason);
     });
 
     setSocket(newSocket);
 
     return () => {
+      newSocket.off("connect");
+      newSocket.off("connect_error");
+      newSocket.off("reconnect");
+      newSocket.off("newNotification");
+      newSocket.off("disconnect");
       newSocket.disconnect();
     };
   }, [user, fetchNotifications]);
