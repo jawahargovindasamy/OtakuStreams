@@ -1474,11 +1474,11 @@ export function DataProvider({ children }) {
   const checkEpisodeAvailability = async (animeId, episodeNumber, malId) => {
     try {
       const response = await fetch(`/.netlify/functions/check-episode?animeId=${animeId}&episode=${episodeNumber}&malId=${malId || ""}`);
-      if (!response.ok) return null;
+      if (!response.ok) return { success: false, isAvailable: true, hasDub: true };
       return await response.json();
     } catch (err) {
       console.error("Check episode availability failed:", err);
-      return null;
+      return { success: false, isAvailable: true, hasDub: true };
     }
   };
 

@@ -268,11 +268,13 @@ const Watch = () => {
                         setActiveSub(subServers[0]);
                     }
                 } else {
-                    setIsAvailable(false);
+                    setIsAvailable(true);
+                    setHasDub(true);
                 }
             } catch (error) {
                 console.error("Episode check failed:", error);
-                setIsAvailable(false);
+                setIsAvailable(true);
+                setHasDub(true);
             } finally {
                 setIsChecking(false);
             }
