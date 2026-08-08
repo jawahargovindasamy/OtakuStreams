@@ -1,325 +1,259 @@
-import React, { useEffect, useState, useRef } from "react";
-import LightLogo from "../assets/Logo Light.png";
-import DarkLogo from "../assets/Logo Dark.png";
-
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-  SheetDescription
-} from "@/components/ui/sheet";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-
-
-import { Search, Shuffle, Bell, Menu } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-
-import ThemeTogglePill from "./ThemeTogglePill";
-import AvatarDropdown from "./AvatarDropdown";
-
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, Bell, Sun, Moon, User } from "lucide-react";
 import { useTheme } from "@/context/theme-provider";
 import { useAuth } from "@/context/auth-provider";
-import { useData } from "@/context/data-provider";
-import SearchPopover from "./SearchPopover";
-import Sidebar from "./Sidebar";
+
+import LightLogo from "../assets/Logo Light.png";
+import DarkLogo from "../assets/Logo Dark.png";
+import AppLogo from "../assets/App Logo (2).png";
+
 import NotificationDropdown from "./NotificationDropdown";
+import AvatarDropdown from "./AvatarDropdown";
+import CommandPalette from "./CommandPalette";
+import BottomTabBar from "./BottomTabBar";
 
+const NAV_LINKS = [
+  { label: "Home", path: "/home", sectionId: null },
+  { label: "Trending", path: "/home", sectionId: "trending" },
+  { label: "Genres", path: "/home", sectionId: "genres" },
+  { label: "Schedule", path: "/home", sectionId: "schedule" },
+  { label: "Watchlist", path: "/home", sectionId: "watchlist" },
+];
 
-/* ================= Navbar ================= */
 const Navbar = () => {
-  const { theme } = useTheme();
-  const { language, setLanguage, user, notification, handleRandom } = useAuth();
-  const { fetchsearchsuggestions } = useData();
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestion, setSuggestion] = useState([]);
-
-  const [desktopOpen, setDesktopOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const { theme, setTheme } = useTheme();
+  const { user, notification } = useAuth();
   const location = useLocation();
-  const mobileSearchRef = useRef(null);
-  const mobileSearchButtonRef1 = useRef(null);
-  const mobileSearchButtonRef2 = useRef(null);
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
 
+  const [scrolled, setScrolled] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(null);
 
-  /* ===== Debounced Search ===== */
+  // Scroll listener for sticky compact glass effect
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSuggestion([]);
+    const handleScroll = () => {
+      if (window.scrollY > 40) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll Spy for Home sections active highlighting
+  useEffect(() => {
+    const isHomePage = currentPath === "/" || currentPath === "/home";
+    if (!isHomePage) {
+      setActiveSection(null);
       return;
     }
 
-    const handler = setTimeout(async () => {
-      try {
-        const data = await fetchsearchsuggestions(searchQuery);
-        setSuggestion(data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    }, 300);
+    const sections = ["trending", "genres", "schedule", "watchlist"];
 
-    return () => clearTimeout(handler);
-  }, [searchQuery, fetchsearchsuggestions]);
-
-  /* ===== Ensure only one popover is open ===== */
-  useEffect(() => {
-    if (isSearchOpen) setDesktopOpen(false);
-  }, [isSearchOpen]);
-
-  /* ===== Close mobile search on route changes ===== */
-  useEffect(() => {
-    setIsSearchOpen(false);
-  }, [location.pathname, location.search]);
-
-  /* ===== Close mobile search when clicking outside ===== */
-  useEffect(() => {
-    if (!isSearchOpen) return;
-
-    const handleClickOutside = (event) => {
-      // If clicking inside the Radix Popover suggestions, don't close.
-      if (event.target.closest("[data-radix-popper-content-wrapper]")) {
+    const handleScrollSpy = () => {
+      const scrollPosition = window.scrollY + 200;
+      if (window.scrollY < 350) {
+        setActiveSection(null);
         return;
       }
 
-      if (
-        mobileSearchRef.current &&
-        !mobileSearchRef.current.contains(event.target) &&
-        mobileSearchButtonRef1.current &&
-        !mobileSearchButtonRef1.current.contains(event.target) &&
-        (!mobileSearchButtonRef2.current || !mobileSearchButtonRef2.current.contains(event.target))
-      ) {
-        setIsSearchOpen(false);
+      let currentSection = null;
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const top = element.offsetTop;
+          const height = element.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            currentSection = sectionId;
+            break;
+          }
+        }
       }
+      setActiveSection(currentSection);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSearchOpen]);
+    handleScrollSpy();
+    window.addEventListener("scroll", handleScrollSpy, { passive: true });
+    return () => window.removeEventListener("scroll", handleScrollSpy);
+  }, [currentPath]);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleNavClick = (link, e) => {
+    const isHomePage = location.pathname === "/" || location.pathname === "/home";
+
+    if (!link.sectionId) {
+      if (isHomePage) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      return;
+    }
+
+    e.preventDefault();
+    if (isHomePage) {
+      const element = document.getElementById(link.sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      navigate("/home", { state: { scrollToSection: link.sectionId } });
+    }
+  };
 
   return (
-    <div className="sticky top-0 z-50">
-      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 text-foreground backdrop-blur-md transition-colors duration-300 supports-backdrop-filter:bg-background/60">
-        <div className="container mx-auto flex h-14 sm:h-16 lg:h-20 items-center justify-between px-3 sm:px-4 lg:px-6 xl:px-8">
-          {/* Left Section */}
-          <div className="flex flex-row items-center gap-2 sm:gap-3 lg:gap-4">
-            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </SheetTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border">
-                    Sidebar
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Sidebar content */}
-              <SheetContent side="left" className="w-70 sm:w-72 p-0 bg-background border-r border-border">
-                <VisuallyHidden>
-                  <SheetTitle>Sidebar navigation</SheetTitle>
-                  <SheetDescription>Main application navigation</SheetDescription>
-                </VisuallyHidden>
-                <Sidebar onClose={() => setSidebarOpen(false)} />
-              </SheetContent>
-            </Sheet>
-
-
-            <Link to="/" className="flex items-center transition-opacity hover:opacity-90 active:scale-95 duration-200">
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? "h-14 lg:h-16 glass border-b border-border/80 shadow-soft"
+            : "h-16 lg:h-20 bg-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+          
+          {/* Left: Brand Logo (App Logo icon + Theme Logo image) */}
+          <div className="flex items-center gap-6 lg:gap-8">
+            <Link 
+              to="/home" 
+              className="flex items-center gap-2.5 sm:gap-3 group focus-visible:outline-2 focus-visible:outline-ring rounded-lg p-0.5"
+            >
+              {/* App Logo icon (Luffy circular image) */}
+              <img
+                src={AppLogo}
+                alt="OtakuStreams Icon"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-border/40 shadow-soft group-hover:scale-105 transition-transform"
+              />
+              {/* Theme-adaptive Logo image */}
               <img
                 src={theme === "light" ? DarkLogo : LightLogo}
-                alt="Logo"
-                className="h-6 sm:h-7 md:h-8 lg:h-9 w-auto object-contain"
+                alt="OtakuStreams"
+                className="h-6 sm:h-7 lg:h-8 w-auto object-contain transition-opacity group-hover:opacity-90"
               />
             </Link>
+
+            {/* Desktop Navigation Links (≥1024px) */}
+            <nav className="hidden lg:flex items-center gap-1" aria-label="Desktop primary">
+              {NAV_LINKS.map((link) => {
+                const isHomePage = currentPath === "/" || currentPath === "/home";
+                const isActive = isHomePage
+                  ? (link.sectionId ? activeSection === link.sectionId : !activeSection)
+                  : (currentPath === link.path && !link.sectionId);
+
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.path}
+                    onClick={(e) => handleNavClick(link, e)}
+                    className={`relative px-3.5 py-2 text-sm font-sans font-medium transition-colors rounded-lg cursor-pointer ${
+                      isActive
+                        ? "text-foreground font-semibold"
+                        : "text-subtle hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-3.5 right-3.5 h-[2.5px] brand-gradient rounded-full" />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Desktop Navigation */}
-          <NavigationMenu className="hidden md:flex justify-end max-w-none">
-            <NavigationMenuList className="gap-1 sm:gap-2 lg:gap-3 items-center">
-              <NavigationMenuItem className="hidden lg:block w-75 xl:w-100">
-                <SearchPopover
-                  open={desktopOpen}
-                  setOpen={setDesktopOpen}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  suggestion={suggestion}
-                />
-              </NavigationMenuItem>
-
-              <NavigationMenuItem className="hidden md:block lg:hidden">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        ref={mobileSearchButtonRef2}
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-                        onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      >
-                        <Search className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border">
-                      Search
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-                        onClick={() => handleRandom()}
-                      >
-                        <Shuffle className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border">
-                      Random
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ToggleGroup
-                        type="single"
-                        value={language}
-                        onValueChange={(value) => value && setLanguage(value)}
-                        className="flex border border-input rounded-lg bg-muted/50 p-0.5"
-                      >
-                        <ToggleGroupItem
-                          value="EN"
-                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md cursor-pointer"
-                        >
-                          EN
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="JP"
-                          className="px-2 sm:px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 rounded-md cursor-pointer"
-                        >
-                          JP
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border">
-                      Language
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NotificationDropdown notifications={notification} />
-              </NavigationMenuItem>
-
-              <NavigationMenuItem className="mx-1">
-                <ThemeTogglePill />
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                {user ? (
-                  <NavigationMenuLink asChild>
-                    <AvatarDropdown />
-                  </NavigationMenuLink>
-                ) : (
-                  <Link to="/login">
-                    <Button size="sm">Login</Button>
-                  </Link>
-                )}
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-
-          {/* Mobile Navigation */}
-          <div className="flex items-center gap-1 sm:gap-2 md:hidden">
-            <Button
-              ref={mobileSearchButtonRef1}
-              variant="ghost"
-              size="icon"
-              className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+          {/* Right Section: Search Trigger Pill + Actions */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            
+            {/* Desktop Search Trigger Pill (≥1024px) */}
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="hidden lg:flex items-center justify-between w-64 xl:w-72 h-10 px-4 rounded-full bg-elevated/70 hover:bg-elevated border border-border/80 text-muted-foreground hover:text-foreground transition-all group cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+              aria-label="Search anime (Press Ctrl+K)"
             >
-              <Search className="h-5 w-5" />
-            </Button>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Search className="w-4 h-4 shrink-0 group-hover:text-primary transition-colors" />
+                <span className="text-xs sm:text-sm font-sans truncate">
+                  Search anime, genres, studios...
+                </span>
+              </div>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground bg-surface border border-border rounded-md shadow-xs shrink-0 font-sans">
+                ⌘K
+              </kbd>
+            </button>
 
-            {/* Notification Dropdown */}
-            <div className="pe-1">
-              <NotificationDropdown notifications={notification} />
-            </div>
+            {/* Mobile Search Icon Button (<1024px) */}
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="lg:hidden p-2.5 rounded-full text-subtle hover:text-foreground hover:bg-elevated transition-colors cursor-pointer"
+              aria-label="Open search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
 
-
-            <div className="hover:scale-105 transition-transform duration-200">
-              {user ? (
-                <AvatarDropdown />
+            {/* Notifications */}
+            <div className="relative">
+              {notification ? (
+                <NotificationDropdown notifications={notification} />
               ) : (
-                <Link to="/login">
-                  <Button size="sm">Login</Button>
-                </Link>
+                <button
+                  type="button"
+                  className="p-2.5 rounded-full text-subtle hover:text-foreground hover:bg-elevated transition-colors cursor-pointer"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                </button>
               )}
             </div>
-          </div>
-        </div>
-      </nav>
 
-      {/* Mobile Search Expand */}
-      {isSearchOpen && (
-        <div 
-          ref={mobileSearchRef}
-          className="absolute top-full left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur-md border-b border-border shadow-lg animate-in slide-in-from-top-2 duration-200 lg:hidden"
-        >
-          <div className="container mx-auto max-w-2xl">
-            <SearchPopover
-              open={mobileOpen}
-              setOpen={setMobileOpen}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              suggestion={suggestion}
-              isMobile={true}
-            />
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full text-subtle hover:text-foreground hover:bg-elevated transition-colors cursor-pointer"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? (
+                <Sun className="w-5 h-5 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-5 h-5 transition-transform hover:-rotate-12" />
+              )}
+            </button>
+
+            {/* User Account / Avatar Dropdown */}
+            {user ? (
+              <AvatarDropdown />
+            ) : (
+              <Link
+                to="/login"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full brand-gradient flex items-center justify-center text-white shadow-soft hover:shadow-glow transition-all active:scale-95"
+                aria-label="User account"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+            )}
+
           </div>
         </div>
-      )}
-    </div>
+      </header>
+
+      {/* Mobile Bottom Tab Bar */}
+      <BottomTabBar onOpenSearch={() => setCommandPaletteOpen(true)} />
+
+      {/* Global Command Palette Overlay (⌘K) */}
+      <CommandPalette 
+        open={commandPaletteOpen} 
+        onOpenChange={setCommandPaletteOpen} 
+      />
+    </>
   );
 };
 

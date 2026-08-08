@@ -16,6 +16,7 @@ import {
   Loader2
 } from "lucide-react";
 import ScrollToTop from "@/components/ScrollToTop";
+import { useData } from "@/context/data-provider";
 
 const features = [
   {
@@ -80,28 +81,39 @@ const installationSteps = [
 ];
 
 const AppLanding = () => {
+  const { fetchLatestAppRelease } = useData();
   const [isDownloading, setIsDownloading] = useState(false);
   const [releaseInfo, setReleaseInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLatestRelease = async () => {
+    document.title = "Download Android App — OtakuStreams";
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadReleaseInfo = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_OTAKUSTREAMS_BACKEND_URL || "https://otakustreams-backend-j3h5.onrender.com/api";
-        const response = await fetch(`${baseUrl}/app/version?platform=android&versionCode=0`);
-        if (!response.ok) throw new Error("Failed to fetch release info");
-        const data = await response.json();
-        if (data && data.latest) {
-          setReleaseInfo(data.latest);
+        if (fetchLatestAppRelease) {
+          const latest = await fetchLatestAppRelease();
+          if (isMounted && latest) {
+            setReleaseInfo(latest);
+          }
         }
       } catch (err) {
-        console.error("Error fetching latest release info:", err);
+        console.error("Error loading release info from DataContext:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-    fetchLatestRelease();
-  }, []);
+
+    loadReleaseInfo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchLatestAppRelease]);
 
   const fallbackRelease = {
     versionName: "1.3.4",

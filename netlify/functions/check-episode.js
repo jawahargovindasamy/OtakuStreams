@@ -1,6 +1,6 @@
-const axios = require('axios');
+import axios from 'axios';
 
-exports.handler = async function (event, context) {
+export async function handler(event) {
     try {
         let { animeId, episode, malId } = event.queryStringParameters;
 

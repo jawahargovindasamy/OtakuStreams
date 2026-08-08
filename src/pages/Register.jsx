@@ -1,339 +1,513 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/context/auth-provider";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-    Loader2,
-    User,
-    Mail,
-    Lock,
-    AlertCircle,
-    Eye,
-    EyeOff,
-    Sparkles,
-    ArrowLeft
+  Loader2,
+  User,
+  Mail,
+  Lock,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ArrowLeft,
+  Sun,
+  Moon,
+  Sparkles,
+  ShieldCheck
 } from "lucide-react";
+import { useAuth } from "@/context/auth-provider";
+import { useTheme } from "@/context/theme-provider";
+
+import LightLogo from "@/assets/Logo Light.png";
+import DarkLogo from "@/assets/Logo Dark.png";
+import AppLogo from "@/assets/App Logo (2).png";
+import loginBg from "@/assets/login-bg.jpg";
 
 const Register = () => {
-    const navigate = useNavigate();
-    const { login, api } = useAuth();
+  const navigate = useNavigate();
+  const { login, api, user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
-    const [formData, setFormData] = useState({
-        username: "",
-        email: "",
-        password: "",
-        agreeTerms: false
-    });
+  // If already logged in, redirect to /home
+  useEffect(() => {
+    if (user) {
+      navigate("/home", { replace: true });
+    }
+  }, [user, navigate]);
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [errors, setErrors] = useState({});
-    const [showPassword, setShowPassword] = useState(false);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-    // Track mouse for parallax effect
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            setMousePosition({
-                x: (e.clientX / window.innerWidth - 0.5) * 20,
-                y: (e.clientY / window.innerHeight - 0.5) * 20
-            });
-        };
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
-        if (error) setError("");
-    };
-
-    const handleCheckboxChange = (checked) => {
-        setFormData(prev => ({ ...prev, agreeTerms: checked }));
-        if (errors.agreeTerms) setErrors(prev => ({ ...prev, agreeTerms: "" }));
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-        if (formData.username.length < 3) {
-            newErrors.username = "Username must be at least 3 characters";
-        }
-        if (formData.password.length < 8) {
-            newErrors.password = "Password must be at least 8 characters";
-        }
-        if (!formData.agreeTerms) {
-            newErrors.agreeTerms = "You must agree to the terms";
-        }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!validateForm()) return;
-
-        setError("");
-        setLoading(true);
-
-        try {
-            const res = await api.post("/auth/register", {
-                username: formData.username,
-                email: formData.email,
-                password: formData.password
-            });
-
-            const { success, data, message } = res.data;
-
-            if (!success) throw new Error(message);
-
-            login(data);
-            navigate("/home");
-        } catch (err) {
-            if (err.response?.data?.errors) {
-                const fieldErrors = {};
-                err.response.data.errors.forEach((e) => {
-                    fieldErrors[e.path] = e.msg;
-                });
-                setErrors(fieldErrors);
-            } else {
-                setError(err.response?.data?.message || err.message || "Registration failed");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#0a0a0f] py-8">
-            {/* Animated Background Grid */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]" />
-
-            {/* Radial Gradient Overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-20%,#7c3aed30,transparent)]" />
-
-            {/* Floating Orbs */}
-            <div
-                className="absolute top-20 right-10 w-72 h-72 bg-purple-600/20 rounded-full blur-[100px] animate-pulse"
-                style={{ transform: `translate(${-mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px)` }}
-            />
-            <div
-                className="absolute bottom-20 left-10 w-96 h-96 bg-pink-600/10 rounded-full blur-[120px] animate-pulse delay-1000"
-                style={{ transform: `translate(${mousePosition.x * 0.3}px, ${-mousePosition.y * 0.3}px)` }}
-            />
-
-            {/* Decorative Lines */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/3 w-px h-full bg-linear-to-b from-transparent via-purple-500/20 to-transparent" />
-                <div className="absolute top-0 right-1/3 w-px h-full bg-linear-to-b from-transparent via-pink-500/20 to-transparent" />
-            </div>
-
-            {/* Back Button */}
-            <button
-                onClick={() => navigate("/login")}
-                className="absolute top-6 left-6 z-20 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm">Back to login</span>
-            </button>
-
-            {/* Main Content */}
-            <div className="relative z-10 w-full max-w-md px-4">
-                {/* Logo */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold bg-linear-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent tracking-tight">
-                        OtakuStreams
-                    </h1>
-                    <p className="text-zinc-400 mt-2 text-sm">Begin your anime journey</p>
-                </div>
-
-                <Card className="w-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-purple-500/50 to-transparent" />
-
-                    <CardHeader className="space-y-1 pb-4">
-                        <CardTitle className="text-xl font-semibold text-white text-center">
-                            Create Account
-                        </CardTitle>
-                        <CardDescription className="text-zinc-400 text-center text-sm">
-                            Join our community of anime enthusiasts
-                        </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                        {error && (
-                            <Alert className="border-red-500/30 bg-red-500/10 backdrop-blur-sm">
-                                <AlertCircle className="h-4 w-4 text-red-400" />
-                                <AlertDescription className="text-red-200 text-sm">
-                                    {error}
-                                </AlertDescription>
-                            </Alert>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Username */}
-                            <div className="space-y-2">
-                                <Label htmlFor="username" className="text-sm font-medium text-zinc-300">
-                                    Username
-                                </Label>
-                                <div className="relative group">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                                    <Input
-                                        id="username"
-                                        name="username"
-                                        placeholder="OtakuKing99"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                        disabled={loading}
-                                        className={`pl-10 h-11 bg-zinc-950/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-purple-500/50 focus:ring-purple-500/20 rounded-lg transition-all ${errors.username ? "border-red-500/50 focus:border-red-500" : ""}`}
-                                    />
-                                </div>
-                                {errors.username && (
-                                    <p className="text-xs text-red-400 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.username}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Email */}
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-medium text-zinc-300">
-                                    Email Address
-                                </Label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        placeholder="shinji@nerv.com"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        disabled={loading}
-                                        className={`pl-10 h-11 bg-zinc-950/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-purple-500/50 focus:ring-purple-500/20 rounded-lg transition-all ${errors.email ? "border-red-500/50 focus:border-red-500" : ""}`}
-                                    />
-                                </div>
-                                {errors.email && (
-                                    <p className="text-xs text-red-400 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.email}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Password */}
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="text-sm font-medium text-zinc-300">
-                                    Password
-                                </Label>
-                                <div className="relative group">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                                    <Input
-                                        id="password"
-                                        name="password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="••••••••"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        disabled={loading}
-                                        className={`pl-10 pr-10 h-11 bg-zinc-950/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-purple-500/50 focus:ring-purple-500/20 rounded-lg transition-all ${errors.password ? "border-red-500/50 focus:border-red-500" : ""}`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                    </button>
-                                </div>
-                                {errors.password && (
-                                    <p className="text-xs text-red-400 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.password}
-                                    </p>
-                                )}
-                                <p className="text-xs text-zinc-500">
-                                    Must be at least 8 characters
-                                </p>
-                            </div>
-
-                            {/* Terms Checkbox */}
-                            <div className="space-y-2">
-                                <div className="flex items-start space-x-2">
-                                    <Checkbox
-                                        id="agreeTerms"
-                                        checked={formData.agreeTerms}
-                                        onCheckedChange={handleCheckboxChange}
-                                        className="mt-1 border-zinc-700 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                                    />
-                                    <label htmlFor="agreeTerms" className="text-sm text-zinc-400 cursor-pointer select-none leading-relaxed">
-                                        I agree to the{" "}
-                                        <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 hover:underline">
-                                            Terms of Service
-                                        </Link>
-                                        {" "}and{" "}
-                                        <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 hover:underline">
-                                            Privacy Policy
-                                        </Link>
-                                    </label>
-                                </div>
-                                {errors.agreeTerms && (
-                                    <p className="text-xs text-red-400 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.agreeTerms}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Submit */}
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full h-11 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Creating account...
-                                    </>
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        Create Account
-                                        <Sparkles className="w-4 h-4" />
-                                    </span>
-                                )}
-                            </Button>
-                        </form>
-
-                        {/* Login link */}
-                        <div className="text-sm text-zinc-400 text-center pt-2">
-                            Already have an account?{" "}
-                            <Link
-                                to="/login"
-                                className="font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors"
-                            >
-                                Sign in
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div className="mt-8 text-center">
-                    <p className="text-xs text-zinc-600">
-                        © 2024 OtakuStreams. All rights reserved.
-                    </p>
-                </div>
-            </div>
-        </div>
+  // Set document metadata for SEO
+  useEffect(() => {
+    document.title = "Create Account — OtakuStreams";
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.name = "description";
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute(
+      "content",
+      "Create your OtakuStreams account to sync your anime watchlists, track active episodes, and receive personalized recommendations."
     );
+  }, []);
+
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    agreeTerms: true
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (error) setError("");
+  };
+
+  const handleCheckboxChange = (checked) => {
+    setFormData((prev) => ({ ...prev, agreeTerms: !!checked }));
+    if (errors.agreeTerms) setErrors((prev) => ({ ...prev, agreeTerms: "" }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailTrimmed = formData.email.trim();
+
+    if (!formData.username.trim() || formData.username.trim().length < 3) {
+      newErrors.username = "Username must be at least 3 characters.";
+    }
+
+    if (!emailTrimmed) {
+      newErrors.email = "Enter your email address.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    }
+
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = "You must agree to the Terms of Service.";
+    }
+
+    setErrors(newErrors);
+
+    // Focus first field with error for accessibility
+    if (newErrors.username) document.getElementById("username")?.focus();
+    else if (newErrors.email) document.getElementById("email")?.focus();
+    else if (newErrors.password) document.getElementById("password")?.focus();
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await api.post("/auth/register", {
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        password: formData.password
+      });
+
+      const { success, data, message } = res.data;
+
+      if (!success) throw new Error(message);
+
+      login(data);
+      navigate("/home", { replace: true });
+    } catch (err) {
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const fieldErrors = {};
+        err.response.data.errors.forEach((e) => {
+          if (e.path) fieldErrors[e.path] = e.msg;
+        });
+        setErrors(fieldErrors);
+      } else {
+        setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setIsGoogleLoading(true);
+    try {
+      window.location.href = `${import.meta.env.VITE_API_URL || ""}/api/auth/google`;
+    } catch {
+      setError("Could not initiate Google Sign-up. Please try again.");
+      setIsGoogleLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-dvh w-full relative flex flex-col justify-between overflow-x-hidden bg-background text-foreground font-sans selection:bg-primary/30">
+      {/* Skip Link */}
+      <a
+        href="#register-form"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-xl shadow-lift transition-all"
+      >
+        Skip to registration form
+      </a>
+
+      {/* Background Artwork & Section C 3-Layer Scrims */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <img
+          src={loginBg}
+          alt=""
+          decoding="async"
+          className="w-full h-full object-cover object-[45%_center] md:object-[42%_center] lg:object-[33%_center] transition-all duration-500"
+        />
+
+        {/* Scrim Layer 1: Global Lateral Contrast Overlay */}
+        <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
+
+        {/* Scrim Layer 2: Right Panel-Side Ambient Contrast Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-l from-background/90 via-background/40 to-transparent max-lg:bg-none" />
+
+        {/* Scrim Layer 3: Bottom Edge Fade into Page Background */}
+        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      </div>
+
+      {/* Navigation Header */}
+      <header className="relative z-20 w-full max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+        {/* Brand Link */}
+        <Link
+          to="/"
+          className="group flex items-center gap-2.5 transition-transform duration-300 hover:rotate-3"
+          aria-label="OtakuStreams Home"
+        >
+          <img
+            src={AppLogo}
+            alt=""
+            className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md"
+          />
+          <img
+            src={theme === "light" ? LightLogo : DarkLogo}
+            alt="OtakuStreams"
+            className="h-6 sm:h-7 object-contain drop-shadow-md"
+          />
+        </Link>
+
+        {/* Top-Right Controls */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Theme Switcher */}
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-10 h-10 rounded-full bg-surface/80 hover:bg-elevated border border-border/80 text-foreground flex items-center justify-center transition-all shadow-xs backdrop-blur-md cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          {/* Back to Login Button */}
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface/80 hover:bg-elevated border border-border/80 text-xs font-semibold text-foreground transition-all backdrop-blur-md shadow-xs focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to login</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 flex-1 flex flex-col justify-center py-6 lg:pb-12 lg:pt-4">
+        
+        {/* 12-Column Grid Aligned at Bottom */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end">
+          
+          {/* Left Column: Story Copy Aligned to Bottom/End of Panel */}
+          <div className="hidden lg:flex lg:col-span-6 flex-col justify-end space-y-3.5 text-left max-w-xl pb-2">
+            <div className="flex items-center gap-1.5 text-accent font-sans">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-cyan-400 dark:text-cyan-300">
+                START YOUR ADVENTURE
+              </span>
+            </div>
+
+            <h2 className="font-display font-black text-4xl lg:text-5xl text-foreground leading-[1.1] tracking-tight drop-shadow-md">
+              Your anime journey<br />
+              begins with a single<br />
+              frame.
+            </h2>
+
+            <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed max-w-md">
+              Create your account to unlock sync across all your devices, track your watchlists, and discover new anime.
+            </p>
+          </div>
+
+          {/* Right Column: Registration Panel */}
+          <div className="w-full lg:col-span-6 flex justify-center lg:justify-end">
+            <div className="w-full max-w-md lg:max-w-[440px] bg-surface/85 backdrop-blur-2xl border border-border/80 rounded-t-[24px] sm:rounded-3xl shadow-lift p-5 sm:p-8 lg:p-10 text-left transition-all duration-300">
+              
+              {/* Panel Top Status Row */}
+              <div className="flex items-center justify-between mb-5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/80 border border-border/80 text-[11px] font-medium text-foreground/90 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  Quick registration
+                </span>
+                <span className="text-xs text-muted-foreground font-sans">Join the community</span>
+              </div>
+
+              {/* Panel Heading */}
+              <div className="space-y-1 mb-6">
+                <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">
+                  Create your account.
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
+                  Join OtakuStreams to save your watchlist and personalize your streaming experience.
+                </p>
+              </div>
+
+              {/* Form-Level General Error Alert */}
+              {error && (
+                <Alert
+                  role="alert"
+                  className="mb-5 border-destructive/40 bg-destructive/10 text-destructive dark:bg-destructive/20 backdrop-blur-sm rounded-xl"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <AlertDescription className="text-xs font-medium">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Registration Form */}
+              <form id="register-form" onSubmit={handleSubmit} noValidate aria-busy={loading} className="space-y-4">
+                
+                {/* Username Field */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="username" className="text-xs sm:text-sm font-semibold text-foreground">
+                    Username
+                  </Label>
+                  <div className="relative group">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
+                    <Input
+                      id="username"
+                      name="username"
+                      type="text"
+                      placeholder="OtakuKing99"
+                      maxLength={50}
+                      value={formData.username}
+                      onChange={handleChange}
+                      disabled={loading}
+                      aria-invalid={errors.username ? "true" : "false"}
+                      aria-describedby={errors.username ? "username-error" : undefined}
+                      className={`pl-11 pr-4 h-[52px] rounded-xl bg-background/60 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/60 text-xs sm:text-sm font-sans transition-all ${
+                        errors.username ? "border-destructive focus:border-destructive focus:ring-destructive/20" : ""
+                      }`}
+                    />
+                  </div>
+                  {errors.username && (
+                    <p id="username-error" className="text-xs text-destructive font-medium flex items-center gap-1.5 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.username}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Email Address Field */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs sm:text-sm font-semibold text-foreground">
+                    Email address
+                  </Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      maxLength={255}
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={loading}
+                      aria-invalid={errors.email ? "true" : "false"}
+                      aria-describedby={errors.email ? "email-error" : undefined}
+                      className={`pl-11 pr-4 h-[52px] rounded-xl bg-background/60 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/60 text-xs sm:text-sm font-sans transition-all ${
+                        errors.email ? "border-destructive focus:border-destructive focus:ring-destructive/20" : ""
+                      }`}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p id="email-error" className="text-xs text-destructive font-medium flex items-center gap-1.5 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.email}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs sm:text-sm font-semibold text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="At least 8 characters"
+                      maxLength={128}
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={loading}
+                      aria-invalid={errors.password ? "true" : "false"}
+                      aria-describedby={errors.password ? "password-error" : undefined}
+                      className={`pl-11 pr-12 h-[52px] rounded-xl bg-background/60 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/60 text-xs sm:text-sm font-sans transition-all ${
+                        errors.password ? "border-destructive focus:border-destructive focus:ring-destructive/20" : ""
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p id="password-error" className="text-xs text-destructive font-medium flex items-center gap-1.5 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.password}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Terms Agreement Checkbox */}
+                <div className="space-y-1.5 pt-1">
+                  <label htmlFor="agreeTerms" className="flex items-start gap-2.5 cursor-pointer select-none py-1 min-h-[44px]">
+                    <Checkbox
+                      id="agreeTerms"
+                      checked={formData.agreeTerms}
+                      onCheckedChange={handleCheckboxChange}
+                      className="w-5 h-5 rounded-md border-input data-[state=checked]:bg-primary data-[state=checked]:border-primary mt-0.5"
+                    />
+                    <span className="text-xs text-foreground/90 font-medium leading-relaxed">
+                      I agree to the{" "}
+                      <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-primary hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                    </span>
+                  </label>
+                  {errors.agreeTerms && (
+                    <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.agreeTerms}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Primary Submit Button (52px height) */}
+                <Button
+                  type="submit"
+                  disabled={loading || isGoogleLoading}
+                  className="w-full h-[52px] rounded-xl brand-gradient text-white font-sans font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-glow hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 mt-3"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Create Account</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* Horizontal Divider */}
+              <div className="relative my-6 text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border/80" />
+                </div>
+                <div className="relative inline-block px-3 bg-surface text-[10px] sm:text-[11px] font-extrabold tracking-widest text-muted-foreground uppercase">
+                  OR CONTINUE WITH
+                </div>
+              </div>
+
+              {/* Google Sign Up Action (52px height) */}
+              <button
+                type="button"
+                onClick={handleGoogleSignUp}
+                disabled={loading || isGoogleLoading}
+                className="w-full h-[52px] rounded-xl bg-background/60 hover:bg-elevated border border-input text-foreground font-sans font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 shadow-xs focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    />
+                  </svg>
+                )}
+                <span>Continue with Google</span>
+              </button>
+
+              {/* Login Switch */}
+              <div className="mt-5 text-center text-xs sm:text-sm text-muted-foreground font-sans">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-bold text-primary hover:underline transition-colors"
+                >
+                  Sign in
+                </Link>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  );
 };
 
 export default Register;

@@ -19,7 +19,20 @@ const THREE_HOURS = 1000 * 60 * 60 * 3;
 export function AuthProvider({ children }) {
 
   const [user, setUser] = useState(null);
-  const [language, setLanguage] = useState("EN");
+  const [language, setLanguageState] = useState(() => {
+    try {
+      return localStorage.getItem("anime_language") || "EN";
+    } catch {
+      return "EN";
+    }
+  });
+
+  const setLanguage = useCallback((newLang) => {
+    setLanguageState(newLang);
+    try {
+      localStorage.setItem("anime_language", newLang);
+    } catch {}
+  }, []);
   const [continueWatching, setContinueWatching] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [notification, setNotification] = useState([]);
@@ -395,6 +408,16 @@ export function AuthProvider({ children }) {
     }
   }, [api])
 
+  const deleteNotification = useCallback(async (notificationId) => {
+    try {
+      await api.delete(`/notification/${notificationId}`);
+      setNotification((prev) => prev.filter((item) => item._id !== notificationId));
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+      setNotification((prev) => prev.filter((item) => item._id !== notificationId));
+    }
+  }, [api])
+
   const updateProgress = useCallback(
     async (progressData) => {
       if (!user) return;
@@ -542,6 +565,7 @@ export function AuthProvider({ children }) {
         updateSettings,
         markRead,
         clearNotifications,
+        deleteNotification,
         updateProgress,
         handleRandom,
       }}

@@ -26,6 +26,10 @@ const sections = [
 const PrivacyPolicy = () => {
   const [activeSection, setActiveSection] = useState("overview");
 
+  useEffect(() => {
+    document.title = "Privacy Policy — OtakuStreams";
+  }, []);
+
   // Track scroll position to update active section in Table of Contents
   useEffect(() => {
     const handleScroll = () => {

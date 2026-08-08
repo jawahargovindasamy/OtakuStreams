@@ -1,35 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
-import CardCarousel from "@/components/CardCarousel";
-import VerticalList from "@/components/VerticalList";
-import MediaCard from "@/components/MediaCard";
-import DateCarousel from "@/components/Datecarousel";
-import ScheduleEpisodeList from "@/components/ScheduleEpisodeList";
-
-import SectionHeader from "@/components/SectionHeader";
-import HomeSidebar from "@/components/HomeSidebar";
 import HomeSkeleton from "@/components/HomeSkeleton";
+import ContinueWatchingSection from "@/components/sections/ContinueWatchingSection";
+import TrendingSection from "@/components/sections/TrendingSection";
+import PopularSection from "@/components/sections/PopularSection";
+import NewReleasesSection from "@/components/sections/NewReleasesSection";
+import TopRatedSection from "@/components/sections/TopRatedSection";
+import GenreSection from "@/components/sections/GenreSection";
+import ScheduleSection from "@/components/sections/ScheduleSection";
+import MoviesSection from "@/components/sections/MoviesSection";
+import WatchlistSection from "@/components/sections/WatchlistSection";
+import RecentlyUpdatedSection from "@/components/sections/RecentlyUpdatedSection";
 
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
-import ContinueWatchingCard from "@/components/ContinueWatchingCard";
 
 const Home = () => {
   /* -------------------- HOOKS (ALWAYS FIRST) -------------------- */
-  const { homedata } = useData();
+  const { homedata, fetchHomedata } = useData();
   const { continueWatching } = useAuth();
+  const location = useLocation();
 
   const [showAll, setShowAll] = useState(false);
-  const [scheduledAnimes, setScheduledAnimes] = useState([]);
   const [top10Animes, setTop10Animes] = useState("today");
-  
+
+  // Lazy fetch homedata if not already loaded
+  useEffect(() => {
+    if (!homedata) {
+      fetchHomedata();
+    }
+  }, [homedata, fetchHomedata]);
+
+  // Smooth scroll to section from navigation state or URL hash
+  useEffect(() => {
+    const targetSection = location.state?.scrollToSection || (window.location.hash ? window.location.hash.replace("#", "") : null);
+    if (targetSection) {
+      const element = document.getElementById(targetSection);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth" });
+          if (window.location.hash) {
+            window.history.replaceState(null, "", window.location.pathname);
+          }
+        }, 150);
+      }
+    }
+  }, [location.state]);
+
+  // Set document title for Home page
+  useEffect(() => {
+    document.title = "OtakuStreams — Watch Anime Online in HD";
+  }, []);
 
   /* -------------------- DATA -------------------- */
   const data = homedata?.data;
-  
+
   /* -------------------- LOADING STATE -------------------- */
   if (!data) {
     return (
@@ -49,126 +78,39 @@ const Home = () => {
       <Navbar />
 
       <main className="flex-1 w-full">
-        <Hero />
+        <Hero spotlightAnimes={data.heroSpotlight} />
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10 lg:space-y-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-6 sm:space-y-8 lg:space-y-10">
 
-          {/* Trending Section */}
-          <section className="space-y-4 sm:space-y-5 w-full">
-            <SectionHeader title="Trending" link="/trending" />
-            <div className="w-full">
-              <CardCarousel animes={data.trendingAnimes} showRank loop hideRating hideYear />
-            </div>
-          </section>
+          {/* Band #2: Continue Watching Section */}
+          <ContinueWatchingSection items={continueWatching} />
 
-          {/* Grid Sections - Top Lists */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 w-full">
-            <VerticalList
-              anime={data.topAiringAnimes}
-              title="Top Airing"
-              link="/top-airing"
-            />
-            <VerticalList
-              anime={data.mostPopularAnimes}
-              title="Most Popular"
-              link="/most-popular"
-            />
-            <VerticalList
-              anime={data.mostFavoriteAnimes}
-              title="Most Favorite"
-              link="/most-favorite"
-            />
-            <VerticalList
-              anime={data.latestCompletedAnimes}
-              title="Completed"
-              link="/completed"
-            />
-          </section>
+          {/* Band #3: Editorial Trending Section */}
+          <TrendingSection animes={data.trendingAnimes} />
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px] gap-6 sm:gap-8 lg:gap-10 w-full">
+          {/* Band #4: Popular This Week Leaderboard Section */}
+          <PopularSection animes={data.mostPopularAnimes} />
 
-            {/* Main Column */}
-            <div className="space-y-8 sm:space-y-10 min-w-0">
+          {/* Band #5: New Releases Horizontal Snap Rail Section */}
+          <NewReleasesSection animes={data.newReleaseAnimes} />
 
-              {continueWatching.length > 0 && (
-                <section className="space-y-4 sm:space-y-5 w-full">
-                  <SectionHeader
-                    title="Continue Watching"
-                    icon
-                    link={continueWatching.length > 5 ? "/continue-watching" : undefined}
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                    {continueWatching.slice(0,5).map((item, index) => (
-                      <ContinueWatchingCard
-                        key={`${item._id}-${index}`}
-                        item={item}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
+          {/* Band #6: Top Rated of All Time Bento Gallery Wall Section */}
+          <TopRatedSection animes={data.topRatedAnimes} />
 
-              {/* Latest Episodes */}
-              <section className="space-y-4 sm:space-y-5 w-full">
-                <SectionHeader
-                  title="Latest Episodes"
-                  icon
-                  link="/recently-updated"
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                  {data.latestEpisodeAnimes.map((a, index) => (
-                    <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year}  />
-                  ))}
-                </div>
-              </section>
+          {/* Band #7: Browse by Genre Color Doors Section */}
+          <GenreSection />
 
-              {/* Schedule Section */}
-              <section className="space-y-4 sm:space-y-5 bg-card/30 rounded-2xl p-4 sm:p-6 border border-border/50 w-full">
-                <SectionHeader title="Estimated Schedule" time />
-                <DateCarousel onScheduleChange={setScheduledAnimes} />
-                <ScheduleEpisodeList animes={scheduledAnimes} />
-              </section>
+          {/* Band #8: Airing Schedule Broadcast Board Section */}
+          <ScheduleSection />
 
-              {/* Top Upcoming */}
-              <section className="space-y-4 sm:space-y-5 w-full">
-                <SectionHeader
-                  title="Top Upcoming"
-                  icon
-                  link="/top-upcoming"
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 w-full">
-                  {data.topUpcomingAnimes.map((a, index) => (
-                    <MediaCard key={`${a.id}-${index}`} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year}  />
-                  ))}
-                </div>
-              </section>
-            </div>
+          {/* Band #9: Anime Movies Cinema Lobby Section */}
+          <MoviesSection initialMovies={data.moviesAnimes} />
 
-            {/* Sidebar - Desktop */}
-            <aside className="hidden lg:block space-y-6 w-full">
-              <div className="sticky top-24 space-y-6">
-                <HomeSidebar
-                  data={data}
-                  showAll={showAll}
-                  setShowAll={setShowAll}
-                  top10Animes={top10Animes}
-                  setTop10Animes={setTop10Animes}
-                />
-              </div>
-            </aside>
-          </div>
+          {/* Band #10: Your Watchlist Personal Shelf Section */}
+          <WatchlistSection />
 
-          {/* Sidebar - Mobile/Tablet */}
-          <section className="block lg:hidden w-full">
-            <HomeSidebar
-              data={data}
-              showAll={showAll}
-              setShowAll={setShowAll}
-              top10Animes={top10Animes}
-              setTop10Animes={setTop10Animes}
-            />
-          </section>
+          {/* Band #11: Recently Updated Release Feed Section */}
+          <RecentlyUpdatedSection initialAnimes={data.recentlyUpdatedAnimes} />
         </div>
       </main>
 

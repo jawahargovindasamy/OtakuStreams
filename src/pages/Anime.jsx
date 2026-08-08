@@ -1,263 +1,226 @@
-import AnimeDetails from '@/components/AnimeDetails';
-import Navbar from '@/components/Navbar';
-import { useData } from '@/context/data-provider';
-import React, { useCallback, useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Loader2, Users, ThumbsUp, Flame, ChevronDown, ChevronUp } from 'lucide-react';
-import CharactersSection from '@/components/CharactersSection';
-import SectionHeader from '@/components/SectionHeader';
-import SeasonsSection from '@/components/SeasonsSection';
-import VerticalList from '@/components/VerticalList';
-import MediaCard from '@/components/MediaCard';
-import Footer from '@/components/Footer';
-import { useAuth } from '@/context/auth-provider';
-import { slugify } from '@/lib/utils';
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+import CinematicHero from "@/components/anime/CinematicHero";
+import StoryFactsSection from "@/components/anime/StoryFactsSection";
+import SeasonsSection from "@/components/SeasonsSection";
+import CharactersGallery from "@/components/anime/CharactersGallery";
+import ProductionStaffSection from "@/components/anime/ProductionStaffSection";
+import FranchiseRelationsSection from "@/components/anime/FranchiseRelationsSection";
+import RecommendationsSection from "@/components/anime/RecommendationsSection";
+import MobileStickyWatchBar from "@/components/anime/MobileStickyWatchBar";
+import AnimeSkeleton from "@/components/anime/AnimeSkeleton";
+
+import { useData } from "@/context/data-provider";
+import { useAuth } from "@/context/auth-provider";
+import { slugify, getAnimeTitle } from "@/lib/utils";
 
 const Anime = () => {
-    const { id } = useParams();
-    const { continueWatching } = useAuth();
-    const { fetchanimeinfo, fetchepisodeinfo, fetchnextepisodeschedule } = useData();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const [loading, setLoading] = useState(true);
-    const [item, setItem] = useState(null);
-    const [nextEpisode, setNextEpisode] = useState(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+  const { continueWatching, language } = useAuth();
+  const { fetchanimeinfo, fetchepisodeinfo } = useData();
 
-    const [showAllPopular, setShowAllPopular] = useState(false);
-    const navigate = useNavigate();
-    const location = useLocation();
+  const [loading, setLoading] = useState(true);
+  const [item, setItem] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-    const preload = location.state?.animeInfo;
+  const heroWatchRef = useRef(null);
+  const [showStickyWatch, setShowStickyWatch] = useState(false);
 
-    let formatted = 0;
+  const preload = location.state?.animeInfo;
 
-    if (nextEpisode?.airingTimestamp) {
-        formatted = new Date(nextEpisode.airingTimestamp).toLocaleString("en-US", {
-            timeZone: "Asia/Kolkata",
-            month: "numeric",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-        });
-    }
+  // Load Anime Details
+  useEffect(() => {
+    let mounted = true;
 
-    useEffect(() => {
-        let mounted = true;
-        const getAnimeInfo = async () => {
-            if (preload) {
-                setItem(preload);
-                setLoading(false);
-                return;
-            }
-            setLoading(true);
-            try {
-                const data = await fetchanimeinfo(id);
-                if (mounted) {
-                    if (!data) {
-                        navigate("/home");
-                        return;
-                    }
-                    setItem(data);
+    const getAnimeInfo = async () => {
+      if (preload) {
+        setItem(preload);
+        setLoading(false);
+        return;
+      }
 
-                    // Replace URL with actual MAL ID and Name if it was accessed via route string
-                    if (data?.anime?.info?.id && isNaN(id)) {
-                        const actualId = data.anime.info.id;
-                        const actualName = data.anime.info.name || data.anime.info.jname || "anime";
-                        const newUrl = `/${slugify(actualName)}/${actualId}`;
-                        navigate(newUrl, { replace: true });
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch anime:", error);
-            } finally {
-                if (mounted) setLoading(false);
-            }
+      setLoading(true);
+      try {
+        const data = await fetchanimeinfo(id);
+        if (mounted) {
+          if (!data) {
+            navigate("/home");
+            return;
+          }
+          setItem(data);
+
+          // Canonical Slug Redirection
+          const media = data?.Media || data?.anime?.info;
+          if (media?.id && isNaN(id)) {
+            const actualId = media.id;
+            const actualName = media.title?.english || media.name || "anime";
+            const newUrl = `/${slugify(actualName)}/${actualId}`;
+            navigate(newUrl, { replace: true });
+          }
         }
-        getAnimeInfo();
-        return () => {
-            mounted = false;
-        };
-    }, [id, fetchanimeinfo, preload]);
+      } catch (error) {
+        console.error("Failed to fetch anime detail:", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
+    getAnimeInfo();
 
-    const handlePlay = useCallback(
-        async (id) => {
-            setIsPlaying(true);
+    return () => {
+      mounted = false;
+    };
+  }, [id, fetchanimeinfo, preload, navigate]);
 
-            try {
-                const data = await fetchepisodeinfo(id);
-                if (data?.data?.episodes?.length > 0) {
-
-                    const progress = continueWatching.find((item) => item.animeId === id.toString());
-
-                    const episodeToPlay = progress
-                        ? `/watch/${id}/${progress.currentEpisode}`
-                        : `/watch/${id}/${data.data.episodes[0].number}`;
-
-                    navigate(episodeToPlay, {
-                        state: {
-                            animeId: id,
-                            episodeList: data.data,
-                            animeInfo: item,
-                            server: progress?.server,
-                            dub: progress?.dub
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error(err);
-                setIsPlaying(false);
-            }
-        },
-        [fetchepisodeinfo, navigate, item, continueWatching]
+  // Mobile Sticky Watch Bar Observer
+  useEffect(() => {
+    if (!heroWatchRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyWatch(!entry.isIntersecting);
+      },
+      { threshold: 0.1 }
     );
+    observer.observe(heroWatchRef.current);
+    return () => observer.disconnect();
+  }, [loading]);
 
-    useEffect(() => {
-        const handlefetchnextepisodeschedule = async () => {
-            try {
-                const data = await fetchnextepisodeschedule(id);
-                if (data) {
-                    setNextEpisode(data);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-        handlefetchnextepisodeschedule();
-    }, [id]);
+  // Check Continue Watching Progress
+  const progress = continueWatching.find((cw) => cw.animeId === id?.toString() || cw.animeId === Number(id));
 
-
-    // Loading skeleton
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
-                <Navbar />
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-                            <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
-                        </div>
-                        <p className="text-muted-foreground animate-pulse text-sm">Loading anime details...</p>
-                    </div>
-                </div>
-            </div>
-        );
+  // Direct Watch Action Handler (No Episodes List UI)
+  const handleWatchClick = useCallback(async () => {
+    setIsPlaying(true);
+    try {
+      if (progress) {
+        navigate(`/watch/${id}/${progress.currentEpisode}`, {
+          state: { animeId: id, animeInfo: item, server: progress.server, dub: progress.dub },
+        });
+      } else {
+        const epData = await fetchepisodeinfo(id);
+        const firstEp = epData?.data?.episodes?.[0]?.number || 1;
+        navigate(`/watch/${id}/${firstEp}`, {
+          state: { animeId: id, animeInfo: item, episodeList: epData?.data },
+        });
+      }
+    } catch (err) {
+      console.error("Watch trigger failed:", err);
+      // Fallback navigation to episode 1
+      navigate(`/watch/${id}/1`, { state: { animeId: id, animeInfo: item } });
+    } finally {
+      setIsPlaying(false);
     }
+  }, [id, progress, fetchepisodeinfo, navigate]);
 
-    const hasCharacters = item?.anime?.info?.charactersVoiceActors && item?.anime?.info?.charactersVoiceActors.length > 0;
-    const hasRecommended = item?.recommendedAnimes && item?.recommendedAnimes.length > 0;
-    const hasPopular = item?.mostPopularAnimes && item?.mostPopularAnimes.length > 0;
-    const popularCount = item?.mostPopularAnimes?.length || 0;
+  useEffect(() => {
+    if (!item) return;
+    const media = item?.Media || item?.anime?.info || item?.info || {};
+    const title = getAnimeTitle(media, language);
+    if (title) {
+      document.title = `${title} — OtakuStreams`;
+    } else {
+      document.title = "Anime Details — OtakuStreams";
+    }
+  }, [item, language]);
 
-    return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-            <Navbar />
-            <main className="flex-1 w-full">
-                <AnimeDetails
-                    anime={item?.anime}
-                    handlePlay={handlePlay}
-                    isPlaying={isPlaying}
-                    nextEpisodeTime={formatted}
-                    id={id}
-                />
+  if (loading) {
+    return <AnimeSkeleton />;
+  }
 
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">
-                    <div className={`grid grid-cols-1 ${hasPopular ? 'lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_380px]' : ''} gap-6 sm:gap-8 lg:gap-10 w-full`}>
-                        {/* Main Column */}
-                        <div className="space-y-8 sm:space-y-10 min-w-0">
-                            {/* Seasons Section */}
-                            {item?.anime?.info?.id && (
-                                <SeasonsSection animeId={item.anime.info.id} />
-                            )}
+  // Normalize Data from AniList GraphQL or homedata provider
+  const media = item?.Media || item?.anime?.info || item?.info || {};
+  const moreInfo = item?.anime?.moreInfo || {};
+  const animeData = {
+    ...media,
+    moreInfo,
+    format: media?.format || media?.type || media?.stats?.type || "TV",
+    description: media?.description || item?.anime?.info?.description || "",
+    poster: media?.coverImage?.extraLarge || media?.coverImage?.large || media?.poster || item?.anime?.info?.poster,
+    bannerImage: media?.bannerImage || item?.anime?.info?.bannerImage || item?.anime?.info?.banner || item?.bannerImage || item?.banner || null,
+  };
 
-                            {/* Characters Section */}
-                            {hasCharacters && (
-                                <CharactersSection charactersVoiceActors={item?.anime?.info?.charactersVoiceActors} />
-                            )}
+  // Extract Collections
+  const characters =
+    media?.characters?.edges ||
+    item?.anime?.info?.charactersVoiceActors ||
+    item?.charactersVoiceActors ||
+    [];
 
-                            {/* Recommended Section */}
-                            {hasRecommended && (
-                                <section className="space-y-4 sm:space-y-5 w-full">
-                                    <SectionHeader title="Recommended For You" icon={ThumbsUp} />
-                                    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${hasPopular ? 'xl:grid-cols-5' : 'lg:grid-cols-5 xl:grid-cols-6'} gap-3 sm:gap-4 w-full`}>
-                                        {item?.recommendedAnimes.map((a) => (
-                                            <MediaCard key={a.id} id={a.id} name={a.name} jname={a.jname} poster={a.poster} type={a.type} rating={a.rating} year={a.year} />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-                        </div>
+  const staff =
+    media?.staff?.edges ||
+    item?.anime?.info?.staff ||
+    item?.staff ||
+    [];
 
-                        {/* Sidebar Column */}
-                        {hasPopular && (
-                            <aside className="space-y-6 sm:space-y-8 min-w-0">
-                                {/* Most Popular */}
-                                <section className="space-y-3 sm:space-y-4">
-                                    <SectionHeader title="Most Popular" icon={Flame} />
-                                    <div className="bg-card/30 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm overflow-hidden">
-                                        <div className="max-h-175 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 sm:p-4">
-                                            <VerticalList
-                                                anime={item?.mostPopularAnimes}
-                                                list={showAllPopular ? popularCount : 5}
-                                            />
-                                        </div>
-                                        {popularCount > 5 && (
-                                            <div className="p-2 border-t border-border/50 bg-card/50">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setShowAllPopular(!showAllPopular)}
-                                                    className="w-full text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 group"
-                                                >
-                                                    <span className="text-xs font-medium">
-                                                        {showAllPopular ? 'Show Less' : `Show More (${popularCount - 5})`}
-                                                    </span>
-                                                    {showAllPopular ? (
-                                                        <ChevronUp className="w-3 h-3 ml-1 group-hover:-translate-y-0.5 transition-transform" />
-                                                    ) : (
-                                                        <ChevronDown className="w-3 h-3 ml-1 group-hover:translate-y-0.5 transition-transform" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
-                            </aside>
-                        )}
-                    </div>
-                </div>
-            </main>
+  const relations =
+    media?.relations?.edges ||
+    item?.anime?.info?.relations ||
+    item?.relations ||
+    [];
 
+  const recommendations =
+    media?.recommendations?.nodes ||
+    item?.recommendedAnimes ||
+    [];
 
-            <Footer />
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <Navbar />
 
-            {/* Custom Scrollbar Styles */}
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 5px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: hsl(var(--primary) / 0.3);
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--primary) / 0.5);
-                }
-                .custom-scrollbar {
-                    scrollbar-width: thin;
-                    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
-                }
-            `}</style>
-        </div>
-    )
-}
+      <main className="flex-1 w-full">
+        {/* Band 1: Cinematic Hero (min-h-[92svh]) */}
+        <CinematicHero
+          anime={animeData}
+          onWatchClick={handleWatchClick}
+          isPlaying={isPlaying}
+          progress={progress}
+          heroWatchRef={heroWatchRef}
+        />
 
-export default Anime
+        {/* Band 2: Story & Essential Facts (1.3fr Story / 0.7fr Facts) */}
+        <StoryFactsSection anime={animeData} />
+
+        {/* Band 3: More Seasons (Chronological Franchise Timeline) */}
+        {id && (
+          <section className="w-full border-y border-border/70 bg-card/20 py-6 sm:py-8 text-foreground font-sans">
+            <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10">
+              <SeasonsSection animeId={id} />
+            </div>
+          </section>
+        )}
+
+        {/* Band 4: Characters Gallery (Cast with Voice Actor Plates) */}
+        {characters.length > 0 && <CharactersGallery characters={characters} />}
+
+        {/* Band 4: Production & Staff */}
+        {staff.length > 0 && <ProductionStaffSection staff={staff} />}
+
+        {/* Band 5: Franchise & Relations */}
+        {relations.length > 0 && <FranchiseRelationsSection relations={relations} />}
+
+        {/* Band 6: Recommendations */}
+        {recommendations.length > 0 && <RecommendationsSection recommendations={recommendations} />}
+      </main>
+
+      {/* Mobile Sticky Watch Bar */}
+      <MobileStickyWatchBar
+        anime={animeData}
+        onWatchClick={handleWatchClick}
+        show={showStickyWatch}
+        progress={progress}
+      />
+
+      <Footer />
+    </div>
+  );
+};
+
+export default Anime;

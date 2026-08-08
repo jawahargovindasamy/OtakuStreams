@@ -3,19 +3,16 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { useData } from "@/context/data-provider";
-import { Play, ChevronRight } from "lucide-react";
+import { Play, Bookmark, Heart, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-provider";
-import { slugify } from "@/lib/utils";
+import { slugify, getAnimeTitle } from "@/lib/utils";
 import HeroSkelton from "./HeroSkelton";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import WatchlistDropdown from "./WatchlistDropdown";
+import { toast } from "sonner";
 
 const ANILIST_QUERY = `
 query ($page: Int, $perPage: Int) {
@@ -38,6 +35,17 @@ query ($page: Int, $perPage: Int) {
       format
       episodes
       seasonYear
+      studios {
+        edges {
+          isMain
+          node {
+            name
+          }
+        }
+        nodes {
+          name
+        }
+      }
       nextAiringEpisode {
         episode
       }
@@ -46,134 +54,257 @@ query ($page: Int, $perPage: Int) {
 }
 `;
 
+const getStudioName = (item) => {
+  if (!item) return "Anime Studio";
+  if (typeof item.studios === "string") return item.studios;
+  if (Array.isArray(item.studios) && item.studios.length > 0) {
+    const first = item.studios[0];
+    if (typeof first === "string") return first;
+    if (first?.name) return first.name;
+  }
+  const mainEdge = item.studios?.edges?.find((e) => e.isMain);
+  if (mainEdge?.node?.name) return mainEdge.node.name;
+  if (item.studios?.nodes?.[0]?.name) return item.studios.nodes[0].name;
+  if (item.studios?.edges?.[0]?.node?.name) return item.studios.edges[0].node.name;
+  return "Anime Studio";
+};
+
 const HeroSlide = memo(({ item, index, language, handlePlay, isPlaying, navigate }) => {
-  const [isNavigating, setIsNavigating] = useState(false);
-  const { fetchanimeinfo } = useData();
-
+  const { user, continueWatching, watchlist, addWatchlist, removeWatchlist } = useAuth();
   const mediaId = item.id;
-  const animeTitle = language === "EN" ? (item.title.english || item.title.romaji) : (item.title.romaji || item.title.english);
-  const isDesktop = useMediaQuery("(min-width: 640px)");
-  const bannerImage = isDesktop ? (item.bannerImage || item.coverImage?.extraLarge) : (item.coverImage?.extraLarge || item.bannerImage);
-  const accentColor = item.coverImage?.color || "hsl(var(--primary))";
-  const displayEpisodes = item.nextAiringEpisode ? item.nextAiringEpisode.episode - 1 : item.episodes;
+  const animeTitle = getAnimeTitle(item, language);
+  const bannerImage = item.bannerImage || item.coverImage?.extraLarge;
+  const studioName = getStudioName(item);
+  const displayEpisodes = item.nextAiringEpisode ? `${item.nextAiringEpisode.episode - 1} episodes` : (item.episodes ? `${item.episodes} episodes` : "Ongoing");
+  const cleanDescription = item.description ? item.description.replace(/<[^>]*>?/gm, '') : "";
 
-  const handleDetails = async () => {
-    if (isNavigating) return;
-    setIsNavigating(true);
+  // 1. Watch Progress Check from Auth / Continue Watching Context
+  const watchProgress = continueWatching?.find(
+    (cw) => cw.animeId === mediaId.toString() || cw.animeId === mediaId || cw._id === mediaId
+  );
+  const currentEp = watchProgress?.currentEpisode || watchProgress?.episodeNumber;
+
+  // 2. Watchlist Check from Auth / LocalStorage fallback
+  const [localWatchlist, setLocalWatchlist] = useState(() => {
     try {
-      const data = await fetchanimeinfo(mediaId);
-      if (data) {
-        navigate(`/${slugify(animeTitle)}/${mediaId}`, { state: { animeInfo: data } });
+      const list = JSON.parse(localStorage.getItem("otakustreams:watchlist") || "[]");
+      return list.some((i) => (i.id || i.animeId) === mediaId);
+    } catch {
+      return false;
+    }
+  });
+
+  const inWatchlist = user
+    ? watchlist?.some((w) => w.animeId === mediaId.toString() || w.animeId === mediaId)
+    : localWatchlist;
+
+  // 3. Favourite Check from LocalStorage
+  const [isFavourite, setIsFavourite] = useState(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem("otakustreams:favourites") || "[]");
+      return list.some((i) => i.id === mediaId);
+    } catch {
+      return false;
+    }
+  });
+
+  const handleCardClick = (e) => {
+    // If click originated on or inside a button, do not navigate to details
+    if (e.target.closest("button") || e.target.closest("a")) return;
+    navigate(`/${slugify(animeTitle)}/${mediaId}`);
+  };
+
+  const toggleWatchlist = async (e) => {
+    e.stopPropagation();
+    if (user && addWatchlist) {
+      try {
+        if (inWatchlist) {
+          const itemToRemove = watchlist.find((w) => w.animeId === mediaId.toString() || w.animeId === mediaId);
+          if (itemToRemove) await removeWatchlist(itemToRemove._id);
+          toast.success(`Removed ${animeTitle} from watchlist`);
+        } else {
+          await addWatchlist(mediaId.toString(), animeTitle, item.coverImage?.extraLarge, "plan_to_watch");
+          toast.success(`Added ${animeTitle} to watchlist`);
+        }
+      } catch (err) {
+        console.error(err);
       }
+    } else {
+      // LocalStorage fallback for guests
+      try {
+        const list = JSON.parse(localStorage.getItem("otakustreams:watchlist") || "[]");
+        let updated;
+        if (localWatchlist) {
+          updated = list.filter((i) => (i.id || i.animeId) !== mediaId);
+          toast.success(`Removed ${animeTitle} from watchlist`);
+        } else {
+          updated = [...list, { id: mediaId, animeId: mediaId, title: animeTitle, poster: item.coverImage?.extraLarge }];
+          toast.success(`Added ${animeTitle} to watchlist`);
+        }
+        localStorage.setItem("otakustreams:watchlist", JSON.stringify(updated));
+        setLocalWatchlist(!localWatchlist);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const toggleFavourite = (e) => {
+    e.stopPropagation();
+    try {
+      const list = JSON.parse(localStorage.getItem("otakustreams:favourites") || "[]");
+      let updated;
+      if (isFavourite) {
+        updated = list.filter((i) => i.id !== mediaId);
+        toast.success(`Removed ${animeTitle} from favourites`);
+      } else {
+        updated = [...list, { id: mediaId, title: animeTitle }];
+        toast.success(`Added ${animeTitle} to favourites`);
+      }
+      localStorage.setItem("otakustreams:favourites", JSON.stringify(updated));
+      setIsFavourite(!isFavourite);
     } catch (err) {
       console.error(err);
-    } finally {
-      setIsNavigating(false);
     }
   };
 
   return (
     <CarouselItem className="relative h-full pl-0">
-      {/* Background Image with proper object coverage */}
+      {/* Full-bleed Backdrop Image */}
       <div className="absolute inset-0 overflow-hidden bg-background">
         <img
           src={bannerImage}
           alt={animeTitle}
-          className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105 opacity-60 sm:opacity-100"
+          className="h-full w-full object-cover object-center transition-transform duration-1000 scale-100 opacity-75 sm:opacity-90"
         />
-        {/* Multi-layered gradient for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent dark:from-background dark:via-background/40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent dark:from-background/95 dark:via-background/50" />
+        
+        {/* Scrim Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
       </div>
 
-      {/* Content Container */}
-      <div className="relative z-10 flex h-full items-end pb-8 sm:pb-12 lg:pb-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="max-w-2xl lg:max-w-3xl space-y-3 sm:space-y-4 lg:space-y-6">
-            
-            {/* Title */}
-            <h1 className="text-xl sm:text-3xl md:text-4xl font-bold leading-tight text-foreground drop-shadow-lg line-clamp-2 sm:line-clamp-2">
-              {animeTitle}
-            </h1>
-
-            {/* Metadata Row */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm sm:text-base font-medium text-muted-foreground drop-shadow-sm">
-              {[
-                item.averageScore && <span key="score" style={{ color: accentColor }} className="font-bold">{item.averageScore}%</span>,
-                item.seasonYear && <span key="year">{item.seasonYear}</span>,
-                item.format && <span key="format">{item.format.replace('_', ' ')}</span>,
-                displayEpisodes && <span key="episodes">{displayEpisodes} Episodes</span>,
-              ].filter(Boolean).map((element, index, array) => (
-                <React.Fragment key={index}>
-                  {element}
-                  {index < array.length - 1 && <span className="text-muted-foreground/60 text-xs sm:text-sm">•</span>}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Description */}
-            <div className="hidden lg:block">
-              <p 
-                className="text-base text-muted-foreground/90 line-clamp-3 max-w-prose leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: item.description }}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
-              <Button
-                disabled={isPlaying || isNavigating}
-                onClick={() => handlePlay(mediaId)}
-                style={{ backgroundColor: accentColor, borderColor: accentColor }}
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-5 sm:px-8 py-2.5 sm:py-3.5 text-sm sm:text-base font-bold text-white shadow-lg transition-all duration-300 hover:brightness-110 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isPlaying ? (
-                  <>
-                    <Spinner className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current transition-transform duration-300 group-hover:scale-110" />
-                    <span>
-                      {item.progress ? `Continue Ep ${item.progress.currentEpisode}` : 'Watch Now'}
-                    </span>
-                  </>
-                )}
-              </Button>
-
-              <Button
-                disabled={isNavigating || isPlaying}
-                onClick={handleDetails}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-secondary/80 px-5 sm:px-8 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-secondary-foreground backdrop-blur-md ring-1 ring-border/50 transition-all duration-300 hover:bg-secondary hover:ring-border hover:gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isNavigating ? (
-                  <>
-                    <Spinner className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Details</span>
-                    <ChevronRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </>
-                )}
-              </Button>
-            </div>
+      {/* Hero Content Container */}
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 h-full flex flex-col justify-center pt-14 sm:pt-20 pb-12 sm:pb-16">
+        
+        {/* Left-Anchored Glass Card (Clickable to navigate to anime details) */}
+        <div 
+          onClick={handleCardClick}
+          className="w-full max-w-xl lg:max-w-2xl bg-surface/85 backdrop-blur-2xl border border-border/80 hover:border-primary/50 rounded-2xl sm:rounded-[22px] shadow-lift p-4 sm:p-6 lg:p-8 space-y-2.5 sm:space-y-4 transition-all cursor-pointer group"
+        >
+          
+          {/* Eyebrow Row: Spotlight Badge + Format/Status */}
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full brand-gradient text-white text-[9px] sm:text-[10px] font-sans font-bold uppercase tracking-wider shadow-xs">
+              #{index + 1} SPOTLIGHT
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              {item.format ? item.format.replace("_", " ") : "TV"} · Airing
+            </span>
           </div>
+
+          {/* Title */}
+          <h1 className="font-display text-xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight tracking-tight line-clamp-2 group-hover:text-primary transition-colors">
+            {animeTitle}
+          </h1>
+
+          {/* Metadata Row */}
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium">
+            {item.averageScore && (
+              <span className="text-success font-bold flex items-center gap-1">
+                ★ {item.averageScore}%
+              </span>
+            )}
+            {item.seasonYear && <span className="text-muted-foreground">{item.seasonYear}</span>}
+            <span className="text-muted-foreground">{displayEpisodes}</span>
+            {studioName && <span className="text-muted-foreground">{studioName}</span>}
+          </div>
+
+          {/* Synopsis */}
+          <p className="text-subtle text-xs sm:text-sm leading-relaxed line-clamp-2 font-sans">
+            {cleanDescription || "An exciting new anime season full of romance, comedy, and unforgettable slice of life moments."}
+          </p>
+
+          {/* Genre Chips */}
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {item.genres?.slice(0, 3).map((genre) => (
+              <span
+                key={genre}
+                className="px-2 py-0.5 rounded-full bg-elevated border border-border/50 text-subtle text-[10px] sm:text-[11px] font-sans font-medium"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1.5">
+            {/* Primary CTA: Watch Now / Continue Ep N */}
+            <button
+              disabled={isPlaying}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlay(mediaId);
+              }}
+              className="h-9 sm:h-10 px-4 sm:px-5 rounded-full brand-gradient text-white font-sans font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-glow hover:opacity-95 active:scale-95 transition-all cursor-pointer disabled:opacity-70"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>
+                {isPlaying
+                  ? "Loading..."
+                  : currentEp
+                  ? `Continue Ep ${currentEp}`
+                  : "Watch now"}
+              </span>
+            </button>
+
+            {/* Secondary CTA: Watchlist Dropdown (5 Categories + Remove) */}
+            <WatchlistDropdown
+              animeId={mediaId}
+              animeTitle={animeTitle}
+              animeImage={item.coverImage?.extraLarge || bannerImage}
+              align="start"
+              side="bottom"
+            >
+              <button
+                type="button"
+                className={`h-9 sm:h-10 px-3.5 sm:px-4 rounded-full font-sans font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  inWatchlist
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "glass hover:bg-elevated border-border text-foreground"
+                }`}
+              >
+                {inWatchlist ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                <span>{inWatchlist ? "In watchlist" : "Add to watchlist"}</span>
+              </button>
+            </WatchlistDropdown>
+
+            {/* Favourite Icon Button */}
+            <button
+              onClick={toggleFavourite}
+              aria-label="Add to favourites"
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full glass border border-border flex items-center justify-center transition-all cursor-pointer ${
+                isFavourite ? "text-rose-500 border-rose-500/50 bg-rose-500/10" : "text-subtle hover:text-foreground hover:bg-elevated"
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${isFavourite ? "fill-rose-500 text-rose-500" : ""}`} />
+            </button>
+          </div>
+
         </div>
+
       </div>
     </CarouselItem>
   );
 });
-HeroSlide.displayName = 'HeroSlide';
 
-const Hero = () => {
-  const { fetchepisodeinfo, fetchanimeinfo } = useData();
+HeroSlide.displayName = "HeroSlide";
+
+const Hero = ({ spotlightAnimes }) => {
+  const { fetchepisodeinfo, fetchanimeinfo, fetchLandingTrending } = useData();
   const { continueWatching, language } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [trendingAnimes, setTrendingAnimes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [trendingAnimes, setTrendingAnimes] = useState(spotlightAnimes || []);
+  const [isLoading, setIsLoading] = useState(!spotlightAnimes || spotlightAnimes.length === 0);
   const [api, setApi] = useState();
   const [current, setCurrent] = useState(0);
 
@@ -181,58 +312,43 @@ const Hero = () => {
 
   const autoplay = useRef(
     Autoplay({
-      delay: 5000,
+      delay: 8000,
       stopOnMouseEnter: true,
-    }),
+    })
   );
 
   useEffect(() => {
+    let isMounted = true;
+
+    if (spotlightAnimes && spotlightAnimes.length > 0) {
+      if (isMounted) {
+        setTrendingAnimes(spotlightAnimes);
+        setIsLoading(false);
+      }
+      return;
+    }
+
     const fetchTrending = async () => {
       try {
-        const cachedStr = sessionStorage.getItem("hero_trending_animes");
-        if (cachedStr) {
-           const parsed = JSON.parse(cachedStr);
-           if (Date.now() - parsed.timestamp < 1000 * 60 * 60 * 5) {
-              setTrendingAnimes(parsed.data);
-              setIsLoading(false);
-              return;
-           }
-        }
-
-        const response = await fetch('https://graphql.anilist.co', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            query: ANILIST_QUERY,
-            variables: { page: 1, perPage: 15 }
-          })
-        });
-        const json = await response.json();
-        if (json.data && json.data.Page && json.data.Page.media) {
-          const mediaWithProgress = json.data.Page.media.map(media => {
-            const progress = continueWatching.find(pw => pw.animeId === media.id.toString());
-            return { ...media, progress };
-          });
-          setTrendingAnimes(mediaWithProgress);
-          try {
-             sessionStorage.setItem("hero_trending_animes", JSON.stringify({
-                data: mediaWithProgress,
-                timestamp: Date.now()
-             }));
-          } catch(e) {}
+        if (fetchLandingTrending) {
+          const items = await fetchLandingTrending();
+          if (isMounted && items && items.length > 0) {
+            setTrendingAnimes(items);
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch trending animes from AniList", err);
+        console.error("Failed to fetch trending animes from DataContext", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchTrending();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [spotlightAnimes, fetchLandingTrending]);
 
   const handlePlay = async (id) => {
     setIsPlaying(true);
@@ -240,7 +356,9 @@ const Hero = () => {
       const animeInfo = await fetchanimeinfo(id);
       const data = await fetchepisodeinfo(id);
       if (data?.data?.episodes?.length > 0) {
-        const progress = continueWatching.find((item) => item.animeId === id.toString());
+        const progress = continueWatching?.find(
+          (item) => item.animeId === id.toString() || item.animeId === id
+        );
         const episodeToPlay = progress
           ? `/watch/${id}/${progress.currentEpisode}`
           : `/watch/${id}/${data.data.episodes[0].number}`;
@@ -251,7 +369,7 @@ const Hero = () => {
             episodeList: data.data,
             animeInfo,
             server: progress?.server,
-            dub: progress?.dub
+            dub: progress?.dub,
           },
         });
       }
@@ -273,52 +391,75 @@ const Hero = () => {
   if (isLoading || !trendingAnimes.length) return <HeroSkelton />;
 
   return (
-    <Carousel
-      className="relative w-full"
-      plugins={[autoplay.current]}
-      setApi={setApi}
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-    >
-      <CarouselContent className="h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[calc(100vh-80px)] ml-0">
-        {trendingAnimes.map((item, index) => {
-          const progress = continueWatching.find(pw => pw.animeId === item.id.toString());
-          return (
-            <HeroSlide 
-              key={item.id} 
-              item={{ ...item, progress }} 
+    <div className="relative w-full overflow-hidden">
+      <Carousel
+        className="relative w-full"
+        plugins={[autoplay.current]}
+        setApi={setApi}
+        opts={{
+          align: "start",
+          loop: true,
+        }}
+      >
+        {/* Mobile height reduced to ~480px-520px for compact viewport fit */}
+        <CarouselContent className="h-[490px] sm:h-[580px] lg:h-[88vh] min-h-[460px] max-h-[760px] ml-0">
+          {trendingAnimes.map((item, index) => (
+            <HeroSlide
+              key={item.id}
+              item={item}
               index={index}
               language={language}
               handlePlay={handlePlay}
               isPlaying={isPlaying}
               navigate={navigate}
             />
-          );
-        })}
-      </CarouselContent>
+          ))}
+        </CarouselContent>
 
-      {/* Navigation Buttons */}
-      <CarouselPrevious className="left-2 sm:left-4 h-8 w-8 sm:h-12 sm:w-12 rounded-full border-border/50 bg-background/20 text-foreground backdrop-blur-md hover:bg-background/40 hover:border-border transition-all duration-200" />
-      <CarouselNext className="right-2 sm:right-4 h-8 w-8 sm:h-12 sm:w-12 rounded-full border-border/50 bg-background/20 text-foreground backdrop-blur-md hover:bg-background/40 hover:border-border transition-all duration-200" />
+        {/* Navigation Controls & Progress Indicators Bar */}
+        <div className="absolute bottom-2.5 sm:bottom-4 left-0 right-0 z-20">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center gap-3 sm:gap-4">
+            
+            {/* Prev / Next Buttons */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => api?.scrollPrev()}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full glass border border-border text-foreground hover:bg-elevated flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => api?.scrollNext()}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full glass border border-border text-foreground hover:bg-elevated flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
 
-      {/* Progress Indicators */}
-      <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 sm:gap-2">
-        {trendingAnimes.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => api?.scrollTo(idx)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              idx === current
-                ? "w-6 sm:w-8 bg-primary"
-                : "w-1.5 sm:w-2 bg-foreground/30 hover:bg-foreground/50"
-            }`}
-            aria-label={`Go to slide ${idx + 1}`}
-          />
-        ))}
-      </div>
-    </Carousel>
+            {/* 5 Slide Progress Bar Ticks */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {trendingAnimes.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => api?.scrollTo(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === current
+                      ? "w-6 sm:w-8 brand-gradient shadow-glow"
+                      : "w-3 sm:w-4 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                  }`}
+                  aria-label={`Go to spotlight ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+          </div>
+        </div>
+      </Carousel>
+    </div>
   );
 };
 

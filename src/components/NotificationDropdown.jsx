@@ -1,143 +1,177 @@
-import React, { useEffect, useState } from 'react';
-import { Bell, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Bell, Play, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/auth-provider";
+import { getAnimeTitle } from "@/lib/utils";
 
 dayjs.extend(relativeTime);
 
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuLabel
-} from "@/components/ui/dropdown-menu";
-
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from '@/context/auth-provider';
-
 const NotificationDropdown = ({ notifications = [] }) => {
-    const { fetchNotifications, markRead, continueWatching } = useAuth();
-    const unreadCount = notifications?.filter((n) => n.read === false).length || 0;
-    const [open, setOpen] = useState(false);
+  const { markRead, continueWatching, language } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
+  const unreadCount = notifications?.filter((n) => n.read === false).length || 0;
 
-    const handleNotificationClick = async (notificationId) => {
-        await markRead(notificationId);
+  const handleNotificationClick = async (item) => {
+    setOpen(false);
+    if (!item.read) {
+      await markRead(item._id);
     }
-
-    return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    className="relative rounded-full hover:bg-accent hover:text-accent-foreground transition-colors duration-200 cursor-pointer"
-                >
-                    <Bell className="h-5 w-5" strokeWidth={2} />
-                    {/* Badge */}
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-medium shadow-lg shadow-primary/25">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-                align="end"
-                className="w-80 sm:w-96 p-0 bg-popover/95 backdrop-blur-xl text-popover-foreground border border-border/50 rounded-xl overflow-hidden shadow-xl shadow-primary/10"
-            >
-                <div className="flex items-center justify-between px-4 py-3 bg-muted/50">
-                    <DropdownMenuLabel className="text-base font-semibold tracking-tight p-0">
-                        Notifications
-                    </DropdownMenuLabel>
-                    {unreadCount > 0 && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                            {unreadCount} new
-                        </span>
-                    )}
-                </div>
-
-                {/* Notification List */}
-                <div className="max-h-100 overflow-y-auto 
-                    scrollbar-thin scrollbar-track-transparent scrollbar-thumb-primary/20 hover:scrollbar-thumb-primary/50 scrollbar-thumb-rounded-full
-                    [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:transition-colors [&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:bg-primary/50"
-                >
-                    {notifications.length === 0 ? (
-                        <div className="p-8 text-center">
-                            <Bell className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" strokeWidth={1.5} />
-                            <p className="text-sm text-muted-foreground">
-                                No notifications yet
-                            </p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">
-                                We'll notify you when new episodes arrive
-                            </p>
-                        </div>
-                    ) : (
-                        notifications.map((item) => {
-                            const isUnread = item.read === false;
-                            const progress = continueWatching?.find((cw) => cw.animeId === item.animeId?.toString());
-                            return (
-                                <Link
-                                    key={item._id}
-                                    to={`/watch/${item.animeId}/${item.episode}`}
-                                    state={{
-                                        server: progress?.server,
-                                        dub: progress?.dub
-                                    }}
-                                    onClick={() => handleNotificationClick(item._id)}
-                                    className={`flex gap-3 px-4 py-3 transition-all duration-200 hover:bg-accent group ${isUnread ? "bg-primary/5" : "bg-transparent"}`}
-                                >
-                                    <div className="relative shrink-0">
-                                        <img
-                                            src={item.animeImage}
-                                            alt={item.animeTitle}
-                                            className="w-12 h-16 object-cover rounded-md shadow-md group-hover:shadow-lg transition-shadow duration-200"
-                                            loading="lazy"
-                                        />
-                                        {isUnread && (
-                                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-popover shadow-sm" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <span
-                                            className={`text-sm leading-snug line-clamp-2 ${isUnread
-                                                ? "text-foreground font-semibold"
-                                                : "text-muted-foreground"
-                                                }`}
-                                        >
-                                            {item.animeTitle}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground/80 mt-1 line-clamp-1">
-                                            {item.message || "New episode available NOW!"}
-                                        </span>
-                                        <span className="text-[11px] text-muted-foreground/60 mt-1 flex items-center gap-1">
-                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                            {dayjs(item.createdAt).fromNow()}
-                                        </span>
-                                    </div>
-                                </Link>
-                            );
-                        })
-                    )}
-                </div>
-
-                {/* Footer */}
-                {notifications.length > 0 && (
-                    <>
-                        <Separator className="bg-border/50" />
-                        <Link
-                            to="/notification"
-                            className="block text-center py-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200 font-medium"
-                        >
-                            View all notifications
-                        </Link>
-                    </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+    const progress = continueWatching?.find(
+      (cw) => (cw.animeId || cw.id) === (item.animeId || item.id)?.toString()
     );
+    navigate(`/watch/${item.animeId}/${item.episode || 1}`, {
+      state: {
+        server: progress?.server,
+        dub: progress?.dub,
+      },
+    });
+  };
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Notifications"
+          className="relative rounded-full hover:bg-card hover:text-foreground transition-all duration-200 cursor-pointer shadow-soft hover:shadow-glow"
+        >
+          <Bell className="h-5 w-5" strokeWidth={2} />
+          {/* Unread Pill Badge */}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-glow animate-pulse">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="w-84 sm:w-96 p-0 bg-background/95 backdrop-blur-2xl text-foreground border border-border/80 rounded-3xl overflow-hidden shadow-lift z-50"
+      >
+        {/* Dropdown Header */}
+        <div className="flex items-center justify-between px-5 py-4 bg-card/60 border-b border-border/60">
+          <DropdownMenuLabel className="text-base font-extrabold font-sans tracking-tight p-0 flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-primary/10 text-primary">
+              <Bell className="h-4 w-4" />
+            </div>
+            <span>Notifications</span>
+          </DropdownMenuLabel>
+          {unreadCount > 0 && (
+            <Badge className="bg-primary text-primary-foreground font-bold text-xs px-2.5 py-0.5 rounded-full shadow-glow">
+              {unreadCount} new
+            </Badge>
+          )}
+        </div>
+
+        {/* Notification Items List */}
+        <div className="max-h-[380px] overflow-y-auto p-3 space-y-2 no-scrollbar">
+          {notifications.length === 0 ? (
+            <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="p-3 rounded-full bg-primary/10 text-primary">
+                <Bell className="h-8 w-8" />
+              </div>
+              <p className="text-sm font-bold font-sans text-foreground">No notifications yet</p>
+              <p className="text-xs text-muted-foreground max-w-[220px]">
+                We'll notify you here as soon as new episodes are released!
+              </p>
+            </div>
+          ) : (
+            notifications.slice(0, 10).map((item) => {
+              const isUnread = item.read === false;
+              const title = getAnimeTitle(item, language) || item.animeTitle || "Anime Update";
+
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => handleNotificationClick(item)}
+                  className={`group flex items-center gap-3 p-2.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
+                    isUnread
+                      ? "border-primary/40 bg-primary/[0.04] shadow-soft hover:bg-primary/10"
+                      : "border-border/60 bg-card/40 hover:bg-card/80"
+                  }`}
+                >
+                  {/* Poster Thumbnail */}
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-16 aspect-[2/3] rounded-xl overflow-hidden bg-elevated">
+                      <img
+                        src={item.animeImage}
+                        alt={title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    {isUnread && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-glow ring-2 ring-primary/40 flex items-center justify-center z-20">
+                        <span className="w-1 h-1 bg-white rounded-full" />
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Content Details */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] gap-1 px-1.5 py-0 border-primary/30 text-primary bg-primary/10 font-semibold"
+                      >
+                        <Play className="h-2.5 w-2.5 fill-current" />
+                        E{item.episode || 1}
+                      </Badge>
+                    </div>
+
+                    <h4
+                      className={`truncate text-xs sm:text-sm font-semibold transition-colors group-hover:text-primary ${
+                        isUnread ? "text-foreground font-bold" : "text-muted-foreground"
+                      }`}
+                    >
+                      {title}
+                    </h4>
+
+                    <p className="text-[11px] text-muted-foreground/80 line-clamp-1 font-sans">
+                      {item.message || "New episode available NOW!"}
+                    </p>
+
+                    <div className="text-[10px] text-muted-foreground/60 font-sans">
+                      {dayjs(item.createdAt).fromNow()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Dropdown Footer Link */}
+        {notifications.length > 0 && (
+          <div className="p-3 border-t border-border/60 bg-card/40">
+            <Link
+              to="/notification"
+              onClick={() => setOpen(false)}
+              className="w-full h-9 rounded-xl text-xs font-bold text-primary hover:text-primary-foreground hover:bg-primary transition-all duration-200 flex items-center justify-center gap-1.5 border border-primary/20 hover:border-transparent cursor-pointer"
+            >
+              <span>View all notifications</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 };
 
 export default NotificationDropdown;

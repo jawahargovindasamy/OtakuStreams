@@ -11,7 +11,6 @@ const Profile          = lazy(() => import("./pages/Profile"));
 const ContinueWatching = lazy(() => import("./pages/ContinueWatching"));
 const Anime            = lazy(() => import("./pages/Anime"));
 const List             = lazy(() => import("./pages/List"));
-const AZ               = lazy(() => import("./pages/AZ"));
 const Genre            = lazy(() => import("./pages/Genre"));
 const Search           = lazy(() => import("./pages/Search"));
 const Producer         = lazy(() => import("./pages/Producer"));
@@ -78,7 +77,6 @@ function App() {
         <Route path="/watch/:id/:episodeNumber" element={<Watch />} />
         <Route path="/genre/:name"         element={<Genre />} />
         <Route path="/producer/:name"      element={<Producer />} />
-        <Route path="/az-list/:letter"     element={<AZ />} />
         <Route path="/search"              element={<Search />} />
         <Route path="/:name/:id"           element={<Anime />} />
         <Route path="/profile"             element={<Profile />} />

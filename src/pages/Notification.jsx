@@ -1,333 +1,415 @@
-import Navbar from '@/components/Navbar';
-import SecondaryNavbar from '@/components/SecondaryNavbar';
-import { useAuth } from '@/context/auth-provider';
-import { Link } from 'react-router-dom';
-import { slugify } from '@/lib/utils';
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { useAuth } from "@/context/auth-provider";
+import { getAnimeTitle, slugify } from "@/lib/utils";
 import {
-    Bell,
-    Check,
-    Trash2,
-    Clock,
-    ChevronRight,
-    Play,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Bell,
+  Check,
+  Trash2,
+  Clock,
+  Play,
+  CheckCircle2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import React, { useState, useMemo, useEffect } from 'react';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
 const Notification = () => {
-    const { notification, clearNotifications, markRead, continueWatching } = useAuth();
-    const [filter, setFilter] = useState('all');
-    const [localNotifications, setLocalNotifications] = useState([]);
+  const { notification, clearNotifications, markRead, deleteNotification, continueWatching, language } = useAuth();
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState("all"); // 'all' | 'unread' | 'read'
+  const [localNotifications, setLocalNotifications] = useState([]);
+  const [showClearModal, setShowClearModal] = useState(false);
 
+  useEffect(() => {
+    document.title = "Notifications — OtakuStreams";
+  }, []);
 
-    // Transform and enrich notification data
-    useEffect(() => {
-        if (notification && Array.isArray(notification)) {
-            const enriched = notification.map((item, index) => ({
-                ...item,
-                read: item.read ?? false,
-                createdAt: item.createdAt || new Date(Date.now() - index * 1000 * 60 * 60 * 2).toISOString(),
-                message: item.message || "New episode available NOW!",
-            }));
-            setLocalNotifications(enriched);
-        }
-    }, [notification]);
+  // Transform and enrich notification data
+  useEffect(() => {
+    if (notification && Array.isArray(notification)) {
+      const enriched = notification.map((item, index) => ({
+        ...item,
+        read: item.read ?? false,
+        createdAt: item.createdAt || new Date(Date.now() - index * 1000 * 60 * 60 * 2).toISOString(),
+        message: item.message || "New episode available NOW!",
+      }));
+      setLocalNotifications(enriched);
+    }
+  }, [notification]);
 
-    const filteredNotifications = useMemo(() => {
-        if (filter === 'unread') return localNotifications.filter(n => !n.read);
-        return localNotifications;
-    }, [localNotifications, filter]);
+  const filteredNotifications = useMemo(() => {
+    if (filter === "unread") return localNotifications.filter((n) => !n.read);
+    if (filter === "read") return localNotifications.filter((n) => n.read);
+    return localNotifications;
+  }, [localNotifications, filter]);
 
-    const unreadCount = localNotifications.filter(n => !n.read).length;
-    const readCount = localNotifications.filter(n => n.read).length;
+  const unreadCount = useMemo(
+    () => localNotifications.filter((n) => !n.read).length,
+    [localNotifications]
+  );
+  const readCount = useMemo(
+    () => localNotifications.filter((n) => n.read).length,
+    [localNotifications]
+  );
 
-    const handleClearAll = () => {
-        clearNotifications?.();
-        setLocalNotifications([]);
-    };
+  const handleClearAll = () => {
+    clearNotifications?.();
+    setLocalNotifications([]);
+    setShowClearModal(false);
+    toast.success("Notifications cleared");
+  };
 
-    const handleMarkAsRead =  async(e, id) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await markRead(id);
-        setLocalNotifications(prev =>
-            prev.map(n => n._id === id ? { ...n, read: true } : n)
-        );
-    };
-
-    const handleNavigate = (id) => {
-        // Mark as read when navigating
-        markRead?.(id);
-        setLocalNotifications(prev =>
-            prev.map(n => n._id === id ? { ...n, read: true } : n)
-        );
-    };
-
-    return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-            <Navbar />
-            <SecondaryNavbar />
-
-            <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-xl">
-                                <Bell className="h-8 w-8 text-primary" />
-                            </div>
-                            Notifications
-                        </h1>
-                        <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-                            Stay updated with your favorite anime releases
-                        </p>
-                    </div>
-
-                    {localNotifications.length > 0 && (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="gap-2 w-full sm:w-auto"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Clear all</span>
-                                    <span className="sm:hidden">Clear</span>
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-popover border-border max-w-md">
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle className="flex items-center gap-2 text-lg">
-                                        <div className="p-2 bg-destructive/10 rounded-full">
-                                            <Trash2 className="h-5 w-5 text-destructive" />
-                                        </div>
-                                        Clear all notifications?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription className="text-muted-foreground pt-2">
-                                        This will permanently remove all {localNotifications.length} notifications from your history.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className="gap-2">
-                                    <AlertDialogCancel className="bg-muted text-muted-foreground hover:bg-muted/80 border-0">
-                                        Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={handleClearAll}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        Clear all
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    )}
-                </div>
-
-                {/* Stats */}
-                {localNotifications.length > 0 && (
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
-                        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-3 sm:p-4 text-center sm:text-left">
-                            <div className="text-xl sm:text-2xl font-bold text-foreground">{localNotifications.length}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">Total</div>
-                        </div>
-                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center sm:text-left">
-                            <div className="text-xl sm:text-2xl font-bold text-primary">{unreadCount}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">Unread</div>
-                        </div>
-                        <div className="bg-muted/50 border border-border/50 rounded-xl p-3 sm:p-4 text-center sm:text-left">
-                            <div className="text-xl sm:text-2xl font-bold text-muted-foreground">{readCount}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">Read</div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Filter Tabs */}
-                {localNotifications.length > 0 && (
-                    <div className="flex items-center gap-1 mb-6 border-b border-border/50">
-                        <button
-                            onClick={() => setFilter('all')}
-                            className={`px-3 sm:px-4 py-3 text-sm font-medium transition-all cursor-pointer relative ${filter === 'all'
-                                ? 'text-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                        >
-                            All
-                            <Badge variant="secondary" className="ml-2 bg-muted text-muted-foreground text-xs">
-                                {localNotifications.length}
-                            </Badge>
-                            {filter === 'all' && (
-                                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setFilter('unread')}
-                            className={`px-3 sm:px-4 py-3 text-sm font-medium transition-all cursor-pointer relative ${filter === 'unread'
-                                ? 'text-primary'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                        >
-                            Unread
-                            {unreadCount > 0 && (
-                                <Badge className="ml-2 bg-primary text-primary-foreground text-xs">
-                                    {unreadCount}
-                                </Badge>
-                            )}
-                            {filter === 'unread' && (
-                                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                            )}
-                        </button>
-                    </div>
-                )}
-
-                {/* Notifications List */}
-                <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden shadow-sm">
-                    {filteredNotifications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 sm:py-20 px-4">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
-                                <Bell className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/30" strokeWidth={1.5} />
-                            </div>
-                            <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2 text-center">
-                                {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
-                            </h3>
-                            <p className="text-muted-foreground text-center max-w-md text-sm mb-6">
-                                {filter === 'unread'
-                                    ? "You've caught up! Check back later for new episode alerts."
-                                    : "We'll notify you when new episodes of your favorite anime are released."}
-                            </p>
-                            {filter === 'unread' && localNotifications.length > 0 && (
-                                <Button variant="outline" onClick={() => setFilter('all')}>
-                                    View all notifications
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <ScrollArea className="h-[500px] sm:h-[600px]">
-                            <div className="divide-y divide-border/50">
-                                {filteredNotifications.map((item) => {
-                                    const isUnread = !item.read;
-                                    const progress = continueWatching?.find((cw) => cw.animeId === item.animeId?.toString());
-                                    return (
-                                        <div
-                                            key={item._id}
-                                            className={`group flex items-start gap-3 sm:gap-4 p-3 sm:p-6 transition-all duration-200 hover:bg-accent/30 ${isUnread ? 'bg-primary/[0.03]' : 'bg-transparent'
-                                                }`}
-                                        >
-                                            {/* Image */}
-                                            <Link
-                                                to={`/${slugify(item.animeTitle || "")}/${item.animeId}`}
-                                                onClick={() => handleNavigate(item._id)}
-                                                className="relative shrink-0"
-                                            >
-                                                <img
-                                                    src={item.animeImage}
-                                                    alt={item.animeTitle}
-                                                    className="w-14 h-20 sm:w-20 sm:h-28 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-105"
-                                                    loading="lazy"
-                                                />
-                                                {isUnread && (
-                                                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 sm:w-4 sm:h-4 bg-primary rounded-full border-2 border-card shadow-sm" />
-                                                )}
-                                            </Link>
-
-                                            {/* Content */}
-                                            <div className="flex-1 min-w-0 pt-0.5 sm:pt-1">
-                                                <div className="flex items-start justify-between gap-2 sm:gap-4">
-                                                    <div className="flex-1 min-w-0">
-                                                        <Link
-                                                            to={`/watch/${item.animeId}/${item.episode}`}
-                                                            state={{
-                                                                server: progress?.server,
-                                                                dub: progress?.dub
-                                                            }}
-                                                            onClick={() => handleNavigate(item._id)}
-                                                            className="inline-block"
-                                                        >
-                                                            <div className="flex items-center gap-2 mb-1.5 sm:mb-2 flex-wrap">
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="text-[10px] sm:text-xs gap-1 px-1.5 sm:px-2.5 py-0.5 border-primary/30 text-primary bg-primary/5 hover:bg-primary/10"
-                                                                >
-                                                                    <Play className="h-3 w-3" />
-                                                                    New Episode
-                                                                </Badge>
-                                                                {isUnread && (
-                                                                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" />
-                                                                )}
-                                                            </div>
-                                                        </Link>
-
-                                                        <Link
-                                                            to={`/${slugify(item.animeTitle || "")}/${item.animeId}`}
-                                                            onClick={() => handleNavigate(item._id)}
-                                                        >
-                                                            <h3 className={`text-sm sm:text-lg font-semibold leading-tight mb-1 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors ${isUnread ? 'text-foreground' : 'text-muted-foreground'
-                                                                }`}>
-                                                                {item.animeTitle}
-                                                            </h3>
-                                                        </Link>
-
-                                                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
-                                                            {item.message}
-                                                        </p>
-
-                                                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground/70">
-                                                            <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                                            {dayjs(item.createdAt).fromNow()}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Actions */}
-                                                    <div className="flex flex-col items-end gap-2 shrink-0">
-                                                        {isUnread && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                                                onClick={(e) => handleMarkAsRead(e, item._id)}
-                                                                title="Mark as read"
-                                                            >
-                                                                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                            </Button>
-                                                        )}
-                                                        <Link
-                                                            to={`/${slugify(item.animeTitle || "")}/${item.animeId}`}
-                                                            onClick={() => handleNavigate(item._id)}
-                                                            className="p-1.5 sm:p-2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                                                        >
-                                                            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </ScrollArea>
-                    )}
-                </div>
-            </main>
-        </div>
+  const handleMarkAsRead = (id) => {
+    markRead?.(id);
+    setLocalNotifications((prev) =>
+      prev.map((n) => (n._id === id ? { ...n, read: true } : n))
     );
+  };
+
+  const handleDeleteNotification = (e, id) => {
+    e.stopPropagation();
+    deleteNotification?.(id);
+    setLocalNotifications((prev) => prev.filter((n) => n._id !== id));
+    toast.success("Notification deleted");
+  };
+
+  const handleCardClick = (item) => {
+    handleMarkAsRead(item._id);
+    const progress = continueWatching?.find(
+      (cw) => (cw.animeId || cw.id) === (item.animeId || item.id)?.toString()
+    );
+    navigate(`/watch/${item.animeId}/${item.episode || 1}`, {
+      state: {
+        server: progress?.server,
+        dub: progress?.dub,
+      },
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary">
+      {/* Skip to Content Link */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-xl focus:shadow-glow focus:outline-none text-sm font-semibold"
+      >
+        Skip to content
+      </a>
+
+      {/* 1. Shared Navbar */}
+      <header className="sticky top-0 z-40 w-full glass border-b border-glass-border">
+        <Navbar />
+      </header>
+
+      <main id="main" className="flex-1 w-full pb-16 lg:pb-24">
+        {/* 2. Library Hero Section (Matching Watchlist / Continue Watching design system) */}
+        <section
+          aria-labelledby="notification-hero-title"
+          className="relative w-full overflow-hidden border-b border-border pt-28 pb-10 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-10"
+        >
+          {/* Aurora Glow Layer */}
+          <div aria-hidden="true" className="aurora opacity-75 pointer-events-none" />
+
+          <div className="relative z-10 max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-6 lg:items-end">
+            {/* Identity & Stats */}
+            <div className="space-y-4">
+              <div className="text-xs font-bold uppercase tracking-[0.16em] text-primary font-sans flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                <span>Stay updated</span>
+              </div>
+              <h1
+                id="notification-hero-title"
+                className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl font-sans text-foreground"
+              >
+                Notifications
+              </h1>
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base max-w-xl font-sans">
+                Real-time alerts for new episode releases and updates on your favorite anime series.
+              </p>
+
+              {/* Stats Row (<dl>) */}
+              <dl className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-2">
+                <div className="space-y-0.5">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                    Total
+                  </dt>
+                  <dd className="font-display font-black text-2xl sm:text-3xl text-foreground tabular-nums">
+                    {localNotifications.length}
+                  </dd>
+                </div>
+                <div className="space-y-0.5">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                    Unread
+                  </dt>
+                  <dd className="font-display font-black text-2xl sm:text-3xl text-primary tabular-nums">
+                    {unreadCount}
+                  </dd>
+                </div>
+                <div className="space-y-0.5">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                    Read
+                  </dt>
+                  <dd className="font-display font-black text-2xl sm:text-3xl text-muted-foreground tabular-nums">
+                    {readCount}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Controls Cluster (Clear All Button) */}
+            <div className="flex items-center gap-3 self-start lg:self-end">
+              <Button
+                variant="outline"
+                disabled={localNotifications.length === 0}
+                onClick={() => setShowClearModal(true)}
+                className="rounded-full h-10 px-4 text-xs font-semibold border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Clear all
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Sticky Control Shell (Status Tabs) */}
+        <div className="sticky top-[64px] z-30 border-y border-border bg-background/85 backdrop-blur-xl">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10">
+            <div
+              role="tablist"
+              aria-label="Notification status"
+              className="no-scrollbar flex items-center gap-2 overflow-x-auto py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0"
+            >
+              {[
+                { key: "all", label: "All", count: localNotifications.length, icon: Bell },
+                { key: "unread", label: "Unread", count: unreadCount, icon: Play, tone: "text-primary" },
+                { key: "read", label: "Read", count: readCount, icon: CheckCircle2, tone: "text-muted-foreground" },
+              ].map((tab) => {
+                const isSelected = filter === tab.key;
+                const Icon = tab.icon;
+
+                return (
+                  <button
+                    key={tab.key}
+                    role="tab"
+                    aria-selected={isSelected}
+                    onClick={() => setFilter(tab.key)}
+                    className={`min-h-11 px-4 rounded-full text-sm font-semibold flex items-center gap-2 transition-all duration-200 shrink-0 cursor-pointer border ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-transparent shadow-glow"
+                        : "bg-card/50 border-border/80 text-muted-foreground hover:text-foreground hover:bg-card"
+                    }`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 ${isSelected ? "text-primary-foreground" : tab.tone || "text-muted-foreground"}`} />
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-full ${
+                        isSelected ? "bg-white/20 text-primary-foreground" : "bg-elevated text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Collection Content Section */}
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 pt-8">
+          {/* Collection Header */}
+          <div className="flex items-baseline justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-black sm:text-2xl font-sans text-foreground tracking-tight">
+                {filter === "all" ? "All alerts" : filter === "unread" ? "Unread updates" : "Read alerts"}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {filteredNotifications.length} {filteredNotifications.length === 1 ? "notification" : "notifications"}
+              </p>
+            </div>
+          </div>
+
+          {/* Accessible Live Region */}
+          <div className="sr-only" aria-live="polite">
+            {filteredNotifications.length} notifications shown
+          </div>
+
+          {/* Notifications List */}
+          {filteredNotifications.length > 0 ? (
+            <div className="space-y-3">
+              {filteredNotifications.map((item) => {
+                const isUnread = !item.read;
+                const title = getAnimeTitle(item, language) || item.animeTitle || "Anime Update";
+
+                return (
+                  <div
+                    key={item._id}
+                    onClick={() => handleCardClick(item)}
+                    className={`group flex items-center gap-4 p-3 sm:p-4 rounded-2xl border transition-all duration-200 cursor-pointer ${
+                      isUnread
+                        ? "border-primary/40 bg-primary/[0.04] shadow-soft"
+                        : "border-border/80 bg-card/50 hover:bg-card"
+                    }`}
+                  >
+                    {/* Poster Thumbnail */}
+                    <div className="relative shrink-0">
+                      <div className="w-14 h-20 aspect-[2/3] rounded-xl overflow-hidden bg-elevated">
+                        <img
+                          src={item.animeImage}
+                          alt={title}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                      {isUnread && (
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-background shadow-glow ring-2 ring-primary/40 flex items-center justify-center z-20">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Notification Details */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] sm:text-xs gap-1 px-2 py-0.5 border-primary/30 text-primary bg-primary/10 font-semibold"
+                        >
+                          <Play className="h-3 w-3 fill-current" />
+                          New Episode {item.episode ? `E${item.episode}` : ""}
+                        </Badge>
+                        {isUnread && (
+                          <Badge className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+
+                      <h3
+                        className={`truncate text-sm sm:text-base font-semibold transition-colors group-hover:text-primary ${
+                          isUnread ? "text-foreground font-bold" : "text-muted-foreground"
+                        }`}
+                      >
+                        {title}
+                      </h3>
+
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
+                        {item.message}
+                      </p>
+
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80 font-sans pt-0.5">
+                        <Clock className="h-3 w-3" />
+                        <span>{dayjs(item.createdAt).fromNow()}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions: Mark As Read & Delete */}
+                    <div className="shrink-0 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {isUnread && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsRead(item._id)}
+                          title="Mark as read"
+                          aria-label="Mark as read"
+                          className="p-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow transition-all duration-200 cursor-pointer"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteNotification(e, item._id)}
+                        title="Delete notification"
+                        aria-label="Delete notification"
+                        className="p-2.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Empty State Presentation */
+            <div className="py-20 text-center flex flex-col items-center justify-center space-y-4 bg-card/30 rounded-3xl border border-border/60 p-8 max-w-xl mx-auto">
+              <div className="p-4 rounded-full bg-primary/10 text-primary">
+                <Bell className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold font-sans text-foreground">
+                {filter === "unread" ? "No unread notifications" : "No notifications yet"}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                {filter === "unread"
+                  ? "You've caught up! Check back later for new episode alerts."
+                  : "We'll notify you here when new episodes of your favorite anime release."}
+              </p>
+              {filter === "unread" && localNotifications.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setFilter("all")}
+                  className="rounded-full text-xs font-semibold border-border hover:bg-elevated cursor-pointer"
+                >
+                  View all notifications
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Clear All Confirmation Modal */}
+      <Dialog open={showClearModal} onOpenChange={setShowClearModal}>
+        <DialogContent className="max-w-md bg-surface border-border rounded-3xl p-6 sm:p-7 shadow-lift">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-xl font-bold font-sans text-foreground">
+              Clear all notifications?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              This will permanently remove all {localNotifications.length} notifications from your history.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearModal(false)}
+              className="h-11 px-5 rounded-xl text-sm font-semibold border-border hover:bg-elevated cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleClearAll}
+              className="h-11 px-6 rounded-xl text-sm font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Clear all
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shared Footer */}
+      <Footer />
+    </div>
+  );
 };
 
 export default Notification;

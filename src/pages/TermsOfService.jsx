@@ -28,6 +28,10 @@ const sections = [
 const TermsOfService = () => {
   const [activeSection, setActiveSection] = useState("acceptance");
 
+  useEffect(() => {
+    document.title = "Terms of Service — OtakuStreams";
+  }, []);
+
   // Track scroll position to update active section in Table of Contents
   useEffect(() => {
     const handleScroll = () => {

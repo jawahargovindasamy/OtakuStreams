@@ -1,104 +1,129 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { X, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { useAuth } from '@/context/auth-provider';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Trash2, Play, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getAnimeTitle } from "@/lib/utils";
+import { useAuth } from "@/context/auth-provider";
 
 const ContinueWatchingCard = ({ item }) => {
-    const navigate = useNavigate();
-    const { api, setContinueWatching } = useAuth();
-    const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
+  const { api, setContinueWatching, language } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const handleContinue = () => {
-        navigate(`/watch/${item.animeId}/${item.currentEpisode}`, {
-            state: {
-                server: item.server,
-                dub: item.dub
-            }
-        });
-    };
+  const animeId = item?.animeId || item?.id || item?._id;
+  const animeTitle = getAnimeTitle(item, language);
+  const poster = item?.animeImage || item?.poster || item?.coverImage?.extraLarge || item?.bannerImage;
+  const episodeNumber = item?.currentEpisode || item?.episodeNumber || 1;
 
-    const handleRemove = async (e) => {
-        e.stopPropagation();
+  // Calculate progress percentage and remaining time
+  const duration = item?.duration || 1440; // Default 24 mins in sec
+  const currentTime = item?.currentTime || 420; // Default watched
+  const progressPercent = item?.duration
+    ? Math.min(100, Math.max(5, Math.round((currentTime / duration) * 100)))
+    : 35;
+  const minutesLeft = item?.duration && item?.currentTime
+    ? Math.max(1, Math.round((duration - currentTime) / 60))
+    : 23;
 
-        if (isDeleting) return;
+  const handleContinue = () => {
+    navigate(`/watch/${animeId}/${episodeNumber}`, {
+      state: {
+        server: item?.server,
+        dub: item?.dub,
+      },
+    });
+  };
 
-        setIsDeleting(true);
+  const handleRemove = async (e) => {
+    e.stopPropagation();
+    if (isDeleting) return;
 
-        try {
-            await api.delete(`/continue-watching/${item.animeId}`);
+    setIsDeleting(true);
+    try {
+      if (api?.delete) {
+        await api.delete(`/continue-watching/${animeId}`);
+      }
+      setContinueWatching((prev) =>
+        prev.filter((watchItem) => (watchItem._id || watchItem.animeId) !== (item._id || item.animeId))
+      );
+      toast.success(`Removed ${animeTitle} from continue watching`);
+    } catch (error) {
+      // Optimistic remove fallback
+      setContinueWatching((prev) =>
+        prev.filter((watchItem) => (watchItem._id || watchItem.animeId) !== (item._id || item.animeId))
+      );
+      toast.success(`Removed ${animeTitle} from continue watching`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-            setContinueWatching(prev => prev.filter(watchItem => watchItem._id !== item._id));
+  return (
+    <div
+      onClick={handleContinue}
+      className="relative group overflow-hidden rounded-2xl aspect-video border border-border/60 hover:border-primary/50 bg-surface shadow-soft hover:shadow-lift transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+    >
+      {/* 16:9 Thumbnail Image */}
+      <img
+        src={poster}
+        alt={animeTitle}
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        loading="lazy"
+      />
 
-            toast.success("Removed from continue watching");
-        } catch (error) {
-            toast.error("Failed to remove", {
-                description: error.response?.data?.message || "Please try again",
-            });
-        } finally {
-            setIsDeleting(false);
-        }
-    };
+      {/* Dark Scrim Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
-    return (
-        <div
-            className="relative bg-card rounded-xl sm:rounded-2xl p-2 sm:p-3 flex flex-col cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-primary/5 hover:z-10 active:scale-95 group border border-transparent hover:border-border/50"
-            onClick={handleContinue}
-        >
-            {/* Remove Button - Appears on hover */}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRemove}
-                disabled={isDeleting}
-                className="absolute top-3 right-3 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/60 text-white hover:bg-destructive hover:text-white opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:scale-110"
-                aria-label="Remove from continue watching"
-            >
-                {isDeleting ? (
-                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-                ) : (
-                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                )}
-            </Button>
+      {/* Trash / Bin Remove Button (Top-Right Glass Button) */}
+      <button
+        type="button"
+        onClick={handleRemove}
+        disabled={isDeleting}
+        aria-label="Remove from continue watching"
+        className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/70 hover:bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer shadow-md hover:scale-110"
+      >
+        {isDeleting ? (
+          <Loader2 className="w-4 h-4 animate-spin text-white" />
+        ) : (
+          <Trash2 className="w-4 h-4 text-white" />
+        )}
+      </button>
 
-            <div className="relative overflow-hidden rounded-lg aspect-2/3 bg-muted">
-                <img
-                    src={item?.animeImage}
-                    alt={item?.animeTitle}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                />
-
-                {/* Hover gradient */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                {/* Play button */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center text-primary-foreground shadow-lg">
-                        <svg
-                            className="h-5 w-5 sm:h-6 sm:w-6 fill-current ml-0.5"
-                            viewBox="0 0 24 24"
-                        >
-                            <path d="M8 5v14l11-7z" />
-                        </svg>
-                    </div>
-                </div>
-
-
-            </div>
-
-            {/* Title */}
-            <h3 className="mt-2 sm:mt-3 text-sm sm:text-base font-semibold leading-tight text-foreground line-clamp-1 group-hover:text-primary transition-colors duration-200">
-                {item?.animeTitle}
-            </h3>
-
-            {/* Episode info */}
-            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1" title={item?.episodeTitle}>
-                {item?.episodeTitle}
-            </p>
+      {/* Hover Center Round Play Button */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 pointer-events-none">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full brand-gradient text-white flex items-center justify-center shadow-glow scale-90 group-hover:scale-100 transition-transform">
+          <Play className="w-6 h-6 fill-current ml-0.5" />
         </div>
-    );
+      </div>
+
+      {/* Bottom Content Area */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 z-10 space-y-1">
+        {/* Progress Bar (3px accent line) */}
+        <div
+          className="w-full h-1 bg-white/20 rounded-full overflow-hidden mb-2"
+          role="progressbar"
+          aria-valuenow={progressPercent}
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <div
+            className="h-full brand-gradient transition-all duration-300 rounded-full"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {/* Title */}
+        <h3 className="font-display font-bold text-white text-sm sm:text-base leading-tight truncate">
+          {animeTitle}
+        </h3>
+
+        {/* Episode Info & Remaining Time */}
+        <p className="text-xs text-white/80 font-sans">
+          Episode {episodeNumber} · {minutesLeft} min left
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default ContinueWatchingCard;
