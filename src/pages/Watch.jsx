@@ -38,7 +38,6 @@ const Watch = () => {
     const [item, setItem] = useState(animeInfo ?? null);
     const [nextEpisode, setNextEpisode] = useState(null);
     const [episode, setEpisode] = useState(null);
-    const availabilityCacheRef = useRef({});
     const playerRef = useRef(null);
 
     const [loading, setLoading] = useState(!animeInfo);
@@ -248,34 +247,35 @@ const Watch = () => {
         const checkEpisode = async () => {
             setIsChecking(true);
             try {
-                const cacheKey = `${id}-${episodeNumber}`;
-                let data = availabilityCacheRef.current[cacheKey];
+                const malId = item?.anime?.info?.malId || "";
+                const response = await fetch(`/.netlify/functions/check-episode?animeId=${id}&episode=${episodeNumber}&malId=${malId}`);
 
-                if (!data && checkEpisodeAvailability) {
-                    const malId = item?.anime?.info?.malId || "";
-                    data = await checkEpisodeAvailability(id, episodeNumber, malId);
-                    if (data && data.success) {
-                        availabilityCacheRef.current[cacheKey] = data;
-                    }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                if (data && data.success) {
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new TypeError("Oops, we haven't got JSON!");
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
                     setIsAvailable(data.isAvailable);
                     setHasDub(data.hasDub);
-                    setDebugInfo(data.debugInfo || []);
+                    setDebugInfo(data.debug || data.debugInfo || []);
 
                     if (!data.hasDub && audioType === "dub") {
                         setActiveDub(null);
                         setActiveSub(subServers[0]);
                     }
                 } else {
-                    setIsAvailable(true);
-                    setHasDub(true);
+                    setIsAvailable(false);
                 }
             } catch (error) {
                 console.error("Episode check failed:", error);
-                setIsAvailable(true);
-                setHasDub(true);
+                setIsAvailable(false);
             } finally {
                 setIsChecking(false);
             }
@@ -284,7 +284,7 @@ const Watch = () => {
         if (id && episodeNumber) {
             checkEpisode();
         }
-    }, [id, episodeNumber, item, audioType, checkEpisodeAvailability]);
+    }, [id, episodeNumber, item, audioType]);
 
     useEffect(() => {
         const title = item ? getAnimeTitle(item?.Media || item?.anime?.info || item, language) : "";
