@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
 import { slugify, getAnimeTitle, isMatchingAnimeInfo } from '@/lib/utils';
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Users, ThumbsUp, Flame, ChevronDown, ChevronUp, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Maximize2, Minimize2, Bookmark, Heart, Share2, Check, Sparkles, X } from 'lucide-react';
 import SeasonsSection from '@/components/SeasonsSection';
 import EpisodeServer from '@/components/EpisodeServer';
@@ -33,7 +33,7 @@ const Watch = () => {
     const animeInfo = isMatchingAnimeInfo(rawAnimeInfo, id) ? rawAnimeInfo : null;
     const episodeList = isMatchingAnimeInfo(rawAnimeInfo, id) ? location.state?.episodeList : null;
 
-    const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver, fetchnextepisodeschedule, checkEpisodeAvailability } = useData();
+    const { fetchanimeinfo, fetchepisodeinfo, fetchnextepisodeschedule } = useData();
     const { updateProgress, user, preferences, updatePreferences, watchlist, addWatchlist, removeWatchlist, favourites, addFavourite, removeFavourite, language } = useAuth();
 
     const [item, setItem] = useState(animeInfo ?? null);
@@ -41,7 +41,7 @@ const Watch = () => {
     const [episode, setEpisode] = useState(null);
     const playerRef = useRef(null);
 
-    const [loading, setLoading] = useState(!animeInfo);
+    const [, setLoading] = useState(!animeInfo);
     const [isTheatre, setIsTheatre] = useState(false);
     const [autoNext, setAutoNext] = useState(() => preferences?.autoNext ?? true);
     const [copied, setCopied] = useState(false);
@@ -162,7 +162,6 @@ const Watch = () => {
         }
     }
     const [activeRaw, setActiveRaw] = useState(null);
-    const [searchParams, setSearchParams] = useSearchParams();
     const activeServerId = activeSub?.serverId || activeDub?.serverId || "hd-1";
 
     const currentEpisodeData = episode?.episodes?.find(
@@ -673,7 +672,6 @@ const Watch = () => {
 
     const iframeSrc = `/player.html?id=${id}&ep=${episodeNumber}&audio=${audioType}&server=${activeServerId}&malId=${item?.anime?.info?.malId || ""}`;
 
-    const hasRecommended = item?.recommendedAnimes?.length > 0;
     const hasPopular = item?.mostPopularAnimes?.length > 0;
     const popularCount = item?.mostPopularAnimes?.length || 0;
 
