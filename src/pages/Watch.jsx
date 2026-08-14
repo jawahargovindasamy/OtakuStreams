@@ -54,8 +54,6 @@ const Watch = () => {
     const completedRef = useRef(false);
     const autoNextTriggeredRef = useRef(false);
     const autoNextRef = useRef(autoNext);
-    const progressThrottleTimerRef = useRef(null);
-    const lastReportedTimeRef = useRef(0);
 
     // Sync autoNext state with preferences
     useEffect(() => {
@@ -472,8 +470,6 @@ const Watch = () => {
     useEffect(() => {
         completedRef.current = false;
         autoNextTriggeredRef.current = false;
-        lastReportedTimeRef.current = 0;
-        progressThrottleTimerRef.current = null;
 
         if (countdownTimerRef.current) {
             clearInterval(countdownTimerRef.current);
@@ -527,52 +523,22 @@ const Watch = () => {
                 return;
             }
 
-            // 3. Time & watching-log progress tracking
-            let currentTime = 0;
-            let duration = 0;
+            // 3. Fallback completion signal: percent >= 99%
             let percent = 0;
+            let duration = 0;
 
             if (data.event === "time") {
-                currentTime = Number(data.time ?? 0);
+                const currentTime = Number(data.time ?? 0);
                 duration = Number(data.duration ?? 0);
                 percent = Number(data.percent ?? (duration > 0 ? (currentTime / duration) * 100 : 0));
             } else if (data.type === "watching-log") {
-                currentTime = Number(data.currentTime ?? 0);
+                const currentTime = Number(data.currentTime ?? 0);
                 duration = Number(data.duration ?? 0);
                 percent = duration > 0 ? (currentTime / duration) * 100 : 0;
             }
 
-            if (duration > 0) {
-                // Fallback completion signal: percent >= 99%
-                if (percent >= 99) {
-                    handleEpisodeComplete();
-                    return;
-                }
-
-                // Throttled watch progress updates (at most every 20s)
-                const now = Date.now();
-                if (!progressThrottleTimerRef.current || (now - progressThrottleTimerRef.current >= 20000 && Math.abs(currentTime - lastReportedTimeRef.current) >= 15)) {
-                    lastReportedTimeRef.current = currentTime;
-                    progressThrottleTimerRef.current = now;
-
-                    const title = getAnimeTitle(item?.Media || item?.anime?.info || item, language) || item?.anime?.info?.name || "Anime";
-                    const poster = item?.anime?.info?.poster || item?.posterImage || item?.coverImage?.extraLarge || "";
-
-                    if (user && updateProgress && id && episodeNumber) {
-                        updateProgress({
-                            animeId: id,
-                            animeTitle: title,
-                            animeImage: poster,
-                            currentEpisode: parseInt(episodeNumber, 10),
-                            episodeNumber: parseInt(episodeNumber, 10),
-                            dub: audioType === "dub" ? "yes" : "no",
-                            server: activeServerId,
-                            currentTime: Math.floor(currentTime),
-                            duration: Math.floor(duration),
-                            completed: false
-                        });
-                    }
-                }
+            if (duration > 0 && percent >= 99) {
+                handleEpisodeComplete();
             }
         };
 
@@ -580,7 +546,7 @@ const Watch = () => {
         return () => {
             window.removeEventListener("message", handleMessage);
         };
-    }, [handleEpisodeComplete, item, language, user, updateProgress, id, episodeNumber, audioType, activeServerId]);
+    }, [handleEpisodeComplete]);
 
     useEffect(() => {
         const title = item ? getAnimeTitle(item?.Media || item?.anime?.info || item, language) : "";
