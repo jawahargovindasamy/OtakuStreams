@@ -68,3 +68,26 @@ export function getAnimeTitle(item, language = "EN") {
 
   return englishTitle || japaneseTitle || "Anime Title";
 }
+
+/**
+ * Checks whether an anime item or preload object matches a target ID.
+ * 
+ * @param {Object} info - Anime object or preloaded state
+ * @param {String|Number} targetId - Target anime ID to compare against
+ * @returns {Boolean} True if any associated ID matches targetId
+ */
+export function isMatchingAnimeInfo(info, targetId) {
+  if (!info || !targetId) return false;
+  const targetStr = targetId.toString();
+
+  const possibleIds = [
+    info?.id,
+    info?.anime?.info?.id,
+    info?.anime?.info?.malId,
+    info?.Media?.id,
+    info?.info?.id,
+    info?.malId,
+  ];
+
+  return possibleIds.some((val) => val !== undefined && val !== null && val.toString() === targetStr);
+}

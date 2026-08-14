@@ -17,7 +17,7 @@ import AnimeSkeleton from "@/components/anime/AnimeSkeleton";
 
 import { useData } from "@/context/data-provider";
 import { useAuth } from "@/context/auth-provider";
-import { slugify, getAnimeTitle } from "@/lib/utils";
+import { slugify, getAnimeTitle, isMatchingAnimeInfo } from "@/lib/utils";
 
 const Anime = () => {
   const { id } = useParams();
@@ -35,13 +35,14 @@ const Anime = () => {
   const [showStickyWatch, setShowStickyWatch] = useState(false);
 
   const preload = location.state?.animeInfo;
+  const isPreloadValid = isMatchingAnimeInfo(preload, id);
 
   // Load Anime Details
   useEffect(() => {
     let mounted = true;
 
     const getAnimeInfo = async () => {
-      if (preload) {
+      if (isPreloadValid && preload) {
         setItem(preload);
         setLoading(false);
         return;

@@ -1,10 +1,10 @@
 import EpisodesList from '@/components/EpisodesList';
 import Navbar from '@/components/Navbar';
 import { useData } from '@/context/data-provider';
-import { slugify, getAnimeTitle } from '@/lib/utils';
+import { slugify, getAnimeTitle, isMatchingAnimeInfo } from '@/lib/utils';
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Users, ThumbsUp, Flame, ChevronDown, ChevronUp, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Maximize2, Minimize2, Bookmark, Heart, Share2, Check, Sparkles } from 'lucide-react';
+import { Users, ThumbsUp, Flame, ChevronDown, ChevronUp, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Maximize2, Minimize2, Bookmark, Heart, Share2, Check, Sparkles, X } from 'lucide-react';
 import SeasonsSection from '@/components/SeasonsSection';
 import EpisodeServer from '@/components/EpisodeServer';
 import SectionHeader from '@/components/SectionHeader';
@@ -29,8 +29,9 @@ const Watch = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const episodeList = location.state?.episodeList;
-    const animeInfo = location.state?.animeInfo;
+    const rawAnimeInfo = location.state?.animeInfo;
+    const animeInfo = isMatchingAnimeInfo(rawAnimeInfo, id) ? rawAnimeInfo : null;
+    const episodeList = isMatchingAnimeInfo(rawAnimeInfo, id) ? location.state?.episodeList : null;
 
     const { fetchanimeinfo, fetchepisodeinfo, fetchepisodeserver, fetchnextepisodeschedule, checkEpisodeAvailability } = useData();
     const { updateProgress, user, preferences, updatePreferences, watchlist, addWatchlist, removeWatchlist, favourites, addFavourite, removeFavourite, language } = useAuth();
@@ -44,6 +45,28 @@ const Watch = () => {
     const [isTheatre, setIsTheatre] = useState(false);
     const [autoNext, setAutoNext] = useState(() => preferences?.autoNext ?? true);
     const [copied, setCopied] = useState(false);
+
+    // Auto Next & Playback State
+    const [showAutoNext, setShowAutoNext] = useState(false);
+    const [countdown, setCountdown] = useState(5);
+    const [nextEpisodeInfo, setNextEpisodeInfo] = useState(null);
+    const countdownTimerRef = useRef(null);
+    const completedRef = useRef(false);
+    const autoNextTriggeredRef = useRef(false);
+    const autoNextRef = useRef(autoNext);
+    const progressThrottleTimerRef = useRef(null);
+    const lastReportedTimeRef = useRef(0);
+
+    // Sync autoNext state with preferences
+    useEffect(() => {
+        if (preferences?.autoNext !== undefined) {
+            setAutoNext(preferences.autoNext);
+        }
+    }, [preferences?.autoNext]);
+
+    useEffect(() => {
+        autoNextRef.current = autoNext;
+    }, [autoNext]);
 
     const [audioType, setAudioType] = useState(() => {
         if (location.state?.dub) return location.state.dub === "yes" ? "dub" : "sub";
@@ -81,9 +104,8 @@ const Watch = () => {
         setNextEpisode(null);
         setLoading(true);
 
-        const stateAnimeId = location.state?.animeInfo?.id?.toString() || location.state?.animeInfo?.malId?.toString();
-        if (stateAnimeId && stateAnimeId === id) {
-            setItem(location.state.animeInfo);
+        if (isMatchingAnimeInfo(rawAnimeInfo, id)) {
+            setItem(rawAnimeInfo);
             setLoading(false);
 
             const newAudioType = location.state?.dub ? (location.state.dub === "yes" ? "dub" : "sub") : (preferences?.audio || "sub");
@@ -286,6 +308,281 @@ const Watch = () => {
         }
     }, [id, episodeNumber, item, audioType]);
 
+    // Determine the next valid episode
+    const getNextEpisode = useCallback(() => {
+        const currentNum = parseInt(episodeNumber, 10);
+        if (isNaN(currentNum)) return null;
+
+        // 1. Check in fetched episodes list (episode?.episodes)
+        if (episode?.episodes && episode.episodes.length > 0) {
+            const currentIndex = episode.episodes.findIndex(
+                (ep) => parseInt(ep.number, 10) === currentNum || ep.number?.toString() === episodeNumber
+            );
+            if (currentIndex !== -1 && currentIndex < episode.episodes.length - 1) {
+                const nextEp = episode.episodes[currentIndex + 1];
+                return {
+                    number: parseInt(nextEp.number, 10),
+                    title: nextEp.title || `Episode ${nextEp.number}`,
+                    isFiller: nextEp.isFiller || false,
+                    poster: item?.anime?.info?.poster || item?.posterImage || ""
+                };
+            }
+            if (currentIndex === episode.episodes.length - 1) {
+                // Final episode reached
+                return null;
+            }
+        }
+
+        // 2. Check in route state episodeList
+        if (episodeList && episodeList.length > 0) {
+            const currentIndex = episodeList.findIndex(
+                (ep) => parseInt(ep.number, 10) === currentNum || ep.number?.toString() === episodeNumber
+            );
+            if (currentIndex !== -1 && currentIndex < episodeList.length - 1) {
+                const nextEp = episodeList[currentIndex + 1];
+                return {
+                    number: parseInt(nextEp.number, 10),
+                    title: nextEp.title || `Episode ${nextEp.number}`,
+                    isFiller: nextEp.isFiller || false,
+                    poster: item?.anime?.info?.poster || item?.posterImage || ""
+                };
+            }
+            if (currentIndex === episodeList.length - 1) {
+                return null;
+            }
+        }
+
+        // 3. Fallback based on total episodes count
+        const totalEps = episode?.totalEpisodes || 
+                         item?.anime?.info?.stats?.episodes?.sub || 
+                         item?.anime?.info?.stats?.episodes?.dub || 
+                         item?.episodes?.sub || 0;
+
+        if (totalEps && currentNum < totalEps) {
+            return {
+                number: currentNum + 1,
+                title: `Episode ${currentNum + 1}`,
+                poster: item?.anime?.info?.poster || item?.posterImage || ""
+            };
+        }
+
+        return null;
+    }, [episodeNumber, episode, episodeList, item]);
+
+    // Handle genuine episode completion (complete event or >= 99% progress)
+    const handleEpisodeComplete = useCallback(() => {
+        if (completedRef.current) return;
+        completedRef.current = true;
+
+        const title = getAnimeTitle(item?.Media || item?.anime?.info || item, language) || item?.anime?.info?.name || "Anime";
+        const poster = item?.anime?.info?.poster || item?.posterImage || item?.coverImage?.extraLarge || "";
+
+        // 1. Mark episode completed in user watch history/progress
+        if (user && updateProgress && id && episodeNumber) {
+            updateProgress({
+                animeId: id,
+                animeTitle: title,
+                animeImage: poster,
+                currentEpisode: parseInt(episodeNumber, 10),
+                episodeNumber: parseInt(episodeNumber, 10),
+                dub: audioType === "dub" ? "yes" : "no",
+                server: activeServerId,
+                completed: true,
+                percent: 100
+            });
+        }
+
+        // 2. Check if Auto Next is enabled (Single source of truth)
+        if (!autoNextRef.current) {
+            // Auto Next is disabled: do NOT show countdown, do NOT navigate, remain on current episode
+            return;
+        }
+
+        // 3. Find if a valid next episode exists
+        const nextEp = getNextEpisode();
+        if (!nextEp) {
+            // Final episode: no next episode to navigate to
+            return;
+        }
+
+        // 4. Start 5-second countdown overlay (guard against multiple timers)
+        if (autoNextTriggeredRef.current) return;
+        autoNextTriggeredRef.current = true;
+
+        setNextEpisodeInfo(nextEp);
+        setCountdown(5);
+        setShowAutoNext(true);
+
+        if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+        }
+
+        countdownTimerRef.current = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(countdownTimerRef.current);
+                    countdownTimerRef.current = null;
+                    setShowAutoNext(false);
+                    navigate(`/watch/${id}/${nextEp.number}`, { state: location.state });
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, [item, language, user, updateProgress, id, episodeNumber, audioType, activeServerId, getNextEpisode, navigate, location.state]);
+
+    // Play Now handler: immediate transition to next episode
+    const handlePlayNow = useCallback(() => {
+        if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+        }
+        setShowAutoNext(false);
+        if (nextEpisodeInfo) {
+            navigate(`/watch/${id}/${nextEpisodeInfo.number}`, { state: location.state });
+        }
+    }, [nextEpisodeInfo, id, navigate, location.state]);
+
+    // Cancel handler: stop auto next countdown, remain on current episode (autoNext preference stays ON)
+    const handleCancelAutoNext = useCallback(() => {
+        if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+        }
+        setShowAutoNext(false);
+    }, []);
+
+    // Toggle Auto Next preference handler
+    const handleToggleAutoNext = useCallback(() => {
+        const updated = !autoNext;
+        setAutoNext(updated);
+        autoNextRef.current = updated;
+        updatePreferences?.({ autoNext: updated });
+
+        // If disabled while countdown is running, immediately cancel the countdown
+        if (!updated && showAutoNext) {
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+            }
+            setShowAutoNext(false);
+        }
+    }, [autoNext, showAutoNext, updatePreferences]);
+
+    // Reset guards and timers on episode / anime change
+    useEffect(() => {
+        completedRef.current = false;
+        autoNextTriggeredRef.current = false;
+        lastReportedTimeRef.current = 0;
+        progressThrottleTimerRef.current = null;
+
+        if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+        }
+        setShowAutoNext(false);
+        setCountdown(5);
+        setNextEpisodeInfo(null);
+
+        return () => {
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+            }
+        };
+    }, [id, episodeNumber]);
+
+    // MegaPlay Player Events Listener (time, complete, watching-log, error)
+    useEffect(() => {
+        const handleMessage = (event) => {
+            let data = event.data;
+            if (typeof data === "string") {
+                try {
+                    data = JSON.parse(data);
+                } catch {
+                    return;
+                }
+            }
+            if (!data || typeof data !== "object") return;
+
+            // Validate source and recognized events
+            const isFromPlayer =
+                data.source === "megaplay-bridge" ||
+                data.channel === "megacloud" ||
+                data.event === "time" ||
+                data.event === "complete" ||
+                data.event === "ended" ||
+                data.type === "watching-log" ||
+                data.event === "error";
+
+            if (!isFromPlayer) return;
+
+            // 1. Error handling: do not trigger completion
+            if (data.event === "error" || data.type === "error") {
+                return;
+            }
+
+            // 2. Primary completion signal: complete / ended
+            if (data.event === "complete" || data.type === "complete" || data.event === "ended" || data.type === "ended") {
+                handleEpisodeComplete();
+                return;
+            }
+
+            // 3. Time & watching-log progress tracking
+            let currentTime = 0;
+            let duration = 0;
+            let percent = 0;
+
+            if (data.event === "time") {
+                currentTime = Number(data.time ?? 0);
+                duration = Number(data.duration ?? 0);
+                percent = Number(data.percent ?? (duration > 0 ? (currentTime / duration) * 100 : 0));
+            } else if (data.type === "watching-log") {
+                currentTime = Number(data.currentTime ?? 0);
+                duration = Number(data.duration ?? 0);
+                percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+            }
+
+            if (duration > 0) {
+                // Fallback completion signal: percent >= 99%
+                if (percent >= 99) {
+                    handleEpisodeComplete();
+                    return;
+                }
+
+                // Throttled watch progress updates (at most every 20s)
+                const now = Date.now();
+                if (!progressThrottleTimerRef.current || (now - progressThrottleTimerRef.current >= 20000 && Math.abs(currentTime - lastReportedTimeRef.current) >= 15)) {
+                    lastReportedTimeRef.current = currentTime;
+                    progressThrottleTimerRef.current = now;
+
+                    const title = getAnimeTitle(item?.Media || item?.anime?.info || item, language) || item?.anime?.info?.name || "Anime";
+                    const poster = item?.anime?.info?.poster || item?.posterImage || item?.coverImage?.extraLarge || "";
+
+                    if (user && updateProgress && id && episodeNumber) {
+                        updateProgress({
+                            animeId: id,
+                            animeTitle: title,
+                            animeImage: poster,
+                            currentEpisode: parseInt(episodeNumber, 10),
+                            episodeNumber: parseInt(episodeNumber, 10),
+                            dub: audioType === "dub" ? "yes" : "no",
+                            server: activeServerId,
+                            currentTime: Math.floor(currentTime),
+                            duration: Math.floor(duration),
+                            completed: false
+                        });
+                    }
+                }
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+        return () => {
+            window.removeEventListener("message", handleMessage);
+        };
+    }, [handleEpisodeComplete, item, language, user, updateProgress, id, episodeNumber, audioType, activeServerId]);
+
     useEffect(() => {
         const title = item ? getAnimeTitle(item?.Media || item?.anime?.info || item, language) : "";
         if (title && episodeNumber) {
@@ -319,7 +616,7 @@ const Watch = () => {
         let isMounted = true;
 
         const getAnimeInfo = async () => {
-            if (animeInfo && item) return;
+            if (isMatchingAnimeInfo(item, id)) return;
             setLoading(true);
             try {
                 const data = await fetchanimeinfo(id);
@@ -342,7 +639,7 @@ const Watch = () => {
         return () => {
             isMounted = false;
         };
-    }, [id, animeInfo, fetchanimeinfo, navigate, item]);
+    }, [id, fetchanimeinfo, navigate, item]);
 
     useEffect(() => {
         let isMounted = true;
@@ -428,12 +725,91 @@ const Watch = () => {
                                 </div>
                             ) : isAvailable ? (
                                 isCurrentServerWorking() ? (
-                                    <iframe
-                                        src={iframeSrc}
-                                        title={`${item?.anime?.info?.name || "Anime"} - Episode ${episodeNumber}`}
-                                        allowFullScreen
-                                        className="absolute inset-0 w-full h-full border-0 bg-black"
-                                    />
+                                    <>
+                                        <iframe
+                                            src={iframeSrc}
+                                            title={`${item?.anime?.info?.name || "Anime"} - Episode ${episodeNumber}`}
+                                            allowFullScreen
+                                            className="absolute inset-0 w-full h-full border-0 bg-black"
+                                        />
+
+                                        {/* Hotstar-Style Floating Next Episode Card (Bottom-Right, non-blocking) */}
+                                        {showAutoNext && nextEpisodeInfo && (
+                                            <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+                                                <div className="flex items-center gap-3 bg-[#0c0f1d]/95 hover:bg-[#12162a] border border-white/15 hover:border-indigo-500/50 backdrop-blur-xl rounded-2xl p-2.5 sm:p-3 shadow-[0_12px_40px_rgba(0,0,0,0.8)] transition-all duration-200 group max-w-[340px] sm:max-w-[380px]">
+                                                    {/* Interactive Area (Play Now on click) */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={handlePlayNow}
+                                                        className="flex items-center gap-3 text-left min-w-0 flex-1 cursor-pointer bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl"
+                                                    >
+                                                        {/* Circular countdown progress ring */}
+                                                        <div className="relative w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center bg-white/5 rounded-full">
+                                                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                                                <path
+                                                                    className="text-white/10"
+                                                                    strokeWidth="3"
+                                                                    stroke="currentColor"
+                                                                    fill="none"
+                                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                                />
+                                                                <path
+                                                                    className="text-indigo-500 transition-all duration-1000 ease-linear"
+                                                                    strokeDasharray={`${(countdown / 5) * 100}, 100`}
+                                                                    strokeWidth="3"
+                                                                    strokeLinecap="round"
+                                                                    stroke="currentColor"
+                                                                    fill="none"
+                                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                                />
+                                                            </svg>
+                                                            <span className="absolute font-sans text-xs sm:text-sm font-black text-white tabular-nums group-hover:hidden">
+                                                                {countdown}s
+                                                            </span>
+                                                            <Play className="w-4 h-4 fill-white text-white absolute hidden group-hover:block transition-all transform scale-110" />
+                                                        </div>
+
+                                                        {/* Episode info */}
+                                                        <div className="min-w-0 flex-1 pr-1">
+                                                            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-indigo-400">
+                                                                <span>Next Episode</span>
+                                                                <span className="text-white/30">•</span>
+                                                                <span className="text-gray-400 font-medium lowercase">in {countdown}s</span>
+                                                            </div>
+                                                            <h4 className="text-xs sm:text-sm font-bold text-white truncate max-w-full group-hover:text-indigo-300 transition-colors">
+                                                                Episode {nextEpisodeInfo.number}{nextEpisodeInfo.title && !nextEpisodeInfo.title.toLowerCase().startsWith('episode') ? `: ${nextEpisodeInfo.title}` : ''}
+                                                            </h4>
+                                                        </div>
+                                                    </button>
+
+                                                    {/* Play Button Pill */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={handlePlayNow}
+                                                        title="Play Now"
+                                                        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shrink-0 transition-all shadow-md cursor-pointer"
+                                                    >
+                                                        <Play className="w-3.5 h-3.5 fill-current" />
+                                                        <span>Play</span>
+                                                    </button>
+
+                                                    {/* Close / Dismiss Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCancelAutoNext();
+                                                        }}
+                                                        title="Dismiss"
+                                                        aria-label="Dismiss Auto Next"
+                                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer border border-white/5"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center bg-card/95 backdrop-blur-md">
                                         <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
@@ -576,11 +952,7 @@ const Watch = () => {
                                         {/* Autoplay Next Toggle */}
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                const updated = !autoNext;
-                                                setAutoNext(updated);
-                                                updatePreferences?.({ autoNext: updated });
-                                            }}
+                                            onClick={handleToggleAutoNext}
                                             className="px-3.5 py-1.5 rounded-full bg-[#121624] border border-white/10 hover:border-white/20 flex items-center gap-2 font-medium text-gray-300 cursor-pointer transition-all"
                                         >
                                             <div className={`w-7 h-4 rounded-full p-0.5 transition-colors ${autoNext ? "bg-indigo-600" : "bg-gray-700"}`}>

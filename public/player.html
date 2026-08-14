@@ -79,6 +79,65 @@
                 }
             }
         }, 1000);
+
+        // Secure MegaPlay player postMessage event bridge
+        window.addEventListener('message', function(event) {
+            // Origin validation
+            if (event.origin) {
+                const origin = event.origin.toLowerCase();
+                const isMegaplay = origin.includes('megaplay.buzz') || 
+                                   origin.includes('megacloud.tv') || 
+                                   origin.includes('megacloud.club') || 
+                                   origin.includes('megacloud') || 
+                                   origin.includes('anikoto');
+                const isLocal = origin === window.location.origin;
+                if (!isMegaplay && !isLocal) {
+                    return;
+                }
+            }
+
+            let data = event.data;
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (e) {
+                    return;
+                }
+            }
+
+            if (!data || typeof data !== 'object') {
+                return;
+            }
+
+            // Accept only recognized MegaPlay player events
+            const eventName = data.event || data.type;
+            const isRecognized = 
+                eventName === 'time' || 
+                eventName === 'complete' || 
+                eventName === 'ended' ||
+                eventName === 'watching-log' || 
+                eventName === 'error' ||
+                data.channel === 'megacloud';
+
+            if (!isRecognized) {
+                return;
+            }
+
+            // Forward normalized event payload to parent window (Watch.jsx)
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    source: 'megaplay-bridge',
+                    event: data.event,
+                    type: data.type,
+                    time: data.time,
+                    currentTime: data.currentTime,
+                    duration: data.duration,
+                    percent: data.percent,
+                    channel: data.channel,
+                    data: data.data
+                }, '*');
+            }
+        });
     </script>
 </body>
 </html>
