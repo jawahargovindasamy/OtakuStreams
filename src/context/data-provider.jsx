@@ -45,7 +45,9 @@ const mapAniListToAnime = (media) => {
       (media.startDate?.year || media.seasonYear) ? (media.startDate?.year || media.seasonYear).toString() : "?"
     ],
     episodes: {
-      sub: media.episodes || "?",
+      sub: (media.nextAiringEpisode && media.nextAiringEpisode.episode > 1)
+        ? media.nextAiringEpisode.episode - 1
+        : (media.episodes || "?"),
       dub: null,
     },
     rating: media.averageScore ? (media.averageScore / 10).toFixed(1) : null,
@@ -680,20 +682,20 @@ export function DataProvider({ children }) {
           } else if (status === "FINISHED" && typeof media.episodes === "number" && media.episodes > 0) {
             // For finished series, media.episodes is the authoritative total episode count
             targetEpisodeCount = media.episodes;
+          } else if (nextAiring && typeof nextAiring.episode === "number") {
+            // For releasing series with an upcoming scheduled episode, only episodes before that have aired
+            targetEpisodeCount = nextAiring.episode > 1 ? nextAiring.episode - 1 : 0;
           } else {
-            const scheduleEpNumber = nextAiring ? nextAiring.episode : 0;
-            const scheduleAiredCount = scheduleEpNumber > 1 ? scheduleEpNumber - 1 : 0;
             const totalCount = media.episodes || 0;
             const streamingCount = media.streamingEpisodes?.length || 0;
-
-            targetEpisodeCount = Math.max(scheduleAiredCount, totalCount, streamingCount);
+            targetEpisodeCount = Math.max(totalCount, streamingCount);
           }
 
           const currentEpCount = allEpisodes.length > 0 ? allEpisodes[allEpisodes.length - 1].number : 0;
 
-          // If finished and allEpisodes has extra items past media.episodes, trim it
-          if (status === "FINISHED" && typeof media.episodes === "number" && media.episodes > 0 && allEpisodes.length > media.episodes) {
-            allEpisodes = allEpisodes.slice(0, media.episodes);
+          // If allEpisodes has extra items past targetEpisodeCount, trim it
+          if (targetEpisodeCount >= 0 && allEpisodes.length > targetEpisodeCount) {
+            allEpisodes = allEpisodes.slice(0, targetEpisodeCount);
           } else if (currentEpCount < targetEpisodeCount) {
             // Append missing episodes up to targetEpisodeCount
             for (let i = currentEpCount + 1; i <= targetEpisodeCount; i++) {
@@ -707,8 +709,8 @@ export function DataProvider({ children }) {
           }
         }
 
-        // Final Fallback: If still empty, ensure at least one episode
-        if (allEpisodes.length === 0 && media) {
+        // Final Fallback: If still empty and not explicitly NOT_YET_RELEASED, ensure at least one episode
+        if (allEpisodes.length === 0 && media && media.status !== "NOT_YET_RELEASED" && (!media.nextAiringEpisode || media.nextAiringEpisode.episode > 1)) {
           allEpisodes.push({
             episodeId: "1",
             number: 1,
