@@ -818,6 +818,7 @@ export function DataProvider({ children }) {
           const epDate = new Date(item.airingAt * 1000);
           return {
             id: media.id.toString(),
+            airingId: item.id ? item.id.toString() : `${media.id}-${item.episode}`,
             name: media.title.english || media.title.romaji,
             jname: media.title.romaji,
             poster: media.coverImage?.large,
@@ -839,6 +840,7 @@ export function DataProvider({ children }) {
             airingAt: item.airingAt,
             timeUntilAiring: item.timeUntilAiring,
             studio: media.studios?.nodes?.[0]?.name || "",
+            popularity: media.popularity || 0,
             rawMedia: media
           };
         });

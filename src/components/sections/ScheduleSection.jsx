@@ -83,7 +83,13 @@ const ScheduleSection = () => {
 
         dayBuckets.forEach((b) => {
           b.count = b.items.length;
-          b.items.sort((a, b) => (a.airingAt || 0) - (b.airingAt || 0));
+          b.items.sort((a, b) => {
+            const timeDiff = (a.airingAt || 0) - (b.airingAt || 0);
+            if (timeDiff !== 0) return timeDiff;
+            const popA = a.popularity ?? a.rawMedia?.popularity ?? 0;
+            const popB = b.popularity ?? b.rawMedia?.popularity ?? 0;
+            return popB - popA;
+          });
         });
 
         // Find globally soonest airing ID
@@ -93,7 +99,7 @@ const ScheduleSection = () => {
           const t = s.timeUntilAiring;
           if (t > 0 && t < minTime) {
             minTime = t;
-            soonest = s.id;
+            soonest = s.airingId || (s.episode ? `${s.id}-${s.episode}` : s.id);
           }
         });
 
@@ -119,8 +125,20 @@ const ScheduleSection = () => {
 
   const activeDay = scheduleDays[activeDayIndex] || scheduleDays[0] || { items: [] };
   const dayItems = activeDay.items || [];
-  const spotlightItem = dayItems[0];
-  const timelineItems = dayItems.slice(1); // Render ALL scheduled items for the day
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const isToday = nowSec >= (activeDay.startTs || 0) && nowSec < (activeDay.endTs || 0);
+
+  let spotlightItem = dayItems[0];
+  if (isToday) {
+    const nextUpcoming = dayItems.find((item) => (item.airingAt || 0) > nowSec);
+    if (nextUpcoming) {
+      spotlightItem = nextUpcoming;
+    }
+  }
+
+  const spotlightKey = spotlightItem?.airingId || (spotlightItem ? `${spotlightItem.id}-${spotlightItem.episode}` : null);
+  const timelineItems = dayItems.filter((item) => (item.airingId || `${item.id}-${item.episode}`) !== spotlightKey);
 
   return (
     <section id="schedule" aria-labelledby="schedule-title" className="w-full space-y-5 sm:space-y-6">
@@ -199,7 +217,7 @@ const ScheduleSection = () => {
               <div className="w-full lg:sticky lg:top-24">
                 <SpotlightCard
                   item={spotlightItem}
-                  isGloballySoonest={spotlightItem.id === globallySoonestId}
+                  isGloballySoonest={(spotlightItem.airingId || (spotlightItem.episode ? `${spotlightItem.id}-${spotlightItem.episode}` : spotlightItem.id)) === globallySoonestId}
                 />
               </div>
             )}
@@ -208,7 +226,7 @@ const ScheduleSection = () => {
             <div className="w-full border-t lg:border-t-0 lg:border-l border-border/70 max-h-[34rem] overflow-y-auto no-scrollbar">
               <ol className="divide-y divide-border/70 w-full list-none p-0 m-0">
                 {timelineItems.map((item, idx) => (
-                  <TimelineRow key={item.id || idx} item={item} />
+                  <TimelineRow key={item.airingId || `${item.id}-${item.episode || idx}`} item={item} />
                 ))}
               </ol>
             </div>
