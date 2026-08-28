@@ -12,7 +12,8 @@ const EpisodeServer = ({
     setActiveDub,
     activeRaw,
     setActiveRaw,
-    nextEpisodeTime
+    nextEpisodeTime,
+    onReloadPlayer
 }) => {
     const { updatePreferences } = useAuth();
     const formatName = (name) => {
@@ -39,10 +40,14 @@ const EpisodeServer = ({
                                     key={s.serverId}
                                     type="button"
                                     onClick={() => {
-                                        setActiveSub(s);
-                                        setActiveDub(null);
-                                        setActiveRaw(null);
-                                        updatePreferences({ audio: "sub", server: s.serverId });
+                                        if (isActive) {
+                                            onReloadPlayer?.();
+                                        } else {
+                                            setActiveSub(s);
+                                            setActiveDub(null);
+                                            setActiveRaw(null);
+                                            updatePreferences({ audio: "sub", server: s.serverId });
+                                        }
                                     }}
                                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                                         isActive
@@ -70,10 +75,14 @@ const EpisodeServer = ({
                                     key={s.serverId}
                                     type="button"
                                     onClick={() => {
-                                        setActiveDub(s);
-                                        setActiveSub(null);
-                                        setActiveRaw(null);
-                                        updatePreferences({ audio: "dub", server: s.serverId });
+                                        if (isActive) {
+                                            onReloadPlayer?.();
+                                        } else {
+                                            setActiveDub(s);
+                                            setActiveSub(null);
+                                            setActiveRaw(null);
+                                            updatePreferences({ audio: "dub", server: s.serverId });
+                                        }
                                     }}
                                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                                         isActive
@@ -101,10 +110,14 @@ const EpisodeServer = ({
                                     key={s.serverId}
                                     type="button"
                                     onClick={() => {
-                                        setActiveRaw(s);
-                                        setActiveSub(null);
-                                        setActiveDub(null);
-                                        updatePreferences({ audio: "raw", server: s.serverId });
+                                        if (isActive) {
+                                            onReloadPlayer?.();
+                                        } else {
+                                            setActiveRaw(s);
+                                            setActiveSub(null);
+                                            setActiveDub(null);
+                                            updatePreferences({ audio: "raw", server: s.serverId });
+                                        }
                                     }}
                                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                                         isActive

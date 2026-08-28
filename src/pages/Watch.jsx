@@ -45,6 +45,11 @@ const Watch = () => {
     const [isTheatre, setIsTheatre] = useState(false);
     const [autoNext, setAutoNext] = useState(() => preferences?.autoNext ?? true);
     const [copied, setCopied] = useState(false);
+    const [playerKey, setPlayerKey] = useState(0);
+
+    const reloadPlayer = useCallback(() => {
+        setPlayerKey((prev) => prev + 1);
+    }, []);
 
     // Auto Next & Playback State
     const [showAutoNext, setShowAutoNext] = useState(false);
@@ -262,48 +267,53 @@ const Watch = () => {
         handlefetchnextepisodeschedule();
     }, [id, fetchnextepisodeschedule]);
 
-    useEffect(() => {
-        const checkEpisode = async () => {
-            setIsChecking(true);
-            try {
-                const malId = item?.anime?.info?.malId || "";
-                const response = await fetch(`/.netlify/functions/check-episode?animeId=${id}&episode=${episodeNumber}&malId=${malId}`);
+    const checkEpisode = useCallback(async () => {
+        setIsChecking(true);
+        try {
+            const malId = item?.anime?.info?.malId || "";
+            const response = await fetch(`/.netlify/functions/check-episode?animeId=${id}&episode=${episodeNumber}&malId=${malId}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new TypeError("Oops, we haven't got JSON!");
-                }
-
-                const data = await response.json();
-
-                if (data.success) {
-                    setIsAvailable(data.isAvailable);
-                    setHasDub(data.hasDub);
-                    setDebugInfo(data.debug || data.debugInfo || []);
-
-                    if (!data.hasDub && audioType === "dub") {
-                        setActiveDub(null);
-                        setActiveSub(subServers[0]);
-                    }
-                } else {
-                    setIsAvailable(false);
-                }
-            } catch (error) {
-                console.error("Episode check failed:", error);
-                setIsAvailable(false);
-            } finally {
-                setIsChecking(false);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        };
 
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new TypeError("Oops, we haven't got JSON!");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                setIsAvailable(data.isAvailable);
+                setHasDub(data.hasDub);
+                setDebugInfo(data.debug || data.debugInfo || []);
+
+                if (!data.hasDub) {
+                    setActiveDub((prevDub) => {
+                        if (prevDub) {
+                            setActiveSub(subServers[0]);
+                            return null;
+                        }
+                        return prevDub;
+                    });
+                }
+            } else {
+                setIsAvailable(false);
+            }
+        } catch (error) {
+            console.error("Episode check failed:", error);
+            setIsAvailable(false);
+        } finally {
+            setIsChecking(false);
+        }
+    }, [id, episodeNumber, item]);
+
+    useEffect(() => {
         if (id && episodeNumber) {
             checkEpisode();
         }
-    }, [id, episodeNumber, item, audioType]);
+    }, [id, episodeNumber, checkEpisode]);
 
     // Determine the next valid episode
     const getNextEpisode = useCallback(() => {
@@ -691,6 +701,7 @@ const Watch = () => {
                                 isCurrentServerWorking() ? (
                                     <>
                                         <iframe
+                                            key={playerKey}
                                             src={iframeSrc}
                                             title={`${item?.anime?.info?.name || "Anime"} - Episode ${episodeNumber}`}
                                             allowFullScreen
@@ -818,7 +829,7 @@ const Watch = () => {
                                     </div>
                                     <Button
                                         variant="outline"
-                                        onClick={() => window.location.reload()}
+                                        onClick={checkEpisode}
                                         className="mt-2 font-sans font-medium"
                                     >
                                         Try Refreshing
@@ -995,6 +1006,7 @@ const Watch = () => {
                                     activeRaw={activeRaw}
                                     setActiveRaw={setActiveRaw}
                                     nextEpisodeTime={formatted || 0}
+                                    onReloadPlayer={reloadPlayer}
                                 />
                             </div>
                         )}

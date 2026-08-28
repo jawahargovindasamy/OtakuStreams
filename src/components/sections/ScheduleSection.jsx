@@ -95,8 +95,9 @@ const ScheduleSection = () => {
         // Find globally soonest airing ID
         let soonest = null;
         let minTime = Infinity;
+        const currentNowSec = Math.floor(Date.now() / 1000);
         allItems.forEach((s) => {
-          const t = s.timeUntilAiring;
+          const t = (s.airingAt || 0) - currentNowSec;
           if (t > 0 && t < minTime) {
             minTime = t;
             soonest = s.airingId || (s.episode ? `${s.id}-${s.episode}` : s.id);
@@ -264,12 +265,7 @@ const SpotlightCard = ({ item, isGloballySoonest }) => {
 
   // Time Until Airing Seconds
   const nowSec = Math.floor(Date.now() / 1000);
-  const seconds =
-    item.timeUntilAiring !== undefined && item.timeUntilAiring !== null
-      ? item.timeUntilAiring
-      : airingAt
-      ? airingAt - nowSec
-      : 0;
+  const seconds = airingAt ? airingAt - nowSec : 0;
 
   const countdownStr = formatCountdownPill(seconds);
 
@@ -391,12 +387,7 @@ const TimelineRow = ({ item }) => {
   const airTimeStr = formatLocaleTime(airingAt);
 
   const nowSec = Math.floor(Date.now() / 1000);
-  const seconds =
-    item.timeUntilAiring !== undefined && item.timeUntilAiring !== null
-      ? item.timeUntilAiring
-      : airingAt
-      ? airingAt - nowSec
-      : 0;
+  const seconds = airingAt ? airingAt - nowSec : 0;
   const countdownStr = formatCountdownPill(seconds);
 
   const format = (media?.format || item.type || "TV").replace("_", " ");
