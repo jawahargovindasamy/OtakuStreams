@@ -40,12 +40,21 @@
         const container = document.getElementById('player-container');
 
         if (animeId) {
-            // Determine if using mal (hd-2) or ani (hd-1)
-            const isMal = animeId.startsWith('mal-') || (malId && malId !== 'null' && malId !== 'undefined' && server === 'hd-2');
-            const cleanId = isMal ? (animeId.startsWith('mal-') ? animeId.replace('mal-', '') : malId) : animeId;
-            const typePath = isMal ? 'mal' : 'ani';
+            let streamUrl = '';
+            const isMalOnly = animeId.startsWith('mal-');
 
-            const streamUrl = `https://megaplay.buzz/stream/${typePath}/${cleanId}/${episode}/${audio}`;
+            if (server === 'hd-3') {
+                // Server 3: ZokoAnime (ani by default, or mal if mal- id)
+                const source = isMalOnly ? 'mal' : 'ani';
+                const cleanId = isMalOnly ? animeId.replace('mal-', '') : animeId;
+                streamUrl = `https://zokoanime.video/stream/${source}/${cleanId}/${episode}/${audio}?color=6366f1&autoplay=true`;
+            } else {
+                // Server 1 & Server 2: MegaPlay (hd-1 = ani, hd-2 = mal)
+                const isMal = isMalOnly || (malId && malId !== 'null' && malId !== 'undefined' && server === 'hd-2');
+                const cleanId = isMal ? (isMalOnly ? animeId.replace('mal-', '') : malId) : animeId;
+                const typePath = isMal ? 'mal' : 'ani';
+                streamUrl = `https://megaplay.buzz/stream/${typePath}/${cleanId}/${episode}/${audio}`;
+            }
 
             const iframe = document.createElement('iframe');
             iframe.src = streamUrl;
@@ -63,7 +72,9 @@
         
         document.addEventListener('click', function(e) {
             const tag = e.target.tagName.toLowerCase();
-            if (tag === 'a' && !e.target.href.includes('megaplay.buzz')) {
+            const href = e.target.href || '';
+            const isAllowedHref = href.includes('megaplay.buzz') || href.includes('zokoanime.video');
+            if (tag === 'a' && !isAllowedHref) {
                 e.preventDefault();
                 e.stopPropagation();
             }
@@ -80,18 +91,20 @@
             }
         }, 1000);
 
-        // Secure MegaPlay player postMessage event bridge
+        // Secure player postMessage event bridge
         window.addEventListener('message', function(event) {
             // Origin validation
             if (event.origin) {
                 const origin = event.origin.toLowerCase();
-                const isMegaplay = origin.includes('megaplay.buzz') || 
-                                   origin.includes('megacloud.tv') || 
-                                   origin.includes('megacloud.club') || 
-                                   origin.includes('megacloud') || 
-                                   origin.includes('anikoto');
+                const isAllowedOrigin = origin.includes('megaplay.buzz') || 
+                                       origin.includes('megacloud.tv') || 
+                                       origin.includes('megacloud.club') || 
+                                       origin.includes('megacloud') || 
+                                       origin.includes('anikoto') ||
+                                       origin.includes('zokoanime.video') ||
+                                       origin.includes('zokoanime');
                 const isLocal = origin === window.location.origin;
-                if (!isMegaplay && !isLocal) {
+                if (!isAllowedOrigin && !isLocal) {
                     return;
                 }
             }

@@ -261,9 +261,9 @@ The frontend project is pre-configured for automated continuous deployment on **
    - *Reason:* AniList or Jikan API is rate limiting (HTTP 429).
    - *Remedy:* The codebase includes automatic retry backoffs. If the rate limits persist, clear your browser session storage (`sessionStorage.clear()`) to force a fresh connection.
 
-3. **Megaplay Iframe returns "Oops! Something went wrong":**
-   - *Reason:* Megaplay has not uploaded the episode or has deleted the endpoint.
-   - *Remedy:* Tap **"Try Next Server"** inside the player UI to switch streams (e.g. from `HD-1` to `HD-2`, swapping the AniList ID fetch with the MAL ID routing).
+3. **Megaplay or Stream Iframe returns "Oops! Something went wrong":**
+   - *Reason:* Provider has not uploaded the episode or has deleted the endpoint.
+   - *Remedy:* Tap **"Try Next Server"** inside the player UI to switch streams (e.g. from `HD-1` AniList or `HD-2` MAL to `HD-3` ZokoAnime, switching provider and ID routing).
 
 ---
 

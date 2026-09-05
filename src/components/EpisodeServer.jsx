@@ -20,6 +20,7 @@ const EpisodeServer = ({
         if (!name) return "";
         if (name.toLowerCase() === "hd-1") return "Server 1";
         if (name.toLowerCase() === "hd-2") return "Server 2";
+        if (name.toLowerCase() === "hd-3") return "Server 3";
         return name;
     };
 

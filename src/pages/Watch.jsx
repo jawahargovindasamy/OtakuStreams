@@ -15,11 +15,13 @@ import { useAuth } from '@/context/auth-provider';
 
 const subServers = [
     { serverId: "hd-1", serverName: "HD-1" },
-    { serverId: "hd-2", serverName: "HD-2" }
+    { serverId: "hd-2", serverName: "HD-2" },
+    { serverId: "hd-3", serverName: "HD-3" }
 ];
 const dubServers = [
     { serverId: "hd-1", serverName: "HD-1" },
-    { serverId: "hd-2", serverName: "HD-2" }
+    { serverId: "hd-2", serverName: "HD-2" },
+    { serverId: "hd-3", serverName: "HD-3" }
 ];
 
 
@@ -571,7 +573,7 @@ const Watch = () => {
 
     // Update progress in auth-provider when user is logged in and episode is available
     useEffect(() => {
-        if (user && updateProgress && isAvailable && !isChecking && id && episodeNumber) {
+        if (user && updateProgress && (isAvailable || activeServerId === "hd-3") && !isChecking && id && episodeNumber) {
             const title = getAnimeTitle(item?.Media || item?.anime?.info || item, language) || item?.anime?.info?.name || "Anime";
             const poster = item?.anime?.info?.poster || item?.posterImage || item?.coverImage?.extraLarge || "";
 
@@ -638,10 +640,11 @@ const Watch = () => {
     }, [id, fetchepisodeinfo]);
 
     const isCurrentServerWorking = () => {
+        if (activeServerId === "hd-3") return true;
         if (!debugInfo || debugInfo.length === 0) return true;
 
         const typePath = activeServerId === "hd-2" ? "/mal/" : "/ani/";
-        const serverStatus = debugInfo.find(d => d.url.includes(typePath) && d.url.includes(`/${audioType}`));
+        const serverStatus = debugInfo.find(d => d.url.includes("megaplay.buzz") && d.url.includes(typePath) && d.url.includes(`/${audioType}`));
 
         return !serverStatus || serverStatus.status === "Success";
     };
@@ -697,7 +700,7 @@ const Watch = () => {
                                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                                     <p className="text-sm text-muted-foreground animate-pulse font-sans">Checking episode availability...</p>
                                 </div>
-                            ) : isAvailable ? (
+                            ) : (isAvailable || activeServerId === "hd-3") ? (
                                 isCurrentServerWorking() ? (
                                     <>
                                         <iframe
@@ -799,7 +802,9 @@ const Watch = () => {
                                         <Button
                                             variant="default"
                                             onClick={() => {
-                                                const nextServerId = activeServerId === "hd-1" ? "hd-2" : "hd-1";
+                                                const serverOrder = ["hd-1", "hd-2", "hd-3"];
+                                                const currentIndex = serverOrder.indexOf(activeServerId);
+                                                const nextServerId = serverOrder[(currentIndex + 1) % serverOrder.length];
                                                 if (audioType === "dub") {
                                                     const nextServer = dubServers.find(s => s.serverId === nextServerId) || dubServers[0];
                                                     setActiveDub(nextServer);
@@ -827,13 +832,32 @@ const Watch = () => {
                                             This episode is not available right now. Please try again later.
                                         </p>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        onClick={checkEpisode}
-                                        className="mt-2 font-sans font-medium"
-                                    >
-                                        Try Refreshing
-                                    </Button>
+                                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                                        <Button
+                                            variant="default"
+                                            onClick={() => {
+                                                if (audioType === "dub") {
+                                                    const zoko = dubServers.find(s => s.serverId === "hd-3") || dubServers[0];
+                                                    setActiveDub(zoko);
+                                                    setActiveSub(null);
+                                                } else {
+                                                    const zoko = subServers.find(s => s.serverId === "hd-3") || subServers[0];
+                                                    setActiveSub(zoko);
+                                                    setActiveDub(null);
+                                                }
+                                            }}
+                                            className="mt-2 font-sans font-bold"
+                                        >
+                                            Switch to Server 3
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={checkEpisode}
+                                            className="mt-2 font-sans font-medium"
+                                        >
+                                            Try Refreshing
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </section>
@@ -993,7 +1017,7 @@ const Watch = () => {
                         </div>
 
                         {/* EPISODE SERVER SELECTOR */}
-                        {isAvailable && (
+                        {(isAvailable || activeServerId === "hd-3") && (
                             <div className="px-4 sm:px-0">
                                 <EpisodeServer
                                     episodeNo={episodeNumber}
